@@ -2454,10 +2454,18 @@ footer .footer-bottom p { margin: 0; }
 .empty .empty-title { margin: 8px 0 4px; font-size: 22px; color: var(--text); }
 
 /* =====================================================================
-   STICKY FILTER BAR – compact mode while scrolling deep
+   STICKY FILTER BAR – auto-hide on scroll-down, reveal on scroll-up
+   ---------------------------------------------------------------------
+   The bar sticks to the top so it's always one scroll-up away. While
+   the user is scrolling DOWN (reading the grid) we translate it off
+   screen so it doesn't cover any cards. As soon as the user scrolls
+   UP — the moment they want to refine results — it slides back in.
 ===================================================================== */
 .filters {
-  transition: padding 0.2s ease;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+              padding 0.2s ease,
+              box-shadow 0.2s ease,
+              opacity 0.2s ease;
 }
 .filters.compact {
   padding-block: 10px;
@@ -2467,6 +2475,15 @@ footer .footer-bottom p { margin: 0; }
   /* Even when "open", collapse to a thin strip when scrolling. */
   padding-top: 4px;
   margin-top: 2px;
+}
+
+/* When the user is scrolling down past the hero, hide the entire
+   filter bar by sliding it above the viewport. It animates back in
+   on the next scroll-up. */
+.filters.scroll-hidden {
+  transform: translateY(-130%);
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* =====================================================================

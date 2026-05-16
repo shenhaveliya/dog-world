@@ -2571,16 +2571,41 @@ if (featuredOpenBtn) {
 /* =====================================================================
    SCROLL TO TOP + FILTER BAR COMPACT MODE
 ===================================================================== */
+/* Track scroll position + direction so the sticky filter bar can hide
+ * while reading down the grid and reappear the moment the user scrolls
+ * up. We coalesce updates inside `requestAnimationFrame` so the scroll
+ * listener never does layout work in the hot path. */
+let _lastScrollY = window.scrollY;
+let _scrollTicking = false;
 window.addEventListener("scroll", () => {
-  scrollTopBtn.classList.toggle("visible", window.scrollY > 400);
-  // Shrink the sticky filter bar once the user has scrolled into the grid.
-  // On mobile we shrink much earlier so the bar collapses to a compact
-  // search+chips strip and stops dominating the screen.
-  if (filtersEl) {
-    const isMobile = window.matchMedia("(max-width: 700px)").matches;
-    const threshold = isMobile ? 80 : 220;
-    filtersEl.classList.toggle("compact", window.scrollY > threshold);
-  }
+  if (_scrollTicking) return;
+  _scrollTicking = true;
+  requestAnimationFrame(() => {
+    const y = window.scrollY;
+    scrollTopBtn.classList.toggle("visible", y > 400);
+
+    if (filtersEl) {
+      // Reveal threshold: always show near the top so the bar can't be
+      // "stuck hidden" if the user lands mid-page from a deep link.
+      const REVEAL_TOP = 120;
+      // Compact threshold: shrink padding once we're well into the grid.
+      const COMPACT = window.matchMedia("(max-width: 700px)").matches ? 80 : 220;
+      const scrollingDown = y > _lastScrollY + 4;
+      const scrollingUp   = y < _lastScrollY - 4;
+
+      if (y < REVEAL_TOP) {
+        filtersEl.classList.remove("scroll-hidden");
+      } else if (scrollingDown) {
+        filtersEl.classList.add("scroll-hidden");
+      } else if (scrollingUp) {
+        filtersEl.classList.remove("scroll-hidden");
+      }
+      filtersEl.classList.toggle("compact", y > COMPACT);
+    }
+
+    _lastScrollY = y;
+    _scrollTicking = false;
+  });
 }, { passive: true });
 scrollTopBtn.addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
