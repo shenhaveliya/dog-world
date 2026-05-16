@@ -46,6 +46,7 @@
   <meta property="og:type" content="website" />
   <meta id="ogTitle" property="og:title" content="עולם הכלבים – מדריך לבחירת הגזע המתאים" />
   <meta id="ogDescription" property="og:description" content="מדריך אינטראקטיבי לסוגי כלבים, אופי הגזעים, התאמה למשפחה, וטיפים לבחירת הכלב המתאים לך." />
+  <meta property="og:url" content="https://shenhaveliya.github.io/dog-world/" />
   <meta property="og:image" content="icon.svg" />
   <meta id="ogLocale" property="og:locale" content="he_IL" />
 
@@ -54,7 +55,11 @@
   <meta id="twTitle" name="twitter:title" content="עולם הכלבים – מדריך לבחירת הגזע המתאים" />
   <meta id="twDescription" name="twitter:description" content="מדריך אינטראקטיבי לסוגי כלבים, אופי הגזעים, התאמה למשפחה, וטיפים לבחירת הכלב המתאים לך." />
 
+  <!-- Privacy-friendly analytics. Works after the domain is added in Plausible. -->
+  <script defer data-domain="shenhaveliya.github.io/dog-world" src="https://plausible.io/js/script.js"></script>
+
   <!-- Alternate language for SEO -->
+  <link rel="canonical" href="https://shenhaveliya.github.io/dog-world/" />
   <link id="altLangHe" rel="alternate" hreflang="he" href="./?lang=he" />
   <link id="altLangEn" rel="alternate" hreflang="en" href="./?lang=en" />
   <link id="altLangX"  rel="alternate" hreflang="x-default" href="./" />
@@ -65,6 +70,7 @@
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "עולם הכלבים",
+    "url": "https://shenhaveliya.github.io/dog-world/",
     "inLanguage": "he",
     "description": "מדריך אינטראקטיבי לסוגי כלבים ובחירת הגזע המתאים."
   }
@@ -130,7 +136,15 @@
       </div>
     </header>
 
-    <section class="filters" aria-label="מסננים וחיפוש" data-i18n-aria-label="filtersLabel">
+    <button id="mobileFilterOpen" class="mobile-filter-open" type="button" data-i18n="mobileFiltersOpen" aria-controls="filtersPanel">
+      🔎 מסננים וחיפוש
+    </button>
+    <div id="filterSheetOverlay" class="filter-sheet-overlay" hidden></div>
+    <section id="filtersPanel" class="filters" aria-label="מסננים וחיפוש" data-i18n-aria-label="filtersLabel">
+      <div class="filter-sheet-head">
+        <strong data-i18n="mobileFiltersTitle">מסננים וחיפוש</strong>
+        <button id="mobileFilterClose" type="button" class="filter-sheet-close" data-i18n-aria-label="closeAria" aria-label="סגור">✕</button>
+      </div>
       <div class="search-wrapper">
         <span class="search-icon" aria-hidden="true">🔍</span>
         <label for="searchInput" class="sr-only" data-i18n="searchLabel">חיפוש כלבים</label>
@@ -201,6 +215,14 @@
 
       <!-- "Your favorites" heading: only visible when the favorites-only filter is on. -->
       <h2 class="favorites-heading" id="favoritesHeading" hidden></h2>
+
+      <section class="recent-breeds" id="recentBreeds" hidden aria-labelledby="recentBreedsTitle">
+        <div class="recent-breeds-head">
+          <h2 id="recentBreedsTitle" data-i18n="recentTitle">נצפו לאחרונה</h2>
+          <button id="recentClearBtn" type="button" class="small-link" data-i18n="recentClear">נקה</button>
+        </div>
+        <div class="recent-breeds-list" id="recentBreedsList"></div>
+      </section>
 
       <section class="cards" id="cardsContainer" aria-label="גזעי כלבים" data-i18n-aria-label="cardsLabel">
         <!-- Cards rendered by script.js from BREEDS data -->
@@ -280,6 +302,7 @@
 
   <!-- SCROLL TO TOP -->
   <button id="scrollTopBtn" class="scroll-top" type="button" aria-label="חזרה למעלה" data-i18n-aria-label="scrollTopAria">↑</button>
+  <button id="installAppBtn" class="install-app-btn" type="button" hidden data-i18n="installApp">התקן אפליקציה</button>
 
   <!-- MOBILE BOTTOM NAV (visible only on narrow screens) -->
   <nav class="mobile-nav" id="mobileNav" aria-label="ניווט תחתון">

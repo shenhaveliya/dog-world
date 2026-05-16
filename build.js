@@ -15,7 +15,7 @@
  *     SPA with `#breed/<key>` so they get the full interactive experience.
  *
  * Usage:
- *   node build.js                 # builds with SITE_URL = "https://example.com"
+ *   node build.js                 # builds with the GitHub Pages SITE_URL
  *   SITE_URL=https://my.site node build.js
  *
  * Re-run this script whenever you edit breeds.js to keep the static
@@ -28,9 +28,9 @@ const path = require("path");
 const { BREEDS } = require("./breeds.js");
 const { I18N, LANGUAGES } = require("./i18n.js");
 
-const SITE_URL = (process.env.SITE_URL || "https://example.com").replace(/\/$/, "");
+const SITE_URL = (process.env.SITE_URL || "https://shenhaveliya.github.io/dog-world").replace(/\/$/, "");
 const OUT_DIR = path.join(__dirname, "breeds");
-const SPA_PATH = "/index.html";
+const SPA_PATH = "/";
 const TODAY = new Date().toISOString().slice(0, 10);
 
 function escapeHTML(str) {

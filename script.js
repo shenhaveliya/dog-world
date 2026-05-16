@@ -54,10 +54,12 @@ const WIKI_CACHE_KEY = "dogweb-wiki-image-cache-v1";
 const WIKI_CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
 const WIKI_MAX_CONCURRENT = 3; // be polite to Wikipedia
 const FAV_KEY = "dogweb-favorites";
+const RECENT_KEY = "dogweb-recent-breeds";
 const THEME_KEY = "dogweb-theme";
 const LANG_KEY = "dogweb-lang";
 const MAX_COMPARE = 4;
 const PHOTOS_PER_BREED = 4;
+const SITE_URL = "https://shenhaveliya.github.io/dog-world/";
 
 /* =====================================================================
    SMALL UTILITIES
@@ -112,6 +114,19 @@ function copyToClipboard(text) {
       ok ? resolve() : reject(new Error("execCommand copy failed"));
     } catch (e) { reject(e); }
   });
+}
+
+function pageUrlWithHash(hash) {
+  const base = location.origin && location.origin !== "null"
+    ? `${location.origin}${location.pathname}`
+    : SITE_URL;
+  return `${base}${location.search || ""}${hash || ""}`;
+}
+
+function trackEvent(name, props) {
+  if (typeof window.plausible === "function") {
+    window.plausible(name, props ? { props } : undefined);
+  }
 }
 
 /* =====================================================================
@@ -259,6 +274,13 @@ const mobileNavEl = document.getElementById("mobileNav");
 const densityToggleBtn = document.getElementById("densityToggle");
 const viewToggleEls = document.querySelectorAll(".view-btn");
 const quickPeekEl = document.getElementById("quickPeek");
+const mobileFilterOpenBtn = document.getElementById("mobileFilterOpen");
+const mobileFilterCloseBtn = document.getElementById("mobileFilterClose");
+const filterSheetOverlay = document.getElementById("filterSheetOverlay");
+const installAppBtn = document.getElementById("installAppBtn");
+const recentBreedsEl = document.getElementById("recentBreeds");
+const recentBreedsListEl = document.getElementById("recentBreedsList");
+const recentClearBtn = document.getElementById("recentClearBtn");
 
 let prefersReducedMotion = false;
 try {
@@ -454,11 +476,46 @@ try { favorites = JSON.parse(localStorage.getItem(FAV_KEY) || "[]"); } catch (e)
 const isFavorite = (breed) => favorites.includes(breed);
 const persistFavorites = () => localStorage.setItem(FAV_KEY, JSON.stringify(favorites));
 
+function readRecentBreeds() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed.filter((key) => breedByKey(key)).slice(0, 8) : [];
+  } catch (e) { return []; }
+}
+
+function writeRecentBreeds(keys) {
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify(keys.slice(0, 8))); } catch (e) { /* ignore */ }
+}
+
+function addRecentBreed(key) {
+  if (!key) return;
+  const next = [key, ...readRecentBreeds().filter((k) => k !== key)].slice(0, 8);
+  writeRecentBreeds(next);
+  renderRecentBreeds();
+}
+
+function renderRecentBreeds() {
+  if (!recentBreedsEl || !recentBreedsListEl) return;
+  const keys = readRecentBreeds();
+  recentBreedsEl.hidden = keys.length === 0;
+  recentBreedsListEl.innerHTML = keys.map((key) => {
+    const breed = breedByKey(key);
+    if (!breed) return "";
+    const name = bName(breed);
+    const img = bestKnownImageFor(breed);
+    const thumb = img
+      ? `<img src="${escapeHTML(img)}" alt="${escapeHTML(name)}" loading="lazy">`
+      : `<span class="recent-initial">${escapeHTML(breedInitial(breed))}</span>`;
+    return `<button type="button" class="recent-breed" data-breed-key="${escapeHTML(key)}">${thumb}<span>${escapeHTML(name)}</span></button>`;
+  }).join("");
+}
+
 const selectedSizes = new Set();
 const activeAttrs = new Set();
 let favOnly = false;
 let currentSort = "default";
 let compareList = [];
+let compareUrlSyncReady = false;
 
 /* ----- Pagination -----------------------------------------------------
    The grid is virtually paged: only the first `visiblePageCount` cards
@@ -1629,6 +1686,40 @@ clearFiltersBtn.addEventListener("click", () => {
   resetPageAndApply();
 });
 
+function openFilterSheet() {
+  if (!filtersEl) return;
+  document.body.classList.add("filters-open");
+  if (filterSheetOverlay) filterSheetOverlay.hidden = false;
+  filtersEl.setAttribute("aria-modal", "true");
+  setTimeout(() => searchInput && searchInput.focus(), 80);
+  trackEvent("Open mobile filters");
+}
+
+function closeFilterSheet() {
+  document.body.classList.remove("filters-open");
+  if (filterSheetOverlay) filterSheetOverlay.hidden = true;
+  if (filtersEl) filtersEl.removeAttribute("aria-modal");
+}
+
+if (mobileFilterOpenBtn) mobileFilterOpenBtn.addEventListener("click", openFilterSheet);
+if (mobileFilterCloseBtn) mobileFilterCloseBtn.addEventListener("click", closeFilterSheet);
+if (filterSheetOverlay) filterSheetOverlay.addEventListener("click", closeFilterSheet);
+
+if (recentBreedsListEl) {
+  recentBreedsListEl.addEventListener("click", (e) => {
+    const btn = e.target.closest(".recent-breed");
+    if (!btn) return;
+    const card = cardForBreed(btn.dataset.breedKey);
+    if (card) openDetailModal(card, btn);
+  });
+}
+if (recentClearBtn) {
+  recentClearBtn.addEventListener("click", () => {
+    writeRecentBreeds([]);
+    renderRecentBreeds();
+  });
+}
+
 /* =====================================================================
    MODAL MANAGEMENT
 ===================================================================== */
@@ -1689,6 +1780,7 @@ document.querySelectorAll(".modal").forEach((modal) => {
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
+    closeFilterSheet();
     document.querySelectorAll(".modal.open").forEach(closeModal);
   }
 });
@@ -1697,10 +1789,43 @@ document.addEventListener("keydown", (e) => {
    DETAIL MODAL – with multi-photo gallery + URL routing
 ===================================================================== */
 
+function similarBreedsHTML(breed) {
+  const similar = BREEDS
+    .filter((candidate) => candidate.key !== breed.key)
+    .map((candidate) => {
+      let score = 0;
+      if (candidate.sizeRank === breed.sizeRank) score += 4;
+      score += Math.max(0, 3 - Math.abs(candidate.energy - breed.energy));
+      score += Math.max(0, 3 - Math.abs(candidate.shedding - breed.shedding));
+      if (candidate.goodWithKids === breed.goodWithKids) score += 1;
+      if (candidate.goodWithCats === breed.goodWithCats) score += 1;
+      return { candidate, score };
+    })
+    .sort((a, b) => b.score - a.score || a.candidate.nameEn.localeCompare(b.candidate.nameEn))
+    .slice(0, 4)
+    .map(({ candidate }) => {
+      const img = bestKnownImageFor(candidate);
+      const name = bName(candidate);
+      const visual = img
+        ? `<img src="${escapeHTML(img)}" alt="${escapeHTML(name)}" loading="lazy">`
+        : `<span class="similar-initial">${escapeHTML(breedInitial(candidate))}</span>`;
+      return `<button type="button" class="similar-breed" data-breed-key="${escapeHTML(candidate.key)}">${visual}<span>${escapeHTML(name)}</span></button>`;
+    })
+    .join("");
+
+  if (!similar) return "";
+  return `<section class="similar-breeds">
+    <h3>${escapeHTML(t("similarTitle"))}</h3>
+    <div class="similar-breeds-list">${similar}</div>
+  </section>`;
+}
+
 function openDetailModal(card, trigger) {
   const breedKey = card.dataset.breed;
   const breed = breedByKey(breedKey);
   if (!breed) return;
+  addRecentBreed(breedKey);
+  trackEvent("Open breed", { breed: breedKey });
 
   const cachedImg = bestKnownImageFor(breed);
   const name = bName(breed);
@@ -1742,13 +1867,18 @@ function openDetailModal(card, trigger) {
       <p class="description">${escapeHTML(bDesc(breed))}</p>
       <div class="info">${detailStatTilesHTML(breed)}</div>
       <p class="price-disclaimer">${escapeHTML(t("priceDisclaimer"))}</p>
+      <p class="adoption-note">${escapeHTML(t("adoptionNote"))}</p>
 
       ${thumbsHTML}
+
+      ${similarBreedsHTML(breed)}
 
       <div class="detail-actions">
         ${refreshBtnHTML}
         <button id="detailFav" class="pill-btn" type="button">${isFavorite(breedKey) ? escapeHTML(t("detailFavOn")) : escapeHTML(t("detailFavAdd"))}</button>
         <button id="detailShare" class="pill-btn" type="button">${escapeHTML(t("detailShare"))}</button>
+        <button id="detailNativeShare" class="pill-btn" type="button">${escapeHTML(t("detailShareNative"))}</button>
+        <a id="detailWhatsApp" class="pill-btn pill-btn-link" href="#" target="_blank" rel="noopener noreferrer">${escapeHTML(t("detailShareWhatsApp"))}</a>
         <a id="detailWiki" class="pill-btn pill-btn-link pill-btn-wiki" href="${escapeHTML(wiki)}" target="_blank" rel="noopener noreferrer">
           <span class="wiki-mark" aria-hidden="true">W</span> ${escapeHTML(t("detailWiki"))}
         </a>
@@ -1790,10 +1920,11 @@ function openDetailModal(card, trigger) {
   });
   document.getElementById("detailShare").addEventListener("click", () => {
     const btn = document.getElementById("detailShare");
-    const url = `${location.origin}${location.pathname}#breed/${encodeURIComponent(breedKey)}`;
+    const url = pageUrlWithHash(`#breed/${encodeURIComponent(breedKey)}`);
     copyToClipboard(url).then(
       () => {
         announce(t("linkCopied"));
+        trackEvent("Copy breed link", { breed: breedKey });
         // Visible feedback for sighted users: swap label + green for ~1.5s.
         const original = btn.textContent;
         btn.textContent = t("detailShareDone");
@@ -1805,6 +1936,30 @@ function openDetailModal(card, trigger) {
       },
       () => prompt(t("detailShare"), url)
     );
+  });
+  const detailUrl = pageUrlWithHash(`#breed/${encodeURIComponent(breedKey)}`);
+  const nativeShareBtn = document.getElementById("detailNativeShare");
+  if (nativeShareBtn) {
+    nativeShareBtn.hidden = typeof navigator.share !== "function";
+    nativeShareBtn.addEventListener("click", () => {
+      navigator.share({
+        title: name,
+        text: bDesc(breed),
+        url: detailUrl,
+      }).then(() => trackEvent("Native share breed", { breed: breedKey })).catch(() => { /* cancelled */ });
+    });
+  }
+  const whatsApp = document.getElementById("detailWhatsApp");
+  if (whatsApp) {
+    const text = `${name} - ${detailUrl}`;
+    whatsApp.href = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    whatsApp.addEventListener("click", () => trackEvent("WhatsApp share breed", { breed: breedKey }));
+  }
+  detailModalContent.querySelectorAll(".similar-breed").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const nextCard = cardForBreed(btn.dataset.breedKey);
+      if (nextCard) openDetailModal(nextCard, btn);
+    });
   });
 }
 
@@ -1925,6 +2080,33 @@ function updateCompareUI() {
   cards.forEach((card) => {
     card.classList.toggle("compare-selected", compareList.includes(card.dataset.breed));
   });
+  if (compareUrlSyncReady) syncCompareUrl();
+}
+
+function syncCompareUrl() {
+  const params = new URLSearchParams(location.search);
+  if (compareList.length) params.set("compare", compareList.join(","));
+  else params.delete("compare");
+  const query = params.toString();
+  const nextUrl = `${location.pathname}${query ? "?" + query : ""}${location.hash}`;
+  const currentUrl = `${location.pathname}${location.search}${location.hash}`;
+  if (nextUrl !== currentUrl) history.replaceState(null, "", nextUrl);
+}
+
+function restoreCompareFromUrl() {
+  const params = new URLSearchParams(location.search);
+  const keys = (params.get("compare") || "")
+    .split(",")
+    .map((key) => key.trim())
+    .filter((key) => breedByKey(key))
+    .slice(0, MAX_COMPARE);
+  if (!keys.length) return;
+  compareList = Array.from(new Set(keys));
+  document.querySelectorAll(".compare-btn").forEach((btn) => {
+    const card = btn.closest(".card");
+    setCompareBtnState(btn, !!card && compareList.includes(card.dataset.breed));
+  });
+  updateCompareUI();
 }
 
 compareClearBtn.addEventListener("click", () => {
@@ -1980,7 +2162,7 @@ function openCompareModal() {
     return { best, worst };
   });
 
-  compareModalContent.innerHTML = breeds.map((breed, colIdx) => {
+  const compareColumns = breeds.map((breed, colIdx) => {
     const dlRows = rowSpecs.map((spec, rowIdx) => {
       const cls = bestIdxPerRow[rowIdx].best.has(colIdx) ? "diff-best" :
                   bestIdxPerRow[rowIdx].worst.has(colIdx) ? "diff-worst" : "";
@@ -1999,11 +2181,35 @@ function openCompareModal() {
     `;
   }).join("");
 
+  compareModalContent.innerHTML = `
+    <div class="compare-modal-head">
+      <h2 id="compareTitle">${escapeHTML(t("compareTitle"))}</h2>
+      <button type="button" class="pill-btn" id="compareCopyLink">${escapeHTML(t("detailShare"))}</button>
+    </div>
+    <div class="compare-grid">${compareColumns}</div>
+  `;
+
   compareModalContent.querySelectorAll("img.compare-img").forEach((img) => {
     const breed = breedByKey(img.dataset.breedKey);
     if (!breed) return;
     hydrateBreedImageInto(img, breed, swapCompareImgToPlaceholder);
   });
+  const copyCompareBtn = document.getElementById("compareCopyLink");
+  if (copyCompareBtn) {
+    copyCompareBtn.addEventListener("click", () => {
+      copyToClipboard(pageUrlWithHash("#compare")).then(() => {
+        announce(t("compareLinkCopied"));
+        trackEvent("Copy compare link", { breeds: compareList.join(",") });
+        const original = copyCompareBtn.textContent;
+        copyCompareBtn.textContent = t("detailShareDone");
+        copyCompareBtn.classList.add("copied");
+        setTimeout(() => {
+          copyCompareBtn.textContent = original;
+          copyCompareBtn.classList.remove("copied");
+        }, 1400);
+      });
+    });
+  }
   if (location.hash !== "#compare") history.pushState(null, "", "#compare");
   openModal(compareModal, compareOpenBtn);
 }
@@ -2617,8 +2823,12 @@ if (mobileNavEl) {
     if (action === "home") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (action === "search") {
-      if (filtersEl) filtersEl.scrollIntoView({ behavior: "smooth", block: "start" });
-      setTimeout(() => searchInput && searchInput.focus(), 350);
+      if (window.matchMedia("(max-width: 700px)").matches) {
+        openFilterSheet();
+      } else {
+        if (filtersEl) filtersEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        setTimeout(() => searchInput && searchInput.focus(), 350);
+      }
     } else if (action === "favorites") {
       if (!favOnly) favOnlyBtn.click();
       if (cardsContainer) cardsContainer.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2655,6 +2865,7 @@ function updateStructuredData(dict, lang) {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": dict.docTitle,
+    "url": SITE_URL,
     "inLanguage": lang,
     "description": dict.docDescription,
   };
@@ -2725,6 +2936,7 @@ function applyLanguage(lang) {
   updateCompareUI();
   renderHeroStats();
   renderFeaturedBreed();
+  renderRecentBreeds();
   // Localised option labels live on the hidden <select>'s textContent;
   // applyLanguage updates those via data-i18n, but the custom dropdown
   // mirrors them so it needs a refresh too.
@@ -2747,6 +2959,33 @@ if (langToggle) {
 }
 
 /* =====================================================================
+   INSTALL APP PROMPT
+===================================================================== */
+let deferredInstallPrompt = null;
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  if (installAppBtn) {
+    installAppBtn.hidden = false;
+    announce(t("installAppReady"));
+  }
+});
+if (installAppBtn) {
+  installAppBtn.addEventListener("click", async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    const choice = await deferredInstallPrompt.userChoice.catch(() => null);
+    trackEvent("Install prompt", { outcome: choice && choice.outcome });
+    deferredInstallPrompt = null;
+    installAppBtn.hidden = true;
+  });
+}
+window.addEventListener("appinstalled", () => {
+  trackEvent("App installed");
+  if (installAppBtn) installAppBtn.hidden = true;
+});
+
+/* =====================================================================
    SERVICE WORKER
 ===================================================================== */
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
@@ -2760,6 +2999,9 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
 ===================================================================== */
 applyTheme(initialTheme);
 applyLanguage(currentLang);
+restoreCompareFromUrl();
+compareUrlSyncReady = true;
+updateCompareUI();
 syncFromHash();
 
 // Restore density + view mode from previous session.
