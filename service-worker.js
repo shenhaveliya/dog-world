@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "dog-world-v3";
+const CACHE_NAME = "dog-world-v4";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -36,7 +36,13 @@ self.addEventListener("fetch", (event) => {
 
   if (url.origin === location.origin) {
     event.respondWith(
-      caches.match(event.request).then((cached) => cached || fetch(event.request))
+      fetch(event.request)
+        .then((response) => {
+          const cloned = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, cloned));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
     );
     return;
   }
