@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Inline boot: set <html lang/dir/data-theme> BEFORE first paint to avoid FOUC.
+       This runs synchronously (no defer) so the page is rendered with the right
+       direction and theme on the very first frame. -->
+  <script>
+    (function () {
+      try {
+        var params = new URLSearchParams(location.search);
+        var paramLang = params.get("lang");
+        var stored = localStorage.getItem("dogweb-lang");
+        var allowed = { he: 1, en: 1 };
+        var lang = (paramLang && allowed[paramLang]) ? paramLang :
+                   (stored && allowed[stored]) ? stored : "he";
+        var dir = lang === "en" ? "ltr" : "rtl";
+        document.documentElement.setAttribute("lang", lang);
+        document.documentElement.setAttribute("dir", dir);
+
+        var storedTheme = localStorage.getItem("dogweb-theme");
+        var prefersDark = window.matchMedia &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var theme = storedTheme || (prefersDark ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", theme);
+      } catch (e) { /* ignore — SSR / privacy mode */ }
+    })();
+  </script>
+
+  <title data-i18n="docTitle">עולם הכלבים – מדריך לבחירת הגזע המתאים</title>
+  <meta id="metaDescription" name="description" content="מדריך אינטראקטיבי לסוגי כלבים, אופי הגזעים, התאמה למשפחה, וטיפים לבחירת הכלב המתאים לך." />
+
+  <!-- Favicon -->
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#f97316" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta id="appleTitle" name="apple-mobile-web-app-title" content="עולם הכלבים" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+
+  <!-- Open Graph (sharing previews) -->
+  <meta property="og:type" content="website" />
+  <meta id="ogTitle" property="og:title" content="עולם הכלבים – מדריך לבחירת הגזע המתאים" />
+  <meta id="ogDescription" property="og:description" content="מדריך אינטראקטיבי לסוגי כלבים, אופי הגזעים, התאמה למשפחה, וטיפים לבחירת הכלב המתאים לך." />
+  <meta property="og:image" content="icon.svg" />
+  <meta id="ogLocale" property="og:locale" content="he_IL" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta id="twTitle" name="twitter:title" content="עולם הכלבים – מדריך לבחירת הגזע המתאים" />
+  <meta id="twDescription" name="twitter:description" content="מדריך אינטראקטיבי לסוגי כלבים, אופי הגזעים, התאמה למשפחה, וטיפים לבחירת הכלב המתאים לך." />
+
+  <!-- Alternate language for SEO -->
+  <link id="altLangHe" rel="alternate" hreflang="he" href="./?lang=he" />
+  <link id="altLangEn" rel="alternate" hreflang="en" href="./?lang=en" />
+  <link id="altLangX"  rel="alternate" hreflang="x-default" href="./" />
+
+  <!-- Structured data for search engines (rewritten on language switch) -->
+  <script id="ldJson" type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "עולם הכלבים",
+    "inLanguage": "he",
+    "description": "מדריך אינטראקטיבי לסוגי כלבים ובחירת הגזע המתאים."
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <a href="#cardsContainer" class="skip-link" data-i18n="skipLink">דלג לתוכן הראשי</a>
+
+  <!-- Live region for announcements (theme change, share, etc.) -->
+  <div id="liveAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Quick-peek tooltip: positioned by JS, populated on long-hover over a card -->
+  <div id="quickPeek" class="quick-peek" role="tooltip" hidden></div>
+
+  <div class="container">
+    <header>
+      <!-- Animated aurora / mesh-gradient backdrop. Three colored blobs drift
+           slowly behind everything else in the hero. Pure CSS, no images. -->
+      <div class="aurora" aria-hidden="true">
+        <span class="aurora-blob aurora-1"></span>
+        <span class="aurora-blob aurora-2"></span>
+        <span class="aurora-blob aurora-3"></span>
+      </div>
+
+      <div class="header-actions">
+        <button id="langToggle" class="lang-toggle" type="button" aria-label="Switch to English" title="Switch to English"><span class="lang-icon" aria-hidden="true">🌐</span><span class="lang-label">EN</span></button>
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="החלף ערכת נושא" title="החלף ערכת נושא">🌙</button>
+        <button id="quizBtn" class="quiz-btn magnetic" type="button" data-i18n="quizBtn">🎯 מצא לי כלב</button>
+      </div>
+
+      <!-- Bento-style hero: a 12-column asymmetric grid. The intro text spans
+           wide, the stats card sits beside it, and the featured banner spans
+           the full bottom row. On narrow screens it collapses to a stack. -->
+      <div class="hero-bento">
+        <div class="hero-intro">
+          <span class="badge" data-i18n="badge">🐾 מדריך קצר לבחירת כלב</span>
+          <h1 class="display-h1" data-i18n="h1">עולם הכלבים</h1>
+          <p data-i18n="headerP">
+            באתר הזה אפשר להכיר סוגי כלבים פופולריים, להבין איזה כלב מתאים למשפחה,
+            מי דורש הרבה פעילות, ואיזה גזע יכול להתאים גם לדירה.
+          </p>
+        </div>
+
+        <!-- Hero stat strip: rendered by script.js (counts come from BREEDS).
+             Numbers animate from 0 → target with a "count-up" effect on first view. -->
+        <div class="hero-stats" id="heroStats" aria-hidden="true"></div>
+
+        <!-- Featured breed banner: a randomly picked breed every visit. -->
+        <div class="featured-banner" id="featuredBanner" hidden>
+          <div class="featured-photo">
+            <img id="featuredImg" alt="" loading="lazy" />
+          </div>
+          <div class="featured-text">
+            <span class="featured-label" id="featuredLabel">גזע מומלץ</span>
+            <h2 class="featured-name" id="featuredName">—</h2>
+            <p class="featured-desc" id="featuredDesc">—</p>
+          </div>
+          <button id="featuredOpenBtn" class="featured-cta magnetic" type="button">—</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="filters" aria-label="מסננים וחיפוש" data-i18n-aria-label="filtersLabel">
+      <div class="search-wrapper">
+        <span class="search-icon" aria-hidden="true">🔍</span>
+        <label for="searchInput" class="sr-only" data-i18n="searchLabel">חיפוש כלבים</label>
+        <input id="searchInput" type="text" placeholder="חיפוש לפי שם, אופי או התאמה..." data-i18n-placeholder="searchPlaceholder" />
+        <button id="clearSearch" class="clear-search" type="button" aria-label="נקה חיפוש" data-i18n-aria-label="clearSearch">✕</button>
+      </div>
+      <div class="buttons">
+        <button class="pill-btn size-btn active" type="button" data-size-rank="all" aria-pressed="true" data-i18n="sizeAll">הכל</button>
+        <button class="pill-btn size-btn" type="button" data-size-rank="1" aria-pressed="false" data-i18n="sizeSmall">קטן</button>
+        <button class="pill-btn size-btn" type="button" data-size-rank="2" aria-pressed="false" data-i18n="sizeMedium">בינוני</button>
+        <button class="pill-btn size-btn" type="button" data-size-rank="3" aria-pressed="false" data-i18n="sizeLarge">גדול</button>
+      </div>
+      <div class="toolbar">
+        <span class="results-counter" id="resultsCounter" aria-live="polite">…</span>
+        <div class="toolbar-right">
+          <!-- Grid ↔ List view toggle. Grid is the default; list shows wide rows. -->
+          <div class="view-toggle" role="group" aria-label="View mode" data-i18n-aria-label="viewModeLabel">
+            <button type="button" class="view-btn active" data-view="grid" aria-pressed="true" data-i18n-title="viewGrid" title="תצוגת רשת">▦</button>
+            <button type="button" class="view-btn" data-view="list" aria-pressed="false" data-i18n-title="viewList" title="תצוגת רשימה">≡</button>
+          </div>
+          <!-- Density toggle (Comfortable / Compact) – only meaningful in grid view. -->
+          <button id="densityToggle" type="button" class="density-toggle" aria-pressed="false" data-i18n-title="densityToggle" title="צפיפות">▤</button>
+          <button id="favOnlyBtn" type="button" class="fav-only-btn" aria-pressed="false" data-i18n="favOnly">❤️ רק מועדפים</button>
+          <button id="advancedToggle" type="button" class="advanced-toggle" aria-expanded="false" aria-controls="advancedFilters" data-i18n="advancedClosed">מסננים מתקדמים ▼</button>
+          <label for="sortSelect" class="sr-only" data-i18n="sortLabel">מיון</label>
+          <!-- Visually-hidden native select keeps form semantics + a11y as a
+               fallback. The custom dropdown below mirrors its state and
+               drives the change event back through to it. -->
+          <select id="sortSelect" class="sort-select sr-only" aria-hidden="true" tabindex="-1" data-i18n-aria-label="sortLabel">
+            <option value="default" data-i18n="sortDefault" data-icon="✨">מיון: ברירת מחדל</option>
+            <option value="name" data-i18n="sortName" data-icon="🔤">לפי שם (א-ת)</option>
+            <option value="size" data-i18n="sortSize" data-icon="📏">לפי גודל (קטן→גדול, מקובץ)</option>
+            <option value="lifespan" data-i18n="sortLifespan" data-icon="⏳">לפי תוחלת חיים</option>
+            <option value="price-asc" data-i18n="sortPriceAsc" data-icon="💸">לפי מחיר (זול→יקר)</option>
+            <option value="price-desc" data-i18n="sortPriceDesc" data-icon="💎">לפי מחיר (יקר→זול)</option>
+          </select>
+          <div class="sort-dropdown" id="sortDropdown">
+            <button type="button" class="sort-trigger" id="sortTrigger"
+                    aria-haspopup="listbox" aria-expanded="false"
+                    aria-controls="sortMenu" data-i18n-aria-label="sortLabel">
+              <span class="sort-trigger-icon" id="sortTriggerIcon" aria-hidden="true">✨</span>
+              <span class="sort-trigger-label" id="sortTriggerLabel">מיון: ברירת מחדל</span>
+              <svg class="sort-trigger-caret" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <ul class="sort-menu" id="sortMenu" role="listbox" tabindex="-1" aria-labelledby="sortTrigger"></ul>
+          </div>
+        </div>
+      </div>
+      <div id="advancedFilters" class="advanced-filters hidden">
+        <button class="attribute-btn" type="button" data-attr="goodWithKids" aria-pressed="false" data-i18n="attrGoodWithKids">👶 טוב עם ילדים</button>
+        <button class="attribute-btn" type="button" data-attr="goodWithCats" aria-pressed="false" data-i18n="attrGoodWithCats">🐱 טוב עם חתולים</button>
+        <button class="attribute-btn" type="button" data-attr="lowShedding" aria-pressed="false" data-i18n="attrLowShedding">🌿 נשירה נמוכה</button>
+        <button class="attribute-btn" type="button" data-attr="beginner" aria-pressed="false" data-i18n="attrBeginner">🆕 לכלב ראשון</button>
+        <button class="attribute-btn" type="button" data-attr="lowEnergy" aria-pressed="false" data-i18n="attrLowEnergy">😌 אנרגיה נמוכה</button>
+        <!-- Compound "lifestyle" filters: combine multiple traits per click. -->
+        <button class="attribute-btn" type="button" data-attr="familyFriendly" aria-pressed="false" data-i18n="attrFamilyFriendly">👨‍👩‍👧 מתאימים למשפחות</button>
+        <button class="attribute-btn" type="button" data-attr="apartmentFriendly" aria-pressed="false" data-i18n="attrApartmentFriendly">🏢 מתאימים לדירה</button>
+        <button class="attribute-btn" type="button" data-attr="activePeople" aria-pressed="false" data-i18n="attrActivePeople">🏃 לאנשים פעילים</button>
+      </div>
+    </section>
+
+    <main>
+      <!-- Active filter chips: rendered by script.js whenever any filter changes.
+           Empty when no filters are active so it doesn't take up space. -->
+      <div class="filter-chips" id="filterChips" role="region" aria-live="polite"></div>
+
+      <!-- "Your favorites" heading: only visible when the favorites-only filter is on. -->
+      <h2 class="favorites-heading" id="favoritesHeading" hidden></h2>
+
+      <section class="cards" id="cardsContainer" aria-label="גזעי כלבים" data-i18n-aria-label="cardsLabel">
+        <!-- Cards rendered by script.js from BREEDS data -->
+      </section>
+
+      <!-- Pagination sentinel: when scrolled into view it auto-loads the next
+           page of cards. It also acts as a manual "load more" button. -->
+      <div class="load-more" id="loadMore" hidden>
+        <button type="button" id="loadMoreBtn" class="load-more-btn" aria-live="polite">
+          <span class="load-more-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 1 1-3-6.7"/>
+              <polyline points="21 4 21 10 15 10"/>
+            </svg>
+          </span>
+          <span class="load-more-label" data-i18n="loadMore">טען עוד גזעים</span>
+          <span class="load-more-remaining" id="loadMoreRemaining"></span>
+        </button>
+      </div>
+
+      <div class="empty" id="emptyMessage">
+        <!-- Two SVG illustrations swapped via the .empty-mode-* class on the parent. -->
+        <svg class="empty-illustration empty-illustration-search" viewBox="0 0 120 120" aria-hidden="true">
+          <circle cx="50" cy="50" r="32" fill="none" stroke="currentColor" stroke-width="4"/>
+          <line x1="76" y1="76" x2="100" y2="100" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+          <circle cx="42" cy="44" r="3" fill="currentColor"/>
+          <circle cx="58" cy="44" r="3" fill="currentColor"/>
+          <path d="M40 60 Q50 56 60 60" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <svg class="empty-illustration empty-illustration-fav" viewBox="0 0 120 120" aria-hidden="true">
+          <path d="M60 95 C30 80 18 58 18 42 C18 28 28 18 42 18 C50 18 56 22 60 30 C64 22 70 18 78 18 C92 18 102 28 102 42 C102 58 90 80 60 95 Z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
+          <circle cx="92" cy="20" r="2.5" fill="currentColor"/>
+          <circle cx="100" cy="32" r="1.8" fill="currentColor"/>
+          <circle cx="22" cy="22" r="1.8" fill="currentColor"/>
+          <circle cx="14" cy="34" r="2.5" fill="currentColor"/>
+        </svg>
+        <h3 class="empty-title" id="emptyTitle">—</h3>
+        <p id="emptyText" data-i18n="emptyMsg">לא נמצאו תוצאות מתאימות. אולי כדאי לרכך את הסינון?</p>
+        <button id="clearFiltersBtn" type="button" data-i18n="clearAllFilters">🧹 נקה את כל המסננים</button>
+      </div>
+    </main>
+
+    <footer>
+      <div class="footer-grid">
+        <div class="footer-col">
+          <h4 data-i18n="footerAboutTitle">על האתר</h4>
+          <p data-i18n="footerAboutBody">מדריך אינטראקטיבי לבחירת הגזע המתאים לך. נבנה כמיזם קוד פתוח.</p>
+        </div>
+        <div class="footer-col">
+          <h4 data-i18n="footerLinksTitle">קישורים</h4>
+          <ul>
+            <li><a href="https://dog.ceo" target="_blank" rel="noopener noreferrer" data-i18n="footerLinkSource">תמונות: dog.ceo</a></li>
+            <li><a href="https://en.wikipedia.org/wiki/Dog_breed" target="_blank" rel="noopener noreferrer" data-i18n="footerLinkWiki">מידע: ויקיפדיה</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4 data-i18n="footerLanguagesTitle">שפות</h4>
+          <ul>
+            <li><a href="?lang=he">עברית</a></li>
+            <li><a href="?lang=en">English</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p data-i18n="footerCopy">© 2026 עולם הכלבים</p>
+        <button id="clearCacheBtn" class="small-link" type="button" data-i18n="clearCache">נקה מטמון תמונות</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- COMPARE BAR -->
+  <div id="compareBar" class="compare-bar" role="region" aria-label="השוואת גזעים" data-i18n-aria-label="compareTitle">
+    <span class="compare-bar-text" id="compareBarText">📋 נבחרו 0 גזעים</span>
+    <button id="compareOpenBtn" class="pill-btn active" type="button" disabled data-i18n="compareOpen">פתח השוואה</button>
+    <button id="compareClearBtn" class="pill-btn" type="button" data-i18n="compareClear">נקה</button>
+  </div>
+
+  <!-- SCROLL TO TOP -->
+  <button id="scrollTopBtn" class="scroll-top" type="button" aria-label="חזרה למעלה" data-i18n-aria-label="scrollTopAria">↑</button>
+
+  <!-- MOBILE BOTTOM NAV (visible only on narrow screens) -->
+  <nav class="mobile-nav" id="mobileNav" aria-label="ניווט תחתון">
+    <button class="mobile-nav-btn" type="button" data-action="home">
+      <span class="mn-icon" aria-hidden="true">🏠</span>
+      <span class="mn-label" data-i18n="navHome">ראשי</span>
+    </button>
+    <button class="mobile-nav-btn" type="button" data-action="search">
+      <span class="mn-icon" aria-hidden="true">🔍</span>
+      <span class="mn-label" data-i18n="navSearch">חיפוש</span>
+    </button>
+    <button class="mobile-nav-btn" type="button" data-action="favorites">
+      <span class="mn-icon" aria-hidden="true">❤️</span>
+      <span class="mn-label" data-i18n="navFavs">מועדפים</span>
+    </button>
+    <button class="mobile-nav-btn" type="button" data-action="quiz">
+      <span class="mn-icon" aria-hidden="true">🎯</span>
+      <span class="mn-label" data-i18n="navQuiz">חידון</span>
+    </button>
+  </nav>
+
+  <!-- DETAIL MODAL -->
+  <div id="detailModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+    <div class="modal-content detail-modal">
+      <button class="modal-close" type="button" aria-label="סגור" data-i18n-aria-label="closeAria">✕</button>
+      <div id="detailModalContent"></div>
+    </div>
+  </div>
+
+  <!-- COMPARE MODAL -->
+  <div id="compareModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="compareTitle">
+    <div class="modal-content">
+      <button class="modal-close" type="button" aria-label="סגור" data-i18n-aria-label="closeAria">✕</button>
+      <h2 id="compareTitle" style="margin:0 0 18px;" data-i18n="compareTitle">השוואת גזעים</h2>
+      <div id="compareModalContent" class="compare-grid"></div>
+    </div>
+  </div>
+
+  <!-- QUIZ MODAL -->
+  <div id="quizModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="quizTitle">
+    <div class="modal-content">
+      <button class="modal-close" type="button" aria-label="סגור" data-i18n-aria-label="closeAria">✕</button>
+      <h2 id="quizTitle" style="margin:0 0 16px;" data-i18n="quizTitle">🎯 איזה כלב מתאים לך?</h2>
+      <div id="quizDots" class="quiz-dots" aria-hidden="true"></div>
+      <div id="quizBody"></div>
+    </div>
+  </div>
+
+  <script src="i18n.js"></script>
+  <script src="breeds.js"></script>
+  <script src="wiki-images.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

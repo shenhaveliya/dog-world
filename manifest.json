@@ -1,0 +1,21 @@
+{
+  "name": "עולם הכלבים – מדריך לבחירת הגזע המתאים",
+  "short_name": "עולם הכלבים",
+  "description": "מדריך אינטראקטיבי לסוגי כלבים, אופי הגזעים והתאמה למשפחה.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff7ed",
+  "theme_color": "#f97316",
+  "lang": "he",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
