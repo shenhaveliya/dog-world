@@ -2573,9 +2573,14 @@ if (featuredOpenBtn) {
 ===================================================================== */
 window.addEventListener("scroll", () => {
   scrollTopBtn.classList.toggle("visible", window.scrollY > 400);
-  // Once we're past the hero (~200 px), shrink the sticky filter bar so it
-  // takes less vertical real estate while the user is browsing the grid.
-  if (filtersEl) filtersEl.classList.toggle("compact", window.scrollY > 220);
+  // Shrink the sticky filter bar once the user has scrolled into the grid.
+  // On mobile we shrink much earlier so the bar collapses to a compact
+  // search+chips strip and stops dominating the screen.
+  if (filtersEl) {
+    const isMobile = window.matchMedia("(max-width: 700px)").matches;
+    const threshold = isMobile ? 80 : 220;
+    filtersEl.classList.toggle("compact", window.scrollY > threshold);
+  }
 }, { passive: true });
 scrollTopBtn.addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
