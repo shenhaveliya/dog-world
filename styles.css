@@ -602,6 +602,105 @@ header p {
 
 .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 
+.search-suggestions {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 8px);
+  inset-inline: 0;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--modal-bg) 94%, transparent);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22);
+  backdrop-filter: blur(16px);
+}
+.search-suggestion {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  border-radius: var(--r-md);
+  padding: 8px;
+  color: var(--text);
+  background: transparent;
+  cursor: pointer;
+  text-align: start;
+}
+.search-suggestion:hover,
+.search-suggestion:focus-visible {
+  background: var(--button-bg);
+  outline: none;
+}
+.search-suggestion-thumb,
+.search-suggestion-thumb img,
+.search-suggestion-initial {
+  width: 54px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--image-placeholder);
+}
+.search-suggestion-thumb img {
+  object-fit: contain;
+  padding: 4px;
+  display: block;
+}
+.search-suggestion-initial {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 900;
+}
+.search-suggestion-text {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.search-suggestion-text strong,
+.search-suggestion-text small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.search-suggestion-text small {
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.quick-filters {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-top: 4px;
+}
+.quick-filters-label {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+.quick-filter-btn {
+  border: 1px solid var(--input-border);
+  border-radius: var(--r-pill);
+  background: var(--input-bg);
+  color: var(--text);
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.quick-filter-btn:hover,
+.quick-filter-btn.active {
+  border-color: var(--tool-1);
+  background: var(--tool-light);
+  color: var(--tool-dark);
+}
+
 .pill-btn {
   border: none;
   border-radius: var(--r-pill);
@@ -1146,6 +1245,28 @@ select.sort-select { display: none; }
   z-index: 1;
 }
 .dog-image-wrapper.loaded::after { opacity: 0; }
+.dog-image-wrapper.image-error::after {
+  content: "!";
+  font-weight: 900;
+}
+
+.image-loading {
+  opacity: 0.45;
+}
+.recent-breed img.image-loading,
+.similar-breed img.image-loading,
+.compare-img.image-loading,
+.featured-photo img.image-loading,
+.search-suggestion-thumb img.image-loading {
+  background:
+    linear-gradient(90deg, var(--skeleton-1), var(--skeleton-2), var(--skeleton-1)),
+    var(--image-placeholder);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+.image-error {
+  filter: saturate(0.65);
+}
 
 /* Image actions are grouped into a single floating glass capsule that
    only appears when the user hovers (or focuses inside) the card.
@@ -1877,7 +1998,24 @@ footer .small-link {
     color-mix(in srgb, var(--card-bg) 85%, var(--accent-2) 15%);
 }
 .compare-col h3 { font-size: 18px; margin: 0 0 10px; }
-.compare-col dl {
+.compare-sections {
+  display: grid;
+  gap: 10px;
+}
+.compare-section {
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--input-border) 72%, transparent);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--card-bg) 58%, transparent);
+}
+.compare-section h4 {
+  margin: 0 0 8px;
+  color: var(--tool-dark);
+  font-size: 12px;
+  font-weight: 900;
+}
+[data-theme="dark"] .compare-section h4 { color: var(--tool-2); }
+.compare-section dl {
   display: grid;
   grid-template-columns: 1fr;
   gap: 4px;
@@ -1885,8 +2023,8 @@ footer .small-link {
   font-size: 13px;
   margin: 0;
 }
-.compare-col dt { color: var(--text-muted); font-size: 12px; }
-.compare-col dd { margin: 0 0 6px; font-weight: bold; }
+.compare-section dt { color: var(--text-muted); font-size: 12px; }
+.compare-section dd { margin: 0 0 6px; font-weight: bold; }
 
 /* =====================================================================
    QUIZ MODAL
@@ -2796,6 +2934,18 @@ a.pill-btn-wiki:hover {
   color: var(--text);
 }
 .favorites-heading[hidden] { display: none; }
+.favorite-share-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: -4px 0 18px;
+  padding: 12px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--tool-1) 9%, var(--info-bg));
+}
+.favorite-share-row[hidden] { display: none; }
 
 /* =====================================================================
    STICKY SECTION HEADERS (when sorted by size)
@@ -3604,15 +3754,15 @@ button:active:not(:disabled),
     font-size: 22px;
     margin-bottom: 12px;
   }
-  .compare-modal .compare-col dl {
+  .compare-modal .compare-section dl {
     grid-template-columns: minmax(88px, 0.85fr) minmax(0, 1fr);
     align-items: center;
     gap: 8px 10px;
   }
-  .compare-modal .compare-col dt {
+  .compare-modal .compare-section dt {
     font-size: 12px;
   }
-  .compare-modal .compare-col dd {
+  .compare-modal .compare-section dd {
     margin: 0;
   }
 

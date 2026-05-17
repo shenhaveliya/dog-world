@@ -132,3 +132,7 @@ const BREED_WIKI_IMAGES = Object.freeze({
 if (typeof module !== "undefined" && module.exports) {
   module.exports = { BREED_WIKI_IMAGES };
 }
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { BREED_WIKI_IMAGES };
+}

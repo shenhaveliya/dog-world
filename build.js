@@ -27,11 +27,14 @@ const path = require("path");
 
 const { BREEDS } = require("./breeds.js");
 const { I18N, LANGUAGES } = require("./i18n.js");
+const { BREED_WIKI_IMAGES } = require("./wiki-images.js");
 
 const SITE_URL = (process.env.SITE_URL || "https://shenhaveliya.github.io/dog-world").replace(/\/$/, "");
 const OUT_DIR = path.join(__dirname, "breeds");
 const SPA_PATH = "/";
 const TODAY = new Date().toISOString().slice(0, 10);
+const CSS_VERSION = "20260517-all-improvements1";
+const DEFAULT_PREVIEW_IMAGE = "https://images.dog.ceo/breeds/retriever-golden/n02099601_7771.jpg";
 
 function escapeHTML(str) {
   return String(str)
@@ -62,6 +65,16 @@ function trainingLabel(breed, lang) {
   return I18N[lang].trainingLabels[breed.trainingDifficulty] || "—";
 }
 
+function breedPageUrl(breed, lang) {
+  return `${SITE_URL}/breeds/${encodeURIComponent(breed.key)}.${lang}.html`;
+}
+
+function previewImageFor(breed) {
+  const wiki = BREED_WIKI_IMAGES && BREED_WIKI_IMAGES[breed.key];
+  if (wiki && wiki.src) return wiki.src;
+  return DEFAULT_PREVIEW_IMAGE;
+}
+
 /**
  * Render a single breed's HTML page in the chosen language.
  */
@@ -69,7 +82,8 @@ function renderBreedPage(breed, lang) {
   const dict = I18N[lang];
   const name = pickName(breed, lang);
   const desc = pickDesc(breed, lang);
-  const url = `${SITE_URL}${SPA_PATH}#breed/${encodeURIComponent(breed.key)}`;
+  const url = breedPageUrl(breed, lang);
+  const image = previewImageFor(breed);
   const wikiHost = dict.wikiHost;
   const wiki = wikiHost + encodeURIComponent(breed.nameEn.replace(/ /g, "_"));
 
@@ -79,6 +93,8 @@ function renderBreedPage(breed, lang) {
     "headline": name,
     "inLanguage": lang,
     "description": desc,
+    "url": url,
+    "image": image,
     "about": {
       "@type": "Thing",
       "name": name,
@@ -107,14 +123,17 @@ function renderBreedPage(breed, lang) {
   <meta property="og:description" content="${escapeHTML(desc)}" />
   <meta property="og:locale" content="${lang === "en" ? "en_US" : "he_IL"}" />
   <meta property="og:url" content="${escapeHTML(url)}" />
+  <meta property="og:image" content="${escapeHTML(image)}" />
+  <meta property="og:image:alt" content="${escapeHTML(name)}" />
 
-  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${escapeHTML(name)}" />
   <meta name="twitter:description" content="${escapeHTML(desc)}" />
+  <meta name="twitter:image" content="${escapeHTML(image)}" />
 
   <script type="application/ld+json">${JSON.stringify(ld)}</script>
 
-  <link rel="stylesheet" href="../styles.css?v=20260517-compare-mobile1" />
+  <link rel="stylesheet" href="../styles.css?v=${CSS_VERSION}" />
 
   <script>
     // Redirect JS-enabled visitors to the SPA so they get the full

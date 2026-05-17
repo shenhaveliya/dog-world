@@ -76,7 +76,7 @@
   }
   </script>
 
-  <link rel="stylesheet" href="styles.css?v=20260517-compare-mobile1" />
+  <link rel="stylesheet" href="styles.css?v=20260517-all-improvements1" />
 </head>
 
 <body>
@@ -150,12 +150,22 @@
         <label for="searchInput" class="sr-only" data-i18n="searchLabel">חיפוש כלבים</label>
         <input id="searchInput" type="text" placeholder="חיפוש לפי שם, אופי או התאמה..." data-i18n-placeholder="searchPlaceholder" />
         <button id="clearSearch" class="clear-search" type="button" aria-label="נקה חיפוש" data-i18n-aria-label="clearSearch">✕</button>
+        <div id="searchSuggestions" class="search-suggestions" role="listbox" hidden></div>
       </div>
       <div class="buttons">
         <button class="pill-btn size-btn active" type="button" data-size-rank="all" aria-pressed="true" data-i18n="sizeAll">הכל</button>
         <button class="pill-btn size-btn" type="button" data-size-rank="1" aria-pressed="false" data-i18n="sizeSmall">קטן</button>
         <button class="pill-btn size-btn" type="button" data-size-rank="2" aria-pressed="false" data-i18n="sizeMedium">בינוני</button>
         <button class="pill-btn size-btn" type="button" data-size-rank="3" aria-pressed="false" data-i18n="sizeLarge">גדול</button>
+      </div>
+      <div id="quickFilters" class="quick-filters" aria-label="סינונים מהירים" data-i18n-aria-label="quickFiltersLabel">
+        <span class="quick-filters-label" data-i18n="quickFiltersTitle">סינון מהיר:</span>
+        <button class="quick-filter-btn" type="button" data-preset="apartment" aria-pressed="false" data-i18n="quickApartment">🏢 לדירה</button>
+        <button class="quick-filter-btn" type="button" data-preset="kids" aria-pressed="false" data-i18n="quickKids">👶 עם ילדים</button>
+        <button class="quick-filter-btn" type="button" data-preset="lowShedding" aria-pressed="false" data-i18n="quickLowShedding">🌿 נשירה נמוכה</button>
+        <button class="quick-filter-btn" type="button" data-preset="easyTrain" aria-pressed="false" data-i18n="quickEasyTrain">🎓 קל לאילוף</button>
+        <button class="quick-filter-btn" type="button" data-preset="beginner" aria-pressed="false" data-i18n="quickBeginner">🆕 למתחילים</button>
+        <button class="quick-filter-btn" type="button" data-preset="active" aria-pressed="false" data-i18n="quickActive">🏃 פעילים</button>
       </div>
       <div class="toolbar">
         <span class="results-counter" id="resultsCounter" aria-live="polite">…</span>
@@ -215,6 +225,10 @@
 
       <!-- "Your favorites" heading: only visible when the favorites-only filter is on. -->
       <h2 class="favorites-heading" id="favoritesHeading" hidden></h2>
+      <div class="favorite-share-row" id="favoriteShareRow" hidden>
+        <button id="favoriteShareBtn" type="button" class="pill-btn" data-i18n="favoriteShare">שתף מועדפים</button>
+        <button id="favoriteCopyBtn" type="button" class="pill-btn" data-i18n="favoriteCopy">העתק קישור מועדפים</button>
+      </div>
 
       <section class="recent-breeds" id="recentBreeds" hidden aria-labelledby="recentBreedsTitle">
         <div class="recent-breeds-head">

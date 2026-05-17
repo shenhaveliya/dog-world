@@ -123,6 +123,25 @@ function pageUrlWithHash(hash) {
   return `${base}${location.search || ""}${hash || ""}`;
 }
 
+function breedPageUrl(breed, lang = currentLang) {
+  if (!breed) return pageUrlWithHash("");
+  const suffix = lang === "en" ? ".en" : ".he";
+  const base = location.origin && location.origin !== "null"
+    ? `${location.origin}${location.pathname.replace(/\/[^/]*$/, "/")}`
+    : SITE_URL;
+  return `${base.replace(/\/$/, "")}/breeds/${encodeURIComponent(breed.key)}${suffix}.html`;
+}
+
+function updateQueryParam(name, value) {
+  const params = new URLSearchParams(location.search);
+  if (value) params.set(name, value);
+  else params.delete(name);
+  const query = params.toString();
+  const nextUrl = `${location.pathname}${query ? "?" + query : ""}${location.hash}`;
+  const currentUrl = `${location.pathname}${location.search}${location.hash}`;
+  if (nextUrl !== currentUrl) history.replaceState(null, "", nextUrl);
+}
+
 function trackEvent(name, props) {
   if (typeof window.plausible === "function") {
     window.plausible(name, props ? { props } : undefined);
@@ -281,6 +300,11 @@ const installAppBtn = document.getElementById("installAppBtn");
 const recentBreedsEl = document.getElementById("recentBreeds");
 const recentBreedsListEl = document.getElementById("recentBreedsList");
 const recentClearBtn = document.getElementById("recentClearBtn");
+const searchSuggestionsEl = document.getElementById("searchSuggestions");
+const quickFiltersEl = document.getElementById("quickFilters");
+const favoriteShareRow = document.getElementById("favoriteShareRow");
+const favoriteShareBtn = document.getElementById("favoriteShareBtn");
+const favoriteCopyBtn = document.getElementById("favoriteCopyBtn");
 
 let prefersReducedMotion = false;
 try {
@@ -476,6 +500,43 @@ try { favorites = JSON.parse(localStorage.getItem(FAV_KEY) || "[]"); } catch (e)
 const isFavorite = (breed) => favorites.includes(breed);
 const persistFavorites = () => localStorage.setItem(FAV_KEY, JSON.stringify(favorites));
 
+function favoritesParamValue() {
+  return favorites.filter((key) => breedByKey(key)).join(",");
+}
+
+function favoritesShareUrl() {
+  const params = new URLSearchParams(location.search);
+  params.set("favorites", favoritesParamValue());
+  params.set("lang", currentLang);
+  return `${location.origin && location.origin !== "null" ? location.origin + location.pathname : SITE_URL}?${params.toString()}`;
+}
+
+function restoreFavoritesFromUrl() {
+  const params = new URLSearchParams(location.search);
+  const keys = (params.get("favorites") || "")
+    .split(",")
+    .map((key) => key.trim())
+    .filter((key) => breedByKey(key));
+  if (!keys.length) return;
+  favorites = Array.from(new Set([...favorites, ...keys]));
+  persistFavorites();
+  document.querySelectorAll(".fav-btn").forEach((btn) => {
+    const card = btn.closest(".card");
+    if (card) setFavBtnState(btn, isFavorite(card.dataset.breed));
+  });
+  favOnly = true;
+  if (favOnlyBtn) {
+    favOnlyBtn.classList.add("active");
+    favOnlyBtn.setAttribute("aria-pressed", "true");
+  }
+  announce(t("favoritesImported", keys.length));
+}
+
+function updateFavoriteShareUI() {
+  if (!favoriteShareRow) return;
+  favoriteShareRow.hidden = favorites.length === 0;
+}
+
 function readRecentBreeds() {
   try {
     const parsed = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]");
@@ -513,6 +574,7 @@ function renderRecentBreeds() {
 
 const selectedSizes = new Set();
 const activeAttrs = new Set();
+let activeQuickPreset = null;
 let favOnly = false;
 let currentSort = "default";
 let compareList = [];
@@ -612,6 +674,7 @@ function renderCard(breed) {
              data-shedding="${breed.shedding}"
              data-experience="${breed.experience}"
              data-lifespan="${breed.lifespan}"
+             data-training="${breed.trainingDifficulty}"
              data-price-min="${breed.priceMin}"
              data-price-avg="${Math.round((breed.priceMin + breed.priceMax) / 2)}"
              data-exercise-hours="${breed.exerciseHours}"
@@ -648,14 +711,45 @@ function breedByKey(key) { return BREEDS.find((b) => b.key === key); }
 ===================================================================== */
 
 function markImageLoaded(image) {
+  image.classList.remove("image-loading", "image-error");
   image.classList.add("loaded");
   const wrapper = image.closest(".dog-image-wrapper");
+  if (wrapper) wrapper.classList.remove("image-loading", "image-error");
   if (wrapper) wrapper.classList.add("loaded");
   const card = image.closest(".card");
   if (card && !_accentSampled.has(card.dataset.breed)) {
     // Sample this card's accent now that the image is decoded.
     requestAnimationFrame(() => sampleAccentForCard(card));
   }
+}
+
+function markImageLoading(image) {
+  if (!image) return;
+  image.classList.remove("loaded", "image-error");
+  image.classList.add("image-loading");
+  const wrapper = image.closest(".dog-image-wrapper");
+  if (wrapper) {
+    wrapper.classList.remove("loaded", "image-error");
+    wrapper.classList.add("image-loading");
+  }
+}
+
+function markImageError(image) {
+  if (!image) return;
+  image.classList.remove("image-loading");
+  image.classList.add("image-error");
+  const wrapper = image.closest(".dog-image-wrapper");
+  if (wrapper) {
+    wrapper.classList.remove("image-loading");
+    wrapper.classList.add("image-error");
+  }
+}
+
+function wireHydratedImage(img) {
+  if (!img || img.dataset.hydrateWired) return;
+  img.dataset.hydrateWired = "true";
+  img.addEventListener("load", () => markImageLoaded(img));
+  img.addEventListener("error", () => markImageError(img));
 }
 
 /**
@@ -702,10 +796,12 @@ function bestKnownImageFor(breed) {
 function hydrateImage(img, url) {
   if (!img) return;
   if (!url) url = DEFAULT_DOG_IMAGE;
+  wireHydratedImage(img);
   if (img.src === url) {
     if (img.complete && img.naturalWidth > 0) markImageLoaded(img);
     return;
   }
+  markImageLoading(img);
   // Enable canvas sampling for image-derived accent colors. Must be set
   // BEFORE src or browsers won't honor the CORS request.
   if (!img.crossOrigin) img.crossOrigin = "anonymous";
@@ -719,6 +815,7 @@ function hydrateImage(img, url) {
  *    3. neither → no-op (the breed has no known photo source) */
 function loadOneImage(image, force) {
   if (!image) return;
+  markImageLoading(image);
   const wikiUrl = image.dataset.wikiImage;
   if (wikiUrl) { hydrateImage(image, wikiUrl); return; }
   const breedApi = image.dataset.breedApi;
@@ -755,7 +852,11 @@ function loadOneImage(image, force) {
  */
 function hydrateBreedImageInto(img, breed, onMissing) {
   if (!img || !breed) return;
-  const missing = () => { if (onMissing) onMissing(img, breed); };
+  markImageLoading(img);
+  const missing = () => {
+    markImageError(img);
+    if (onMissing) onMissing(img, breed);
+  };
 
   if (breed.apiName) {
     const cached = getCachedImage(breed.apiName);
@@ -998,6 +1099,7 @@ function setCompareBtnState(btn, on) {
 function updateFavOnlyLabel() {
   if (!favOnlyBtn) return;
   favOnlyBtn.textContent = t("favCount", favorites.length);
+  updateFavoriteShareUI();
 }
 
 /* =====================================================================
@@ -1012,8 +1114,10 @@ function wireUpCard(card) {
     const openBtn = card.querySelector(".card-open-btn");
 
     if (img) {
+      wireHydratedImage(img);
       img.addEventListener("load", () => markImageLoaded(img));
       img.addEventListener("error", () => {
+        markImageError(img);
         // For Wikipedia-sourced images: a load failure means the cached URL
         // has rotted (Commons reorganized the file). Forget the bad cache
         // entry and downgrade the card to the no-image placeholder so we
@@ -1062,6 +1166,7 @@ function wireUpCard(card) {
       persistFavorites();
       setFavBtnState(favBtn, isFavorite(breed));
       updateFavOnlyLabel();
+      updateFavoriteShareUI();
       applyFilters();
     });
 
@@ -1134,10 +1239,77 @@ function wireUpCards() {
 ===================================================================== */
 
 const debouncedFilter = debounce(resetPageAndApply, 150);
+const debouncedSearchSuggestions = debounce(renderSearchSuggestions, 80);
 searchInput.addEventListener("input", () => {
   clearSearchBtn.style.display = searchInput.value ? "inline-flex" : "none";
+  debouncedSearchSuggestions();
   debouncedFilter();
 });
+
+searchInput.addEventListener("focus", renderSearchSuggestions);
+document.addEventListener("click", (e) => {
+  if (!searchSuggestionsEl || searchSuggestionsEl.hidden) return;
+  if (e.target.closest(".search-wrapper")) return;
+  hideSearchSuggestions();
+});
+
+function hideSearchSuggestions() {
+  if (!searchSuggestionsEl) return;
+  searchSuggestionsEl.hidden = true;
+  searchSuggestionsEl.innerHTML = "";
+}
+
+function renderSearchSuggestions() {
+  if (!searchSuggestionsEl || !searchInput) return;
+  const query = searchInput.value.trim().toLowerCase();
+  if (query.length < 2) {
+    hideSearchSuggestions();
+    return;
+  }
+  const matches = BREEDS
+    .filter((breed) => {
+      const text = [
+        breed.nameHe, breed.nameEn, breed.description, breed.descriptionEn,
+        breed.character, breed.characterEn, breed.suitableFor, breed.suitableForEn,
+        breed.origin, breed.originEn,
+      ].join(" ").toLowerCase();
+      return text.includes(query);
+    })
+    .slice(0, 6);
+  if (!matches.length) {
+    hideSearchSuggestions();
+    return;
+  }
+  searchSuggestionsEl.hidden = false;
+  searchSuggestionsEl.innerHTML = matches.map((breed) => `
+    <button type="button" class="search-suggestion" role="option" data-breed-key="${escapeHTML(breed.key)}">
+      <span class="search-suggestion-thumb"><img alt="" data-breed-key="${escapeHTML(breed.key)}" loading="lazy"></span>
+      <span class="search-suggestion-text">
+        <strong>${escapeHTML(bName(breed))}</strong>
+        <small>${escapeHTML(bSize(breed))} · ${escapeHTML(bEnergy(breed))}</small>
+      </span>
+    </button>
+  `).join("");
+  searchSuggestionsEl.querySelectorAll(".search-suggestion img").forEach((img) => {
+    const breed = breedByKey(img.dataset.breedKey);
+    if (breed) hydrateBreedImageInto(img, breed, () => swapInlineThumbToInitial(img, breed, "search-suggestion-initial"));
+  });
+}
+
+if (searchSuggestionsEl) {
+  searchSuggestionsEl.addEventListener("click", (e) => {
+    const btn = e.target.closest(".search-suggestion");
+    if (!btn) return;
+    const breed = breedByKey(btn.dataset.breedKey);
+    if (!breed) return;
+    searchInput.value = bName(breed);
+    clearSearchBtn.style.display = "inline-flex";
+    hideSearchSuggestions();
+    resetPageAndApply();
+    const card = cardForBreed(breed.key);
+    if (card) openDetailModal(card, btn);
+  });
+}
 /**
  * Clear the search input, hide the X, and re-apply filters from page 1.
  * Centralised so both the direct listener and the document-level delegate
@@ -1147,6 +1319,7 @@ function performClearSearch() {
   if (!searchInput) return;
   searchInput.value = "";
   if (clearSearchBtn) clearSearchBtn.style.display = "none";
+  hideSearchSuggestions();
   if (typeof resetPageAndApply === "function") resetPageAndApply();
   else if (typeof applyFilters === "function") applyFilters();
   searchInput.focus();
@@ -1164,6 +1337,7 @@ document.addEventListener("click", (e) => {
 
 document.querySelectorAll(".size-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
+    activeQuickPreset = null;
     const rank = btn.dataset.sizeRank;
     if (rank === "all") {
       selectedSizes.clear();
@@ -1173,9 +1347,65 @@ document.querySelectorAll(".size-btn").forEach((btn) => {
       else selectedSizes.add(r);
     }
     syncSizeButtons();
+    syncQuickFilterButtons();
     resetPageAndApply();
   });
 });
+
+const QUICK_PRESETS = {
+  apartment: { attrs: ["apartmentFriendly"], sizes: [1] },
+  kids: { attrs: ["goodWithKids", "familyFriendly"], sizes: [] },
+  lowShedding: { attrs: ["lowShedding"], sizes: [] },
+  easyTrain: { attrs: ["easyToTrain"], sizes: [] },
+  beginner: { attrs: ["beginner"], sizes: [] },
+  active: { attrs: ["activePeople"], sizes: [] },
+};
+
+function syncAttributeButtons() {
+  document.querySelectorAll(".attribute-btn").forEach((b) => {
+    const on = activeAttrs.has(b.dataset.attr);
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-pressed", on);
+  });
+}
+
+function syncQuickFilterButtons() {
+  if (!quickFiltersEl) return;
+  quickFiltersEl.querySelectorAll(".quick-filter-btn").forEach((btn) => {
+    const on = activeQuickPreset === btn.dataset.preset;
+    btn.classList.toggle("active", on);
+    btn.setAttribute("aria-pressed", on);
+  });
+}
+
+function applyQuickPreset(preset) {
+  if (activeQuickPreset === preset) {
+    activeQuickPreset = null;
+    selectedSizes.clear();
+    activeAttrs.clear();
+  } else {
+    const config = QUICK_PRESETS[preset];
+    if (!config) return;
+    activeQuickPreset = preset;
+    selectedSizes.clear();
+    activeAttrs.clear();
+    config.sizes.forEach((size) => selectedSizes.add(size));
+    config.attrs.forEach((attr) => activeAttrs.add(attr));
+  }
+  syncSizeButtons();
+  syncAttributeButtons();
+  syncQuickFilterButtons();
+  resetPageAndApply();
+  trackEvent("Quick filter", { preset: activeQuickPreset || "cleared" });
+}
+
+if (quickFiltersEl) {
+  quickFiltersEl.addEventListener("click", (e) => {
+    const btn = e.target.closest(".quick-filter-btn");
+    if (!btn) return;
+    applyQuickPreset(btn.dataset.preset);
+  });
+}
 
 function syncSizeButtons() {
   document.querySelectorAll(".size-btn").forEach((b) => {
@@ -1203,11 +1433,13 @@ advancedToggle.addEventListener("click", () => {
 
 document.querySelectorAll(".attribute-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
+    activeQuickPreset = null;
     const attr = btn.dataset.attr;
     if (activeAttrs.has(attr)) activeAttrs.delete(attr);
     else activeAttrs.add(attr);
     btn.classList.toggle("active", activeAttrs.has(attr));
     btn.setAttribute("aria-pressed", activeAttrs.has(attr));
+    syncQuickFilterButtons();
     resetPageAndApply();
   });
 });
@@ -1435,12 +1667,30 @@ function cardMatchesAttrs(card) {
     if (attr === "lowShedding" && shedding !== 1) return false;
     if (attr === "beginner" && experience !== 1) return false;
     if (attr === "lowEnergy" && energy > 2) return false;
+    if (attr === "easyToTrain" && parseInt(card.dataset.training, 10) > 2) return false;
     // Compound "lifestyle" filters – combine multiple traits per click.
     if (attr === "familyFriendly" && !(card.dataset.goodWithKids === "true" && experience <= 2 && sizeRank <= 2)) return false;
     if (attr === "apartmentFriendly" && !(sizeRank === 1 && energy <= 2)) return false;
     if (attr === "activePeople" && !(energy >= 3 && exercise >= 1.5)) return false;
   }
   return true;
+}
+
+function attrLabel(attr) {
+  const keyByAttr = {
+    goodWithKids: "attrGoodWithKids",
+    goodWithCats: "attrGoodWithCats",
+    lowShedding: "attrLowShedding",
+    beginner: "attrBeginner",
+    lowEnergy: "attrLowEnergy",
+    familyFriendly: "attrFamilyFriendly",
+    apartmentFriendly: "attrApartmentFriendly",
+    activePeople: "attrActivePeople",
+    easyToTrain: "quickEasyTrain",
+  };
+  const key = keyByAttr[attr];
+  const value = key && I18N[currentLang][key];
+  return typeof value === "string" ? value : attr;
 }
 
 /** Match a card against the search string in BOTH languages (so an English
@@ -1612,9 +1862,7 @@ function renderFilterChips(searchText) {
     if (breed) chips.push(chipHTML("size:" + rank, t("chipSize", bSize(breed))));
   });
   activeAttrs.forEach((attr) => {
-    const btn = document.querySelector(`.attribute-btn[data-attr="${attr}"]`);
-    const label = btn ? btn.textContent.trim() : attr;
-    chips.push(chipHTML("attr:" + attr, label));
+    chips.push(chipHTML("attr:" + attr, attrLabel(attr)));
   });
   if (favOnly) {
     chips.push(chipHTML("fav", t("chipFav")));
@@ -1659,12 +1907,10 @@ function removeFilterToken(token) {
   } else if (token.startsWith("attr:")) {
     const attr = token.slice(5);
     activeAttrs.delete(attr);
-    const btn = document.querySelector(`.attribute-btn[data-attr="${attr}"]`);
-    if (btn) {
-      btn.classList.remove("active");
-      btn.setAttribute("aria-pressed", "false");
-    }
+    syncAttributeButtons();
   }
+  activeQuickPreset = null;
+  syncQuickFilterButtons();
   resetPageAndApply();
 }
 
@@ -1685,14 +1931,13 @@ clearFiltersBtn.addEventListener("click", () => {
   clearSearchBtn.style.display = "none";
   selectedSizes.clear();
   syncSizeButtons();
+  activeQuickPreset = null;
+  syncQuickFilterButtons();
   favOnly = false;
   favOnlyBtn.classList.remove("active");
   favOnlyBtn.setAttribute("aria-pressed", "false");
   activeAttrs.clear();
-  document.querySelectorAll(".attribute-btn").forEach((b) => {
-    b.classList.remove("active");
-    b.setAttribute("aria-pressed", "false");
-  });
+  syncAttributeButtons();
   resetPageAndApply();
 });
 
@@ -1727,6 +1972,39 @@ if (recentClearBtn) {
   recentClearBtn.addEventListener("click", () => {
     writeRecentBreeds([]);
     renderRecentBreeds();
+  });
+}
+
+if (favoriteCopyBtn) {
+  favoriteCopyBtn.addEventListener("click", () => {
+    if (!favorites.length) return;
+    const url = favoritesShareUrl();
+    copyToClipboard(url).then(() => {
+      announce(t("favoriteLinkCopied"));
+      const original = favoriteCopyBtn.textContent;
+      favoriteCopyBtn.textContent = t("detailShareDone");
+      favoriteCopyBtn.classList.add("copied");
+      setTimeout(() => {
+        favoriteCopyBtn.textContent = original;
+        favoriteCopyBtn.classList.remove("copied");
+      }, 1400);
+    });
+  });
+}
+
+if (favoriteShareBtn) {
+  favoriteShareBtn.addEventListener("click", () => {
+    if (!favorites.length) return;
+    const url = favoritesShareUrl();
+    if (typeof navigator.share === "function") {
+      navigator.share({
+        title: t("favoriteShareTitle"),
+        text: t("favoriteShareText", favorites.length),
+        url,
+      }).then(() => trackEvent("Share favorites", { count: favorites.length })).catch(() => { /* cancelled */ });
+    } else if (favoriteCopyBtn) {
+      favoriteCopyBtn.click();
+    }
   });
 }
 
@@ -1927,7 +2205,7 @@ function openDetailModal(card, trigger) {
   });
   document.getElementById("detailShare").addEventListener("click", () => {
     const btn = document.getElementById("detailShare");
-    const url = pageUrlWithHash(`#breed/${encodeURIComponent(breedKey)}`);
+    const url = breedPageUrl(breed);
     copyToClipboard(url).then(
       () => {
         announce(t("linkCopied"));
@@ -1944,7 +2222,7 @@ function openDetailModal(card, trigger) {
       () => prompt(t("detailShare"), url)
     );
   });
-  const detailUrl = pageUrlWithHash(`#breed/${encodeURIComponent(breedKey)}`);
+  const detailUrl = breedPageUrl(breed);
   const nativeShareBtn = document.getElementById("detailNativeShare");
   if (nativeShareBtn) {
     nativeShareBtn.hidden = typeof navigator.share !== "function";
@@ -2137,21 +2415,21 @@ function openCompareModal() {
   // axis isn't numerically comparable (text fields like "character"/"origin").
   // `betterIsLower` controls which extreme is highlighted as the "best" cell.
   const rowSpecs = [
-    { label: dict.cmpRow.size,      val: (b) => bSize(b),     cmp: (b) => b.sizeRank,        lower: false },
-    { label: dict.cmpRow.energy,    val: (b) => bEnergy(b),   cmp: (b) => b.energy,          lower: false },
-    { label: dict.cmpRow.lifespan,  val: (b) => bLifespan(b), cmp: (b) => b.lifespan,        lower: false },
-    { label: dict.cmpRow.shedding,  val: (b) => bShedding(b), cmp: (b) => b.shedding,        lower: true },
-    { label: dict.cmpRow.origin,    val: (b) => bOrigin(b),   cmp: () => null,               lower: false },
-    { label: dict.cmpRow.weight,    val: (b) => bWeight(b),   cmp: () => null,               lower: false },
-    { label: dict.cmpRow.exercise,  val: (b) => t("exerciseValue", b.exerciseHours),
+    { group: "compareGroupKey", label: dict.cmpRow.size,      val: (b) => bSize(b),     cmp: (b) => b.sizeRank,        lower: false },
+    { group: "compareGroupKey", label: dict.cmpRow.energy,    val: (b) => bEnergy(b),   cmp: (b) => b.energy,          lower: false },
+    { group: "compareGroupKey", label: dict.cmpRow.lifespan,  val: (b) => bLifespan(b), cmp: (b) => b.lifespan,        lower: false },
+    { group: "compareGroupKey", label: dict.cmpRow.shedding,  val: (b) => bShedding(b), cmp: (b) => b.shedding,        lower: true },
+    { group: "compareGroupCare", label: dict.cmpRow.exercise,  val: (b) => t("exerciseValue", b.exerciseHours),
                                                               cmp: (b) => b.exerciseHours,   lower: true },
-    { label: dict.cmpRow.training,  val: (b) => bTraining(b), cmp: (b) => b.trainingDifficulty, lower: true },
-    { label: dict.cmpRow.cats,      val: (b) => b.goodWithCats ? t("cmpYes") : t("cmpNo"),
+    { group: "compareGroupCare", label: dict.cmpRow.training,  val: (b) => bTraining(b), cmp: (b) => b.trainingDifficulty, lower: true },
+    { group: "compareGroupFamily", label: dict.cmpRow.cats,      val: (b) => b.goodWithCats ? t("cmpYes") : t("cmpNo"),
                                                               cmp: (b) => b.goodWithCats ? 1 : 0, lower: false },
-    { label: dict.cmpRow.kids,      val: (b) => b.goodWithKids ? t("cmpYes") : t("cmpKidsCaution"),
+    { group: "compareGroupFamily", label: dict.cmpRow.kids,      val: (b) => b.goodWithKids ? t("cmpYes") : t("cmpKidsCaution"),
                                                               cmp: (b) => b.goodWithKids ? 1 : 0, lower: false },
-    { label: dict.cmpRow.character, val: (b) => bCharacter(b), cmp: () => null, lower: false },
-    { label: dict.cmpRow.suitable,  val: (b) => bSuitable(b),  cmp: () => null, lower: false },
+    { group: "compareGroupDetails", label: dict.cmpRow.origin,    val: (b) => bOrigin(b),   cmp: () => null,               lower: false },
+    { group: "compareGroupDetails", label: dict.cmpRow.weight,    val: (b) => bWeight(b),   cmp: () => null,               lower: false },
+    { group: "compareGroupDetails", label: dict.cmpRow.character, val: (b) => bCharacter(b), cmp: () => null, lower: false },
+    { group: "compareGroupDetails", label: dict.cmpRow.suitable,  val: (b) => bSuitable(b),  cmp: () => null, lower: false },
   ];
 
   const breeds = compareList.map(breedByKey).filter(Boolean);
@@ -2176,11 +2454,16 @@ function openCompareModal() {
   });
 
   const compareColumns = breeds.map((breed, colIdx) => {
-    const dlRows = rowSpecs.map((spec, rowIdx) => {
-      const cls = bestIdxPerRow[rowIdx].best.has(colIdx) ? "diff-best" :
-                  bestIdxPerRow[rowIdx].worst.has(colIdx) ? "diff-worst" : "";
-      return `<dt>${escapeHTML(spec.label)}</dt><dd class="${cls}">${escapeHTML(String(spec.val(breed)))}</dd>`;
-    }).join("");
+    const sections = ["compareGroupKey", "compareGroupCare", "compareGroupFamily", "compareGroupDetails"]
+      .map((group) => {
+        const rows = rowSpecs.map((spec, rowIdx) => {
+          if (spec.group !== group) return "";
+          const cls = bestIdxPerRow[rowIdx].best.has(colIdx) ? "diff-best" :
+                      bestIdxPerRow[rowIdx].worst.has(colIdx) ? "diff-worst" : "";
+          return `<dt>${escapeHTML(spec.label)}</dt><dd class="${cls}">${escapeHTML(String(spec.val(breed)))}</dd>`;
+        }).join("");
+        return rows ? `<section class="compare-section"><h4>${escapeHTML(t(group))}</h4><dl>${rows}</dl></section>` : "";
+      }).join("");
     // Always render an <img>; hydrateBreedImageInto resolves the source
     // (dog.ceo or Wikipedia) and the missing handler swaps to a placeholder
     // only if both sources fail.
@@ -2189,7 +2472,7 @@ function openCompareModal() {
       <div class="compare-col">
         ${imageBlock}
         <h3>${escapeHTML(bName(breed))}</h3>
-        <dl>${dlRows}</dl>
+        <div class="compare-sections">${sections}</div>
       </div>
     `;
   }).join("");
@@ -2682,32 +2965,32 @@ function countUpHeroStats() {
   });
 }
 
-/** State so the same featured breed persists across language toggles
- *  but rotates on each fresh page visit. */
+/** State so the same breed of the day persists across language toggles
+ *  and rotates once per calendar day. */
 let featuredBreedKey = null;
 
-/** Pick a random breed for the featured banner, preferring breeds that
+/** Pick a deterministic breed for the featured banner, preferring breeds that
  *  actually have a known photo source so the banner never shows an empty
  *  frame. Falls back to any breed if (somehow) no photo-bearing breed
  *  exists. */
 function pickFeaturedBreed() {
   const withImage = BREEDS.filter(hasBreedImage);
   const pool = withImage.length ? withImage : BREEDS;
-  return pool[Math.floor(Math.random() * pool.length)];
+  const today = new Date();
+  const daySeed = Math.floor(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) / 86400000);
+  return pool[daySeed % pool.length];
 }
 
-/** Pick a random breed and populate the featured-breed banner. */
+/** Populate the deterministic breed-of-the-day banner. */
 function renderFeaturedBreed() {
   if (!featuredBanner) return;
-  if (!featuredBreedKey) {
-    featuredBreedKey = pickFeaturedBreed().key;
-  }
+  featuredBreedKey = pickFeaturedBreed().key;
   const breed = breedByKey(featuredBreedKey);
   if (!breed) return;
-  featuredLabelEl.textContent = t("featuredLabel");
+  featuredLabelEl.textContent = t("breedOfDayLabel");
   featuredNameEl.textContent = bName(breed);
   featuredDescEl.textContent = bDesc(breed);
-  featuredOpenBtn.textContent = t("featuredCta", bName(breed));
+  featuredOpenBtn.textContent = t("breedOfDayCta", bName(breed));
   featuredImg.alt = bName(breed);
   hydrateFeaturedImage(breed);
   featuredBanner.hidden = false;
@@ -2723,19 +3006,21 @@ function hydrateFeaturedImage(breed) {
   const photoEl = featuredImg.parentElement; // .featured-photo
   if (!photoEl) return;
   // Reset any placeholder state from a previous featured breed.
-  photoEl.classList.remove("no-image");
+  photoEl.classList.remove("no-image", "image-error");
+  photoEl.classList.add("image-loading");
   photoEl.querySelectorAll(".no-image-initial, .no-image-label").forEach((el) => el.remove());
   featuredImg.hidden = false;
-  featuredImg.src = "";
+  wireHydratedImage(featuredImg);
+  featuredImg.removeAttribute("src");
 
   if (breed.apiName) {
     const cached = getCachedImage(breed.apiName);
-    if (cached) { featuredImg.src = cached; return; }
+    if (cached) { hydrateImage(featuredImg, cached); return; }
     fetch(`https://dog.ceo/api/breed/${breed.apiName}/images/random`)
       .then((r) => r.json())
       .then((data) => {
         if (data.status === "success" && data.message) {
-          featuredImg.src = data.message;
+          hydrateImage(featuredImg, data.message);
           pushCachedImage(breed.apiName, data.message);
         } else {
           showFeaturedPlaceholder(breed);
@@ -2747,12 +3032,12 @@ function hydrateFeaturedImage(breed) {
 
   // No dog.ceo source — try Wikipedia next.
   const cachedWiki = getCachedWikiImage(breed.key);
-  if (typeof cachedWiki === "string") { featuredImg.src = cachedWiki; return; }
+  if (typeof cachedWiki === "string") { hydrateImage(featuredImg, cachedWiki); return; }
   if (cachedWiki === null) { showFeaturedPlaceholder(breed); return; }
   // Never tried — fetch now (will also populate the cache for cards).
   fetchBreedWikiImage(breed).then((url) => {
     setCachedWikiImage(breed.key, url || null);
-    if (url) featuredImg.src = url;
+    if (url) hydrateImage(featuredImg, url);
     else showFeaturedPlaceholder(breed);
   });
 }
@@ -2764,6 +3049,7 @@ function showFeaturedPlaceholder(breed) {
   const photoEl = featuredImg.parentElement;
   if (!photoEl) return;
   photoEl.classList.add("no-image");
+  photoEl.classList.remove("image-loading");
   featuredImg.hidden = true;
   featuredImg.removeAttribute("src");
   if (!photoEl.querySelector(".no-image-initial")) {
@@ -2950,6 +3236,9 @@ function applyLanguage(lang) {
   renderHeroStats();
   renderFeaturedBreed();
   renderRecentBreeds();
+  renderSearchSuggestions();
+  syncQuickFilterButtons();
+  updateFavoriteShareUI();
   // Localised option labels live on the hidden <select>'s textContent;
   // applyLanguage updates those via data-i18n, but the custom dropdown
   // mirrors them so it needs a refresh too.
@@ -3012,9 +3301,12 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
 ===================================================================== */
 applyTheme(initialTheme);
 applyLanguage(currentLang);
+restoreFavoritesFromUrl();
 restoreCompareFromUrl();
 compareUrlSyncReady = true;
+updateFavOnlyLabel();
 updateCompareUI();
+applyFilters();
 syncFromHash();
 
 // Restore density + view mode from previous session.
