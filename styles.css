@@ -2569,9 +2569,7 @@ footer .footer-bottom p { margin: 0; }
 .recent-breed img {
   object-fit: contain;
   object-position: center;
-  background:
-    radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.12), transparent 56%),
-    color-mix(in srgb, var(--info-bg) 82%, var(--accent-1) 18%);
+  background: var(--image-placeholder);
 }
 .recent-initial {
   background: linear-gradient(135deg, var(--accent-1), var(--tool-1));
