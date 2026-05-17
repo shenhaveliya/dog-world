@@ -1836,27 +1836,19 @@ footer .small-link {
 /* =====================================================================
    COMPARE MODAL
 ===================================================================== */
+.compare-modal {
+  max-width: 960px;
+}
+.compare-modal-body {
+  display: block;
+}
+.compare-modal-head {
+  padding-inline-end: 52px;
+}
 .compare-grid {
   display: grid;
   gap: 16px;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-}
-/* On narrow screens (less than ~700px) showing 2-4 columns at 200px each
-   would cram each column to nothing. Switch to a horizontal-scroll strip so
-   each compared breed gets a comfortable 220px and the user can swipe. */
-@media (max-width: 700px) {
-  .compare-grid {
-    display: flex;
-    gap: 12px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 8px;
-  }
-  .compare-col {
-    flex: 0 0 220px;
-    scroll-snap-align: start;
-  }
 }
 .compare-col {
   background: var(--info-bg);
@@ -3572,6 +3564,57 @@ button:active:not(:disabled),
   .modal.open .modal-content { transform: translateY(0); opacity: 1; }
   .detail-modal { border-radius: var(--r-xl) var(--r-xl) 0 0; }
   .detail-modal .detail-hero { border-radius: var(--r-xl) var(--r-xl) 0 0; }
+  .modal-content.compare-modal {
+    width: min(100%, 520px);
+    padding: 22px 18px calc(22px + env(safe-area-inset-bottom, 0px));
+  }
+  .compare-modal .compare-modal-head {
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-items: start;
+    gap: 10px;
+    padding-inline: 52px 0;
+    margin-bottom: 16px;
+  }
+  [dir="rtl"] .compare-modal .compare-modal-head {
+    justify-items: end;
+    padding-inline: 0 52px;
+  }
+  .compare-modal .compare-modal-head h2 {
+    font-size: clamp(26px, 8vw, 34px);
+    line-height: 1.1;
+  }
+  .compare-modal .compare-modal-head .pill-btn {
+    min-height: 42px;
+    padding: 10px 16px;
+  }
+  .compare-modal .compare-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .compare-modal .compare-col {
+    text-align: start;
+    padding: 12px;
+  }
+  .compare-modal .compare-col img,
+  .compare-modal .compare-col .compare-img-no-image {
+    height: 180px;
+  }
+  .compare-modal .compare-col h3 {
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
+  .compare-modal .compare-col dl {
+    grid-template-columns: minmax(88px, 0.85fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 8px 10px;
+  }
+  .compare-modal .compare-col dt {
+    font-size: 12px;
+  }
+  .compare-modal .compare-col dd {
+    margin: 0;
+  }
 
   /* Sticky section headers shouldn't crash into the smaller header. */
   .section-header { top: 64px; }

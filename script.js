@@ -2130,6 +2130,7 @@ compareClearBtn.addEventListener("click", () => {
 function openCompareModal() {
   if (compareList.length < 2) return;
   const dict = I18N[currentLang];
+  compareModalContent.className = "compare-modal-body";
 
   // Each row spec: [labelKey, displayValueFn, comparableValueFn, betterIsLower].
   // `comparableValueFn` returns a number for diff-detection, or null if the
