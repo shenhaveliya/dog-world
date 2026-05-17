@@ -3704,6 +3704,28 @@ button:active:not(:disabled),
   footer .footer-bottom { flex-direction: column; gap: 4px; }
   /* Detail-modal info: 2 columns on narrow, not 3. */
   .detail-modal .info { grid-template-columns: 1fr 1fr; }
+  .detail-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .detail-actions .pill-btn,
+  .detail-actions .pill-btn-link {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+    text-align: center;
+    padding-inline: 12px;
+    white-space: nowrap;
+    box-sizing: border-box;
+  }
+  #detailRefresh,
+  #detailFav,
+  #detailWhatsApp,
+  #detailWiki {
+    grid-column: 1 / -1;
+  }
 
   /* Mobile bottom-nav: shown only here. Reserve space at the bottom of the
      scroll container so floating buttons + content don't sit under it. */
