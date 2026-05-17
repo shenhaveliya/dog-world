@@ -2584,6 +2584,14 @@ footer .footer-bottom p { margin: 0; }
 .similar-initial {
   background: linear-gradient(135deg, var(--accent-2), var(--tool-2));
 }
+
+/* Specific desktop/mobile guard: these thumbnails should show the full dog,
+   never crop to fill the frame. */
+.recent-breed > img,
+.similar-breed > img {
+  object-fit: contain !important;
+  object-position: center !important;
+}
 .compare-modal-head,
 .compare-share-row {
   display: flex;
