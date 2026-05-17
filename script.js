@@ -301,7 +301,6 @@ const recentBreedsEl = document.getElementById("recentBreeds");
 const recentBreedsListEl = document.getElementById("recentBreedsList");
 const recentClearBtn = document.getElementById("recentClearBtn");
 const searchSuggestionsEl = document.getElementById("searchSuggestions");
-const quickFiltersEl = document.getElementById("quickFilters");
 const favoriteShareRow = document.getElementById("favoriteShareRow");
 const favoriteShareBtn = document.getElementById("favoriteShareBtn");
 const favoriteCopyBtn = document.getElementById("favoriteCopyBtn");
@@ -574,7 +573,6 @@ function renderRecentBreeds() {
 
 const selectedSizes = new Set();
 const activeAttrs = new Set();
-let activeQuickPreset = null;
 let favOnly = false;
 let currentSort = "default";
 let compareList = [];
@@ -1337,7 +1335,6 @@ document.addEventListener("click", (e) => {
 
 document.querySelectorAll(".size-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
-    activeQuickPreset = null;
     const rank = btn.dataset.sizeRank;
     if (rank === "all") {
       selectedSizes.clear();
@@ -1347,63 +1344,15 @@ document.querySelectorAll(".size-btn").forEach((btn) => {
       else selectedSizes.add(r);
     }
     syncSizeButtons();
-    syncQuickFilterButtons();
     resetPageAndApply();
   });
 });
-
-const QUICK_PRESETS = {
-  apartment: { attrs: ["apartmentFriendly"], sizes: [1] },
-  kids: { attrs: ["goodWithKids", "familyFriendly"], sizes: [] },
-  lowShedding: { attrs: ["lowShedding"], sizes: [] },
-  easyTrain: { attrs: ["easyToTrain"], sizes: [] },
-  beginner: { attrs: ["beginner"], sizes: [] },
-  active: { attrs: ["activePeople"], sizes: [] },
-};
 
 function syncAttributeButtons() {
   document.querySelectorAll(".attribute-btn").forEach((b) => {
     const on = activeAttrs.has(b.dataset.attr);
     b.classList.toggle("active", on);
     b.setAttribute("aria-pressed", on);
-  });
-}
-
-function syncQuickFilterButtons() {
-  if (!quickFiltersEl) return;
-  quickFiltersEl.querySelectorAll(".quick-filter-btn").forEach((btn) => {
-    const on = activeQuickPreset === btn.dataset.preset;
-    btn.classList.toggle("active", on);
-    btn.setAttribute("aria-pressed", on);
-  });
-}
-
-function applyQuickPreset(preset) {
-  if (activeQuickPreset === preset) {
-    activeQuickPreset = null;
-    selectedSizes.clear();
-    activeAttrs.clear();
-  } else {
-    const config = QUICK_PRESETS[preset];
-    if (!config) return;
-    activeQuickPreset = preset;
-    selectedSizes.clear();
-    activeAttrs.clear();
-    config.sizes.forEach((size) => selectedSizes.add(size));
-    config.attrs.forEach((attr) => activeAttrs.add(attr));
-  }
-  syncSizeButtons();
-  syncAttributeButtons();
-  syncQuickFilterButtons();
-  resetPageAndApply();
-  trackEvent("Quick filter", { preset: activeQuickPreset || "cleared" });
-}
-
-if (quickFiltersEl) {
-  quickFiltersEl.addEventListener("click", (e) => {
-    const btn = e.target.closest(".quick-filter-btn");
-    if (!btn) return;
-    applyQuickPreset(btn.dataset.preset);
   });
 }
 
@@ -1433,13 +1382,11 @@ advancedToggle.addEventListener("click", () => {
 
 document.querySelectorAll(".attribute-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
-    activeQuickPreset = null;
     const attr = btn.dataset.attr;
     if (activeAttrs.has(attr)) activeAttrs.delete(attr);
     else activeAttrs.add(attr);
     btn.classList.toggle("active", activeAttrs.has(attr));
     btn.setAttribute("aria-pressed", activeAttrs.has(attr));
-    syncQuickFilterButtons();
     resetPageAndApply();
   });
 });
@@ -1681,12 +1628,12 @@ function attrLabel(attr) {
     goodWithKids: "attrGoodWithKids",
     goodWithCats: "attrGoodWithCats",
     lowShedding: "attrLowShedding",
+    easyToTrain: "attrEasyToTrain",
     beginner: "attrBeginner",
     lowEnergy: "attrLowEnergy",
     familyFriendly: "attrFamilyFriendly",
     apartmentFriendly: "attrApartmentFriendly",
     activePeople: "attrActivePeople",
-    easyToTrain: "quickEasyTrain",
   };
   const key = keyByAttr[attr];
   const value = key && I18N[currentLang][key];
@@ -1909,8 +1856,6 @@ function removeFilterToken(token) {
     activeAttrs.delete(attr);
     syncAttributeButtons();
   }
-  activeQuickPreset = null;
-  syncQuickFilterButtons();
   resetPageAndApply();
 }
 
@@ -1931,8 +1876,6 @@ clearFiltersBtn.addEventListener("click", () => {
   clearSearchBtn.style.display = "none";
   selectedSizes.clear();
   syncSizeButtons();
-  activeQuickPreset = null;
-  syncQuickFilterButtons();
   favOnly = false;
   favOnlyBtn.classList.remove("active");
   favOnlyBtn.setAttribute("aria-pressed", "false");
@@ -3237,7 +3180,6 @@ function applyLanguage(lang) {
   renderFeaturedBreed();
   renderRecentBreeds();
   renderSearchSuggestions();
-  syncQuickFilterButtons();
   updateFavoriteShareUI();
   // Localised option labels live on the hidden <select>'s textContent;
   // applyLanguage updates those via data-i18n, but the custom dropdown

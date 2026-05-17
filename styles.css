@@ -670,60 +670,6 @@ header p {
   font-weight: 700;
 }
 
-.quick-filters {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 10px 14px;
-  padding: 10px 12px;
-  border: 1px solid color-mix(in srgb, var(--tool-1) 22%, var(--input-border));
-  border-radius: 18px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--tool-1) 8%, transparent), transparent 55%),
-    color-mix(in srgb, var(--info-bg) 78%, var(--filter-bg) 22%);
-}
-.quick-filters-label {
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 900;
-  white-space: nowrap;
-}
-.quick-filter-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-start;
-}
-[dir="rtl"] .quick-filter-list {
-  justify-content: flex-end;
-}
-.quick-filter-btn {
-  border: 1px solid var(--input-border);
-  border-radius: var(--r-pill);
-  background: color-mix(in srgb, var(--input-bg) 88%, var(--tool-1) 12%);
-  color: var(--text);
-  min-height: 38px;
-  padding: 8px 14px;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 800;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-  transition: transform 0.16s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
-}
-.quick-filter-btn:hover,
-.quick-filter-btn.active {
-  border-color: var(--tool-1);
-  background: linear-gradient(135deg, var(--tool-1), var(--tool-2));
-  color: var(--tool-dark);
-  box-shadow: 0 8px 18px var(--tool-shadow);
-  transform: translateY(-1px);
-}
-.quick-filter-btn.active {
-  color: white;
-}
-
 .pill-btn {
   border: none;
   border-radius: var(--r-pill);
@@ -3690,17 +3636,6 @@ button:active:not(:disabled),
     border-radius: 24px 24px 0 0;
     transform: translateY(105%);
     transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .quick-filters {
-    grid-template-columns: 1fr;
-    align-items: stretch;
-  }
-  .quick-filter-list,
-  [dir="rtl"] .quick-filter-list {
-    justify-content: stretch;
-  }
-  .quick-filter-btn {
-    flex: 1 1 calc(50% - 8px);
   }
   body.filters-open .filters {
     transform: translateY(0);
