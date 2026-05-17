@@ -580,10 +580,8 @@ let compareUrlSyncReady = false;
 
 /* ----- Pagination -----------------------------------------------------
    The grid is virtually paged: only the first `visiblePageCount` cards
-   that pass the active filters are actually shown. A sentinel below the
-   grid lets the user reveal another page on demand (button click or by
-   scrolling it into view). This keeps the initial DOM short and the
-   page from running on for hundreds of cards. */
+   that pass the active filters are actually shown. The button below the
+   grid reveals another page on demand while keeping the initial DOM short. */
 const PAGE_SIZE = 24;
 let visiblePageCount = PAGE_SIZE;
 
@@ -1760,8 +1758,7 @@ function resetPageAndApply() {
   applyFilters();
 }
 
-/** Reveal the next page of filtered cards. Called by the button click and
- *  by the IntersectionObserver when the sentinel scrolls into view. */
+/** Reveal the next page of filtered cards. Called by the button click. */
 let _loadMoreInFlight = false;
 function loadMoreCards() {
   if (!loadMoreEl || loadMoreEl.hidden || _loadMoreInFlight) return;
@@ -1781,18 +1778,6 @@ function loadMoreCards() {
 
 if (loadMoreBtn) {
   loadMoreBtn.addEventListener("click", loadMoreCards);
-}
-
-// Auto-load the next page when the sentinel scrolls into view. We use a
-// generous rootMargin so the next batch is already rendered by the time
-// the user reaches the bottom of the current one.
-if (loadMoreEl && "IntersectionObserver" in window) {
-  const loadMoreObserver = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting && !loadMoreEl.hidden) loadMoreCards();
-    });
-  }, { rootMargin: "400px" });
-  loadMoreObserver.observe(loadMoreEl);
 }
 
 /** Render the strip of removable filter chips above the cards grid.
