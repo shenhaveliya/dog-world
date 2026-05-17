@@ -2091,6 +2091,28 @@ function similarBreedScore(breed, candidate) {
   };
 }
 
+function similarReasonLabels(breed, candidate) {
+  const reasons = [];
+  const add = (key) => {
+    const label = t(key);
+    if (label && !reasons.includes(label)) reasons.push(label);
+  };
+
+  if (candidate.sizeRank === breed.sizeRank) add("similarReasonSize");
+  if (Math.abs(candidate.energy - breed.energy) <= 1) add("similarReasonEnergy");
+  if (Math.abs(candidate.exerciseHours - breed.exerciseHours) <= 0.5) add("similarReasonExercise");
+  if (Math.abs(candidate.trainingDifficulty - breed.trainingDifficulty) <= 1) add("similarReasonTraining");
+  if (candidate.shedding === breed.shedding) add("similarReasonShedding");
+  if (candidate.goodWithKids && breed.goodWithKids) add("similarReasonKids");
+  if (candidate.goodWithCats && breed.goodWithCats) add("similarReasonCats");
+  if (candidate.sizeRank === 1 && breed.sizeRank === 1 && candidate.energy <= 2 && breed.energy <= 2) add("similarReasonApartment");
+  if (candidate.energy >= 3 && breed.energy >= 3 && candidate.exerciseHours >= 1.5 && breed.exerciseHours >= 1.5) add("similarReasonActive");
+  if (candidate.experience === 1 && breed.experience === 1) add("similarReasonBeginner");
+  if (candidate.experience >= 3 && breed.experience >= 3) add("similarReasonExperienced");
+
+  return reasons.slice(0, 2);
+}
+
 function similarBreedsHTML(breed) {
   const similar = BREEDS
     .filter((candidate) => candidate.key !== breed.key)
@@ -2107,7 +2129,10 @@ function similarBreedsHTML(breed) {
     .map(({ candidate }) => {
       const name = bName(candidate);
       const visual = `<img data-breed-key="${escapeHTML(candidate.key)}" alt="${escapeHTML(name)}" loading="lazy">`;
-      return `<button type="button" class="similar-breed" data-breed-key="${escapeHTML(candidate.key)}">${visual}<span>${escapeHTML(name)}</span></button>`;
+      const reasons = similarReasonLabels(breed, candidate)
+        .map((reason) => `<span class="similar-reason">${escapeHTML(reason)}</span>`)
+        .join("");
+      return `<button type="button" class="similar-breed" data-breed-key="${escapeHTML(candidate.key)}">${visual}<span class="similar-name">${escapeHTML(name)}</span><span class="similar-reasons">${reasons}</span></button>`;
     })
     .join("");
 

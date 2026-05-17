@@ -2703,6 +2703,8 @@ footer .footer-bottom p { margin: 0; }
 .similar-breed {
   padding: 8px;
   text-align: center;
+  display: grid;
+  gap: 6px;
 }
 .similar-breed img,
 .similar-initial {
@@ -2722,6 +2724,24 @@ footer .footer-bottom p { margin: 0; }
 }
 .similar-initial {
   background: linear-gradient(135deg, var(--accent-2), var(--tool-2));
+}
+.similar-name {
+  display: block;
+}
+.similar-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+.similar-reason {
+  border-radius: var(--r-pill);
+  padding: 3px 7px;
+  background: color-mix(in srgb, var(--tool-1) 14%, transparent);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
 }
 
 /* Specific desktop/mobile guard: these thumbnails should show the full dog,
