@@ -2620,9 +2620,7 @@ footer .footer-bottom p { margin: 0; }
 .similar-breed img {
   object-fit: contain;
   object-position: center;
-  background:
-    radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.12), transparent 56%),
-    color-mix(in srgb, var(--info-bg) 82%, var(--tool-2) 18%);
+  background: var(--image-placeholder);
 }
 .similar-initial {
   background: linear-gradient(135deg, var(--accent-2), var(--tool-2));

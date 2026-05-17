@@ -114,7 +114,7 @@ function renderBreedPage(breed, lang) {
 
   <script type="application/ld+json">${JSON.stringify(ld)}</script>
 
-  <link rel="stylesheet" href="../styles.css?v=20260517-clear1" />
+  <link rel="stylesheet" href="../styles.css?v=20260517-similar-bg1" />
 
   <script>
     // Redirect JS-enabled visitors to the SPA so they get the full
