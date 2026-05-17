@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "dog-world-v15";
+const CACHE_NAME = "dog-world-v16";
 const STATIC_ASSETS = [
   "./",
   "./index.html",

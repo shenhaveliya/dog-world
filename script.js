@@ -240,8 +240,8 @@ function detailStatTilesHTML(breed) {
     statTile("🎓", "infoTraining", bTraining(breed), false, "training"),
     statTile("🐱", "infoCats", breed.goodWithCats ? dict.yes : dict.catsBad, false, "cats"),
     statTile("👶", "infoKids", breed.goodWithKids ? dict.yes : dict.kidsBad, false, "kids"),
-    statTile("🧠", "infoCharacter", bCharacter(breed), true, "character"),
-    statTile("🏠", "infoSuitable", bSuitable(breed), true, "suitable"),
+    statTile("🧠", "infoCharacter", bCharacter(breed), false, "character"),
+    statTile("🏠", "infoSuitable", bSuitable(breed), false, "suitable"),
   ].join("");
 }
 
