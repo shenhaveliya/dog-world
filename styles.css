@@ -616,6 +616,7 @@ header p {
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22);
   backdrop-filter: blur(16px);
 }
+.search-suggestions[hidden] { display: none; }
 .search-suggestion {
   display: grid;
   grid-template-columns: 54px minmax(0, 1fr);
