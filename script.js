@@ -502,12 +502,13 @@ function renderRecentBreeds() {
     const breed = breedByKey(key);
     if (!breed) return "";
     const name = bName(breed);
-    const img = bestKnownImageFor(breed);
-    const thumb = img
-      ? `<img src="${escapeHTML(img)}" alt="${escapeHTML(name)}" loading="lazy">`
-      : `<span class="recent-initial">${escapeHTML(breedInitial(breed))}</span>`;
+    const thumb = `<img data-breed-key="${escapeHTML(key)}" alt="${escapeHTML(name)}" loading="lazy">`;
     return `<button type="button" class="recent-breed" data-breed-key="${escapeHTML(key)}">${thumb}<span>${escapeHTML(name)}</span></button>`;
   }).join("");
+  recentBreedsListEl.querySelectorAll(".recent-breed img").forEach((img) => {
+    const breed = breedByKey(img.dataset.breedKey);
+    if (breed) hydrateBreedImageInto(img, breed, () => swapInlineThumbToInitial(img, breed, "recent-initial"));
+  });
 }
 
 const selectedSizes = new Set();
@@ -815,6 +816,15 @@ function swapAvatarToInitial(avatar, breed) {
   avatar.classList.add("compare-avatar-no-image");
   avatar.innerHTML = `<span class="no-image-initial">${escapeHTML(breedInitial(breed))}</span>`;
   avatar.setAttribute("aria-label", bName(breed));
+}
+
+function swapInlineThumbToInitial(img, breed, className) {
+  if (!img || !img.parentNode) return;
+  const span = document.createElement("span");
+  span.className = className;
+  span.setAttribute("aria-hidden", "true");
+  span.textContent = breedInitial(breed);
+  img.replaceWith(span);
 }
 
 /* Single, persistent IntersectionObserver shared across re-renders.
@@ -1804,11 +1814,8 @@ function similarBreedsHTML(breed) {
     .sort((a, b) => b.score - a.score || a.candidate.nameEn.localeCompare(b.candidate.nameEn))
     .slice(0, 4)
     .map(({ candidate }) => {
-      const img = bestKnownImageFor(candidate);
       const name = bName(candidate);
-      const visual = img
-        ? `<img src="${escapeHTML(img)}" alt="${escapeHTML(name)}" loading="lazy">`
-        : `<span class="similar-initial">${escapeHTML(breedInitial(candidate))}</span>`;
+      const visual = `<img data-breed-key="${escapeHTML(candidate.key)}" alt="${escapeHTML(name)}" loading="lazy">`;
       return `<button type="button" class="similar-breed" data-breed-key="${escapeHTML(candidate.key)}">${visual}<span>${escapeHTML(name)}</span></button>`;
     })
     .join("");
@@ -1956,6 +1963,11 @@ function openDetailModal(card, trigger) {
     whatsApp.addEventListener("click", () => trackEvent("WhatsApp share breed", { breed: breedKey }));
   }
   detailModalContent.querySelectorAll(".similar-breed").forEach((btn) => {
+    const img = btn.querySelector("img");
+    const breedForThumb = breedByKey(btn.dataset.breedKey);
+    if (img && breedForThumb) {
+      hydrateBreedImageInto(img, breedForThumb, () => swapInlineThumbToInitial(img, breedForThumb, "similar-initial"));
+    }
     btn.addEventListener("click", () => {
       const nextCard = cardForBreed(btn.dataset.breedKey);
       if (nextCard) openDetailModal(nextCard, btn);
