@@ -2020,19 +2020,89 @@ document.addEventListener("keydown", (e) => {
    DETAIL MODAL – with multi-photo gallery + URL routing
 ===================================================================== */
 
+const SIMILAR_STOP_WORDS = new Set([
+  "a", "an", "and", "are", "as", "built", "dog", "dogs", "for", "great", "home",
+  "homes", "of", "the", "to", "with", "כלב", "כלבים", "עם", "של", "ל", "ב", "ו",
+  "מתאים", "מתאימים", "בית", "בתים",
+]);
+
+function similarTextTokens(breed) {
+  return new Set([
+    breed.character, breed.characterEn, breed.suitableFor, breed.suitableForEn,
+    breed.description, breed.descriptionEn,
+  ].join(" ")
+    .toLowerCase()
+    .split(/[^a-z\u0590-\u05ff]+/u)
+    .filter((token) => token.length > 2 && !SIMILAR_STOP_WORDS.has(token)));
+}
+
+function lifestyleTags(breed) {
+  const tags = [];
+  if (breed.goodWithKids && breed.experience <= 2) tags.push("family");
+  if (breed.goodWithCats) tags.push("cat-friendly");
+  if (breed.sizeRank === 1 && breed.energy <= 2) tags.push("apartment");
+  if (breed.energy >= 3 && breed.exerciseHours >= 1.5) tags.push("active");
+  if (breed.energy <= 2) tags.push("calmer");
+  if (breed.shedding === 1) tags.push("low-shedding");
+  if (breed.experience === 1) tags.push("beginner");
+  if (breed.experience >= 3) tags.push("experienced-owner");
+  if (breed.trainingDifficulty <= 2) tags.push("easy-training");
+  if (breed.trainingDifficulty >= 4) tags.push("advanced-training");
+  return new Set(tags);
+}
+
+function similarBreedScore(breed, candidate) {
+  const sizeDiff = Math.abs(candidate.sizeRank - breed.sizeRank);
+  const energyDiff = Math.abs(candidate.energy - breed.energy);
+  const exerciseDiff = Math.abs(candidate.exerciseHours - breed.exerciseHours);
+  const experienceDiff = Math.abs(candidate.experience - breed.experience);
+  const trainingDiff = Math.abs(candidate.trainingDifficulty - breed.trainingDifficulty);
+  const sheddingDiff = Math.abs(candidate.shedding - breed.shedding);
+
+  let score = 0;
+  if (sizeDiff === 0) score += 6;
+  else if (sizeDiff === 1) score += 2;
+
+  score += Math.max(0, 4 - energyDiff * 2);
+  score += Math.max(0, 3 - exerciseDiff * 2);
+  score += Math.max(0, 3 - experienceDiff * 1.5);
+  score += Math.max(0, 3 - trainingDiff);
+  score += Math.max(0, 2 - sheddingDiff);
+
+  if (candidate.goodWithKids === breed.goodWithKids) score += 1.5;
+  if (candidate.goodWithCats === breed.goodWithCats) score += 1;
+
+  const breedTags = lifestyleTags(breed);
+  const candidateTags = lifestyleTags(candidate);
+  const sharedTags = [...breedTags].filter((tag) => candidateTags.has(tag)).length;
+  score += sharedTags * 2;
+
+  const breedTokens = similarTextTokens(breed);
+  const candidateTokens = similarTextTokens(candidate);
+  const sharedTokens = [...breedTokens].filter((token) => candidateTokens.has(token)).length;
+  score += Math.min(sharedTokens, 4) * 1.25;
+
+  return {
+    candidate,
+    score,
+    sharedTags,
+    sharedTokens,
+    distance: sizeDiff * 3 + energyDiff * 2 + exerciseDiff + experienceDiff + trainingDiff + sheddingDiff,
+  };
+}
+
 function similarBreedsHTML(breed) {
   const similar = BREEDS
     .filter((candidate) => candidate.key !== breed.key)
-    .map((candidate) => {
-      let score = 0;
-      if (candidate.sizeRank === breed.sizeRank) score += 4;
-      score += Math.max(0, 3 - Math.abs(candidate.energy - breed.energy));
-      score += Math.max(0, 3 - Math.abs(candidate.shedding - breed.shedding));
-      if (candidate.goodWithKids === breed.goodWithKids) score += 1;
-      if (candidate.goodWithCats === breed.goodWithCats) score += 1;
-      return { candidate, score };
-    })
-    .sort((a, b) => b.score - a.score || a.candidate.nameEn.localeCompare(b.candidate.nameEn))
+    .map((candidate) => similarBreedScore(breed, candidate))
+    .filter((match) => match.score >= 13 && (match.sharedTags >= 1 || match.sharedTokens >= 1))
+    .sort((a, b) =>
+      b.score - a.score ||
+      b.sharedTags - a.sharedTags ||
+      b.sharedTokens - a.sharedTokens ||
+      a.distance - b.distance ||
+      a.candidate.nameEn.localeCompare(b.candidate.nameEn)
+    )
     .slice(0, 4)
     .map(({ candidate }) => {
       const name = bName(candidate);
