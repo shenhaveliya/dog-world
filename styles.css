@@ -2697,14 +2697,15 @@ footer .footer-bottom p { margin: 0; }
 }
 .similar-breeds-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
 }
 .similar-breed {
-  padding: 8px;
+  padding: 10px;
   text-align: center;
   display: grid;
-  gap: 6px;
+  align-content: start;
+  gap: 7px;
 }
 .similar-breed img,
 .similar-initial {
@@ -2727,21 +2728,43 @@ footer .footer-bottom p { margin: 0; }
 }
 .similar-name {
   display: block;
+  line-height: 1.25;
 }
 .similar-reasons {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 4px;
+  gap: 5px;
+  margin-top: 1px;
 }
 .similar-reason {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
   border-radius: var(--r-pill);
-  padding: 3px 7px;
-  background: color-mix(in srgb, var(--tool-1) 14%, transparent);
-  color: var(--text-muted);
-  font-size: 11px;
+  border: 1px solid color-mix(in srgb, var(--tool-1) 22%, transparent);
+  padding: 3px 8px;
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--tool-1) 10%, transparent),
+      color-mix(in srgb, var(--accent-1) 7%, transparent));
+  color: color-mix(in srgb, var(--text-muted) 88%, var(--text));
+  font-size: 10.5px;
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.similar-reason::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--tool-1);
+  opacity: 0.75;
+  flex: 0 0 auto;
 }
 
 /* Specific desktop/mobile guard: these thumbnails should show the full dog,
