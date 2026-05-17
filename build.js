@@ -33,7 +33,7 @@ const SITE_URL = (process.env.SITE_URL || "https://shenhaveliya.github.io/dog-wo
 const OUT_DIR = path.join(__dirname, "breeds");
 const SPA_PATH = "/";
 const TODAY = new Date().toISOString().slice(0, 10);
-const CSS_VERSION = "20260517-mobile-actions1";
+const CSS_VERSION = "20260517-feedback-disclaimer1";
 const DEFAULT_PREVIEW_IMAGE = "https://images.dog.ceo/breeds/retriever-golden/n02099601_7771.jpg";
 
 function escapeHTML(str) {

@@ -2514,6 +2514,29 @@ footer .footer-col p {
   line-height: 1.6;
   color: var(--text);
 }
+footer .footer-note {
+  margin-top: 12px;
+  color: var(--text-muted);
+}
+footer .footer-feedback-link {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 14px;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent-1) 32%, var(--input-border));
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--accent-1) 10%, transparent);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.15s ease;
+}
+footer .footer-feedback-link:hover {
+  border-color: var(--accent-1);
+  background: color-mix(in srgb, var(--accent-1) 16%, transparent);
+  transform: translateY(-1px);
+}
 footer ul {
   list-style: none;
   padding: 0;
