@@ -3483,8 +3483,10 @@ function applyLanguage(lang) {
   setMeta("ogTitle", dict.docTitle);
   setMeta("ogDescription", dict.docDescription);
   setMeta("ogLocale", lang === "en" ? "en_US" : "he_IL");
+  setMeta("ogImageAlt", dict.ogImageAlt || dict.docTitle);
   setMeta("twTitle", dict.docTitle);
   setMeta("twDescription", dict.docDescription);
+  setMeta("twImageAlt", dict.ogImageAlt || dict.docTitle);
   setMeta("appleTitle", lang === "en" ? "Dog World" : "עולם הכלבים");
 
   updateStructuredData(dict, lang);

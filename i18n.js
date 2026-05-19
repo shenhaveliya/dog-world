@@ -15,6 +15,7 @@ const I18N = {
 
     docTitle: "עולם הכלבים – מדריך לבחירת הגזע המתאים",
     docDescription: "מדריך אינטראקטיבי לסוגי כלבים, אופי הגזעים, התאמה למשפחה, וטיפים לבחירת הכלב המתאים לך.",
+    ogImageAlt: "עולם הכלבים – מדריך אינטראקטיבי לבחירת הגזע המתאים",
 
     skipLink: "דלג לתוכן הראשי",
     badge: "🐾 מדריך קצר לבחירת כלב",
@@ -288,6 +289,7 @@ const I18N = {
 
     docTitle: "Dog World – Guide to Choosing the Right Breed",
     docDescription: "An interactive guide to dog breeds, their personalities, family fit, and tips for picking the right dog for you.",
+    ogImageAlt: "Dog World – an interactive guide to choosing the right dog breed",
 
     skipLink: "Skip to main content",
     badge: "🐾 Quick guide to picking a dog",
