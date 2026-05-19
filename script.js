@@ -169,6 +169,71 @@ function t(key, ...args) {
   return key; // fallback so missing keys are visible
 }
 
+/* =====================================================================
+   TOAST
+   Lightweight, non-blocking replacement for `alert()`. Used for short
+   "you can do up to N…" style notices. The toast slides in, holds for
+   a few seconds, then slides out. Tapping it dismisses early.
+===================================================================== */
+const TOAST_DEFAULT_DURATION = 3800;
+
+/**
+ * Show a transient toast. Returns a function that dismisses it on demand.
+ * @param {string} message – body text
+ * @param {{icon?: string, variant?: "info"|"warning"|"success", duration?: number}} [opts]
+ */
+function showToast(message, opts = {}) {
+  const stack = document.getElementById("toastStack");
+  if (!stack) {
+    console.warn("toast stack not in DOM; falling back to alert()");
+    alert(message);
+    return () => {};
+  }
+  const { icon = "ℹ️", variant = "info", duration = TOAST_DEFAULT_DURATION } = opts;
+
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${variant}`;
+  toast.setAttribute("role", "status");
+  toast.innerHTML = `
+    <span class="toast-icon" aria-hidden="true">${escapeHTML(icon)}</span>
+    <span class="toast-message">${escapeHTML(message)}</span>
+    <button type="button" class="toast-close" aria-label="${escapeHTML(t("closeAria") || "סגור")}">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
+      </svg>
+    </button>
+    <span class="toast-progress" style="animation-duration:${duration}ms"></span>
+  `;
+  stack.appendChild(toast);
+  // Force a reflow so the entrance transition runs from the initial state.
+  // eslint-disable-next-line no-unused-expressions
+  toast.offsetHeight;
+  toast.classList.add("toast-in");
+
+  let dismissed = false;
+  const dismiss = () => {
+    if (dismissed) return;
+    dismissed = true;
+    clearTimeout(timer);
+    toast.classList.remove("toast-in");
+    toast.classList.add("toast-out");
+    toast.addEventListener("transitionend", () => toast.remove(), { once: true });
+    // Safety net in case transitionend doesn't fire.
+    setTimeout(() => toast.isConnected && toast.remove(), 500);
+  };
+
+  toast.querySelector(".toast-close").addEventListener("click", dismiss);
+  // Tapping anywhere on the toast (outside the close button itself) also
+  // dismisses – matches what mobile users expect from snackbars.
+  toast.addEventListener("click", (e) => {
+    if (e.target.closest(".toast-close")) return;
+    dismiss();
+  });
+
+  const timer = setTimeout(dismiss, duration);
+  return dismiss;
+}
+
 /** @param {Breed} b */ function bName(b) { return currentLang === "en" ? b.nameEn : b.nameHe; }
 /** @param {Breed} b */ function bDesc(b) { return currentLang === "en" ? b.descriptionEn : b.description; }
 /** @param {Breed} b */ function bEnergy(b) { return currentLang === "en" ? b.energyLabelEn : b.energyLabel; }
@@ -1173,7 +1238,7 @@ function wireUpCard(card) {
         compareList = compareList.filter((b) => b !== breed);
       } else {
         if (compareList.length >= MAX_COMPARE) {
-          alert(t("compareMaxAlert", MAX_COMPARE));
+          showToast(t("compareMaxAlert", MAX_COMPARE), { icon: "📋", variant: "warning" });
           return;
         }
         compareList.push(breed);
