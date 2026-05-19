@@ -848,7 +848,11 @@ select.sort-select { display: none; }
 }
 [dir="ltr"] .sort-menu { transform-origin: top left; inset-inline-end: auto; inset-inline-start: 0; }
 
-.sort-dropdown.open .sort-menu {
+/* `.is-open` is set directly on the menu (in addition to `.sort-dropdown.open`)
+   so the open state still applies once the menu has been hoisted to <body>
+   to escape a transformed ancestor (see openSortMenu in script.js). */
+.sort-dropdown.open .sort-menu,
+.sort-menu.is-open {
   opacity: 1;
   visibility: visible;
   transform: translateY(0) scale(1);
