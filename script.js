@@ -1459,6 +1459,7 @@ function positionSortMenu() {
   Object.assign(sortMenu.style, {
     position: "", top: "", left: "", right: "",
     insetInlineStart: "", insetInlineEnd: "",
+    maxHeight: "", overflowY: "",
   });
 
   const tr = sortTrigger.getBoundingClientRect();
@@ -1475,11 +1476,22 @@ function positionSortMenu() {
     : tr.left;                    // align menu's left edge with trigger's left edge
   left = Math.max(pad, Math.min(left, vw - menuWidth - pad));
 
-  // Drop below the trigger; flip above if there isn't enough room and the
-  // space above is sufficient.
-  let top = tr.bottom + 8;
-  if (top + menuHeight > vh - pad && tr.top - menuHeight - 8 >= pad) {
+  // Vertical placement: prefer below, fall back to above, then to whichever
+  // side has more room (with an internal scroll if the menu still can't fit).
+  const spaceBelow = vh - tr.bottom - pad;
+  const spaceAbove = tr.top - pad;
+  let top;
+  let cappedHeight = null;
+  if (menuHeight + 8 <= spaceBelow) {
+    top = tr.bottom + 8;
+  } else if (menuHeight + 8 <= spaceAbove) {
     top = tr.top - menuHeight - 8;
+  } else if (spaceBelow >= spaceAbove) {
+    top = tr.bottom + 8;
+    cappedHeight = Math.max(120, spaceBelow - 8);
+  } else {
+    cappedHeight = Math.max(120, spaceAbove - 8);
+    top = tr.top - cappedHeight - 8;
   }
 
   Object.assign(sortMenu.style, {
@@ -1490,21 +1502,138 @@ function positionSortMenu() {
     insetInlineEnd: "auto",
     right: "auto",
   });
+  if (cappedHeight != null) {
+    sortMenu.style.maxHeight = `${cappedHeight}px`;
+    sortMenu.style.overflowY = "auto";
+  }
+}
+
+// Tracks state used by openSortMenu/closeSortMenu to keep DOM and event
+// listeners tidy across the menu's life cycle.
+let _sortMenuOriginalParent = null;
+let _sortMenuScrollCloseTargets = [];
+let _sortMenuScrollCloseHandler = null;
+
+/** Collect ancestor elements that scroll, so we can close the popover when
+ *  any of them moves – this matches native mobile selects and prevents the
+ *  fixed-position popover from visually drifting away from its trigger. */
+function collectScrollableAncestors(el) {
+  const out = [];
+  let p = el && el.parentElement;
+  while (p && p !== document.body && p !== document.documentElement) {
+    const cs = getComputedStyle(p);
+    if (/(auto|scroll|overlay)/.test(cs.overflowY) && p.scrollHeight > p.clientHeight) {
+      out.push(p);
+    }
+    p = p.parentElement;
+  }
+  return out;
+}
+
+/** Decide whether to render the popover floating (hoisted to <body>) or
+ *  inline (in the document flow below its trigger).
+ *
+ *  Inline is used whenever the trigger lives inside the mobile filter
+ *  sheet: the sheet has its own `overflow-y: auto` scroll container *and*
+ *  a `transform` that breaks `position: fixed`, so a floating popover
+ *  ends up either mis-positioned or smothering the sheet's swipe surface.
+ *  Inline mode side-steps both: the menu becomes part of the sheet's
+ *  scrollable content, so the sheet scrolls naturally and the menu
+ *  behaves like an accordion expansion. */
+function shouldUseInlineSortMenu() {
+  return document.body.classList.contains("filters-open");
 }
 
 function openSortMenu() {
   if (!sortDropdown || !sortTrigger) return;
+
+  // Guard against the menu being rebuilt empty by a sibling code path.
+  if (sortMenu.children.length === 0) renderSortMenu();
+
+  const inline = shouldUseInlineSortMenu();
+
+  if (inline) {
+    // Inline mode: make sure the menu is back in its original DOM home
+    // (in case a previous open hoisted it).
+    if (_sortMenuOriginalParent && sortMenu.parentElement === document.body) {
+      _sortMenuOriginalParent.appendChild(sortMenu);
+      _sortMenuOriginalParent = null;
+    }
+    // Clear any inline positioning left over from a previous floating open.
+    Object.assign(sortMenu.style, {
+      position: "", top: "", left: "", right: "",
+      insetInlineStart: "", insetInlineEnd: "",
+      maxHeight: "", overflowY: "", zIndex: "",
+    });
+  } else {
+    // Floating mode: hoist to <body> so `position: fixed` is anchored to
+    // the actual viewport rather than a transformed ancestor.
+    if (sortMenu.parentElement !== document.body) {
+      _sortMenuOriginalParent = sortMenu.parentElement;
+      document.body.appendChild(sortMenu);
+    }
+  }
+
   sortDropdown.classList.add("open");
+  sortDropdown.classList.toggle("has-inline-menu", inline);
+  sortMenu.classList.add("is-open");
+  sortMenu.classList.toggle("is-inline", inline);
   sortTrigger.setAttribute("aria-expanded", "true");
-  positionSortMenu();
+
+  if (!inline) {
+    positionSortMenu();
+    // Close on any scroll – of the page or of an internal scroll container.
+    // Deferred by one frame so any layout-settling scroll on open doesn't
+    // immediately close the menu.
+    _sortMenuScrollCloseTargets = [window, ...collectScrollableAncestors(sortTrigger)];
+    _sortMenuScrollCloseHandler = () => closeSortMenu();
+    requestAnimationFrame(() => {
+      if (!sortDropdown.classList.contains("open")) return;
+      for (const t of _sortMenuScrollCloseTargets) {
+        t.addEventListener("scroll", _sortMenuScrollCloseHandler, { passive: true });
+      }
+    });
+  }
+
   // Focus the currently-active option so keyboard users land on it.
+  // `preventScroll` avoids a layout shake on iOS Safari when focus moves to
+  // an element that's been freshly positioned via JS.
   const active = sortMenu.querySelector(".sort-option.is-active") || sortMenu.querySelector(".sort-option");
-  if (active) active.focus();
+  if (active) {
+    try { active.focus({ preventScroll: true }); }
+    catch (_) { active.focus(); }
+  }
 }
 function closeSortMenu() {
   if (!sortDropdown || !sortTrigger) return;
   sortDropdown.classList.remove("open");
+  sortDropdown.classList.remove("has-inline-menu");
+  sortMenu.classList.remove("is-open");
+  sortMenu.classList.remove("is-inline");
   sortTrigger.setAttribute("aria-expanded", "false");
+
+  if (_sortMenuScrollCloseHandler) {
+    for (const t of _sortMenuScrollCloseTargets) {
+      t.removeEventListener("scroll", _sortMenuScrollCloseHandler);
+    }
+    _sortMenuScrollCloseTargets = [];
+    _sortMenuScrollCloseHandler = null;
+  }
+
+  // Clear any leftover inline positioning styles so the next open starts
+  // from a clean slate, regardless of mode.
+  Object.assign(sortMenu.style, {
+    position: "", top: "", left: "", right: "",
+    insetInlineStart: "", insetInlineEnd: "",
+    maxHeight: "", overflowY: "", zIndex: "",
+  });
+
+  // Return the menu to its original DOM home so accessibility relationships
+  // (aria-controls / aria-labelledby) and the static layout stay tidy.
+  if (_sortMenuOriginalParent && sortMenu.parentElement === document.body) {
+    _sortMenuOriginalParent.appendChild(sortMenu);
+    _sortMenuOriginalParent = null;
+  }
 }
 
 function pickSortOption(value) {
@@ -1574,19 +1703,23 @@ if (sortTrigger && sortMenu) {
     }
   });
 
-  // Click outside / Escape to close.
+  // Click outside / Escape to close. The menu may be reparented to <body>
+  // while open, so test both the dropdown and the menu when deciding what
+  // counts as "outside".
   document.addEventListener("click", (e) => {
     if (!sortDropdown.classList.contains("open")) return;
-    if (!sortDropdown.contains(e.target)) closeSortMenu();
+    if (sortDropdown.contains(e.target)) return;
+    if (sortMenu.contains(e.target)) return;
+    closeSortMenu();
   });
 
-  // Keep the popover anchored to the trigger when the layout shifts
-  // (orientation change, browser chrome show/hide, scroll, soft keyboard, ...).
-  const reposition = () => {
+  // Re-pin to the trigger when the viewport itself changes (orientation,
+  // browser chrome show/hide, soft keyboard, ...). Scroll-close is handled
+  // per-open inside openSortMenu so it can also catch internal scrollers
+  // like the mobile filter sheet.
+  window.addEventListener("resize", () => {
     if (sortDropdown.classList.contains("open")) positionSortMenu();
-  };
-  window.addEventListener("resize", reposition);
-  window.addEventListener("scroll", reposition, { passive: true });
+  });
 }
 
 // Make .sort-option focusable. Native tabindex on dynamic elements is

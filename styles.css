@@ -848,12 +848,21 @@ select.sort-select { display: none; }
 }
 [dir="ltr"] .sort-menu { transform-origin: top left; inset-inline-end: auto; inset-inline-start: 0; }
 
-.sort-dropdown.open .sort-menu {
+/* `.is-open` is set directly on the menu (in addition to `.sort-dropdown.open`)
+   so the open state still applies once the menu has been hoisted to <body>
+   to escape a transformed ancestor (see openSortMenu in script.js). */
+.sort-dropdown.open .sort-menu,
+.sort-menu.is-open {
   opacity: 1;
   visibility: visible;
   transform: translateY(0) scale(1);
   transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.2, 1, 0.2, 1),
               visibility 0s linear 0s;
+  /* When hoisted to <body> the menu sits in the page's root stacking
+     context, so it has to outrank the mobile filter sheet (z-index 80)
+     and the bottom nav (z-index 90) – otherwise it disappears behind
+     them. The default z-index of 60 is fine when nested in the trigger. */
+  z-index: 110;
 }
 
 .sort-option {
@@ -943,6 +952,42 @@ select.sort-select { display: none; }
 @media (max-width: 600px) {
   .sort-trigger { min-width: 0; padding: 8px 12px; }
   .sort-menu { min-width: 220px; }
+}
+
+/* =====================================================================
+   INLINE MODE – used inside the mobile filter sheet.
+   The sheet has its own overflow-y scroll *and* a transform that
+   breaks position:fixed, so a floating popover misbehaves. Inline mode
+   drops the popover behaviour entirely: the menu becomes a full-width
+   accordion expansion that lives inside the sheet's scroll flow, so the
+   sheet keeps scrolling normally and the menu is always fully on-screen.
+===================================================================== */
+.sort-menu.is-inline {
+  position: static;
+  display: block;
+  inset: auto;
+  margin: 8px 0 0;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  max-height: none;
+  overflow: visible;
+  transform: none;
+  z-index: auto;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+}
+.sort-menu.is-inline.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+/* When the menu is opened inline, let the dropdown take a full row so the
+   menu has room to expand under it. The toolbar uses flex-wrap, so this
+   only pushes wrapping; it doesn't fight desktop layout. The class is also
+   set explicitly by JS so it works on browsers without :has() support. */
+.sort-dropdown.has-inline-menu,
+.sort-dropdown:has(> .sort-menu.is-inline.is-open) {
+  width: 100%;
+  flex-basis: 100%;
 }
 
 .fav-only-btn,
