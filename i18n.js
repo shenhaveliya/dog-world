@@ -277,6 +277,7 @@ const I18N = {
 
     scrollTopAria: "חזרה למעלה",
     closeAria: "סגור",
+    toastsAria: "התראות",
     themeToggleTitle: "החלף ערכת נושא",
   },
 
@@ -548,6 +549,7 @@ const I18N = {
 
     scrollTopAria: "Back to top",
     closeAria: "Close",
+    toastsAria: "Notifications",
     themeToggleTitle: "Toggle theme",
   },
 };
