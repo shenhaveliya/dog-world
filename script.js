@@ -1530,41 +1530,70 @@ function collectScrollableAncestors(el) {
   return out;
 }
 
+/** Decide whether to render the popover floating (hoisted to <body>) or
+ *  inline (in the document flow below its trigger).
+ *
+ *  Inline is used whenever the trigger lives inside the mobile filter
+ *  sheet: the sheet has its own `overflow-y: auto` scroll container *and*
+ *  a `transform` that breaks `position: fixed`, so a floating popover
+ *  ends up either mis-positioned or smothering the sheet's swipe surface.
+ *  Inline mode side-steps both: the menu becomes part of the sheet's
+ *  scrollable content, so the sheet scrolls naturally and the menu
+ *  behaves like an accordion expansion. */
+function shouldUseInlineSortMenu() {
+  return document.body.classList.contains("filters-open");
+}
+
 function openSortMenu() {
   if (!sortDropdown || !sortTrigger) return;
-
-  // Move the menu to <body> so its `position: fixed` is anchored to the
-  // viewport, not to a transformed ancestor. The mobile filter sheet uses
-  // `transform: translateY(0)` for its slide-up animation, which silently
-  // turns it into the containing block for fixed descendants – without
-  // this hop, our viewport-based coordinates land at the wrong spot and
-  // the menu either floats off-screen or smothers the sheet's scroll area.
-  if (sortMenu.parentElement !== document.body) {
-    _sortMenuOriginalParent = sortMenu.parentElement;
-    document.body.appendChild(sortMenu);
-  }
 
   // Guard against the menu being rebuilt empty by a sibling code path.
   if (sortMenu.children.length === 0) renderSortMenu();
 
-  sortDropdown.classList.add("open");
-  sortMenu.classList.add("is-open");
-  sortTrigger.setAttribute("aria-expanded", "true");
-  positionSortMenu();
+  const inline = shouldUseInlineSortMenu();
 
-  // Close on any scroll – of the page or of an internal scroll container
-  // (e.g. the mobile filter sheet). Re-querying ancestors every open keeps
-  // this correct even if the trigger moves between scrollable regions.
-  // Defer by a frame so any layout-settling scroll that fires on open
-  // (focus(), DOM reparent, ...) doesn't immediately close the menu.
-  _sortMenuScrollCloseTargets = [window, ...collectScrollableAncestors(sortTrigger)];
-  _sortMenuScrollCloseHandler = () => closeSortMenu();
-  requestAnimationFrame(() => {
-    if (!sortDropdown.classList.contains("open")) return;
-    for (const t of _sortMenuScrollCloseTargets) {
-      t.addEventListener("scroll", _sortMenuScrollCloseHandler, { passive: true });
+  if (inline) {
+    // Inline mode: make sure the menu is back in its original DOM home
+    // (in case a previous open hoisted it).
+    if (_sortMenuOriginalParent && sortMenu.parentElement === document.body) {
+      _sortMenuOriginalParent.appendChild(sortMenu);
+      _sortMenuOriginalParent = null;
     }
-  });
+    // Clear any inline positioning left over from a previous floating open.
+    Object.assign(sortMenu.style, {
+      position: "", top: "", left: "", right: "",
+      insetInlineStart: "", insetInlineEnd: "",
+      maxHeight: "", overflowY: "", zIndex: "",
+    });
+  } else {
+    // Floating mode: hoist to <body> so `position: fixed` is anchored to
+    // the actual viewport rather than a transformed ancestor.
+    if (sortMenu.parentElement !== document.body) {
+      _sortMenuOriginalParent = sortMenu.parentElement;
+      document.body.appendChild(sortMenu);
+    }
+  }
+
+  sortDropdown.classList.add("open");
+  sortDropdown.classList.toggle("has-inline-menu", inline);
+  sortMenu.classList.add("is-open");
+  sortMenu.classList.toggle("is-inline", inline);
+  sortTrigger.setAttribute("aria-expanded", "true");
+
+  if (!inline) {
+    positionSortMenu();
+    // Close on any scroll – of the page or of an internal scroll container.
+    // Deferred by one frame so any layout-settling scroll on open doesn't
+    // immediately close the menu.
+    _sortMenuScrollCloseTargets = [window, ...collectScrollableAncestors(sortTrigger)];
+    _sortMenuScrollCloseHandler = () => closeSortMenu();
+    requestAnimationFrame(() => {
+      if (!sortDropdown.classList.contains("open")) return;
+      for (const t of _sortMenuScrollCloseTargets) {
+        t.addEventListener("scroll", _sortMenuScrollCloseHandler, { passive: true });
+      }
+    });
+  }
 
   // Focus the currently-active option so keyboard users land on it.
   // `preventScroll` avoids a layout shake on iOS Safari when focus moves to
@@ -1578,7 +1607,9 @@ function openSortMenu() {
 function closeSortMenu() {
   if (!sortDropdown || !sortTrigger) return;
   sortDropdown.classList.remove("open");
+  sortDropdown.classList.remove("has-inline-menu");
   sortMenu.classList.remove("is-open");
+  sortMenu.classList.remove("is-inline");
   sortTrigger.setAttribute("aria-expanded", "false");
 
   if (_sortMenuScrollCloseHandler) {
@@ -1588,6 +1619,14 @@ function closeSortMenu() {
     _sortMenuScrollCloseTargets = [];
     _sortMenuScrollCloseHandler = null;
   }
+
+  // Clear any leftover inline positioning styles so the next open starts
+  // from a clean slate, regardless of mode.
+  Object.assign(sortMenu.style, {
+    position: "", top: "", left: "", right: "",
+    insetInlineStart: "", insetInlineEnd: "",
+    maxHeight: "", overflowY: "", zIndex: "",
+  });
 
   // Return the menu to its original DOM home so accessibility relationships
   // (aria-controls / aria-labelledby) and the static layout stay tidy.

@@ -954,6 +954,42 @@ select.sort-select { display: none; }
   .sort-menu { min-width: 220px; }
 }
 
+/* =====================================================================
+   INLINE MODE – used inside the mobile filter sheet.
+   The sheet has its own overflow-y scroll *and* a transform that
+   breaks position:fixed, so a floating popover misbehaves. Inline mode
+   drops the popover behaviour entirely: the menu becomes a full-width
+   accordion expansion that lives inside the sheet's scroll flow, so the
+   sheet keeps scrolling normally and the menu is always fully on-screen.
+===================================================================== */
+.sort-menu.is-inline {
+  position: static;
+  display: block;
+  inset: auto;
+  margin: 8px 0 0;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  max-height: none;
+  overflow: visible;
+  transform: none;
+  z-index: auto;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+}
+.sort-menu.is-inline.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+/* When the menu is opened inline, let the dropdown take a full row so the
+   menu has room to expand under it. The toolbar uses flex-wrap, so this
+   only pushes wrapping; it doesn't fight desktop layout. The class is also
+   set explicitly by JS so it works on browsers without :has() support. */
+.sort-dropdown.has-inline-menu,
+.sort-dropdown:has(> .sort-menu.is-inline.is-open) {
+  width: 100%;
+  flex-basis: 100%;
+}
+
 .fav-only-btn,
 .advanced-toggle {
   padding: 0 16px;
