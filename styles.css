@@ -858,6 +858,11 @@ select.sort-select { display: none; }
   transform: translateY(0) scale(1);
   transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.2, 1, 0.2, 1),
               visibility 0s linear 0s;
+  /* When hoisted to <body> the menu sits in the page's root stacking
+     context, so it has to outrank the mobile filter sheet (z-index 80)
+     and the bottom nav (z-index 90) – otherwise it disappears behind
+     them. The default z-index of 60 is fine when nested in the trigger. */
+  z-index: 110;
 }
 
 .sort-option {

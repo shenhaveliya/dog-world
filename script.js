@@ -1544,6 +1544,9 @@ function openSortMenu() {
     document.body.appendChild(sortMenu);
   }
 
+  // Guard against the menu being rebuilt empty by a sibling code path.
+  if (sortMenu.children.length === 0) renderSortMenu();
+
   sortDropdown.classList.add("open");
   sortMenu.classList.add("is-open");
   sortTrigger.setAttribute("aria-expanded", "true");
@@ -1552,11 +1555,16 @@ function openSortMenu() {
   // Close on any scroll – of the page or of an internal scroll container
   // (e.g. the mobile filter sheet). Re-querying ancestors every open keeps
   // this correct even if the trigger moves between scrollable regions.
+  // Defer by a frame so any layout-settling scroll that fires on open
+  // (focus(), DOM reparent, ...) doesn't immediately close the menu.
   _sortMenuScrollCloseTargets = [window, ...collectScrollableAncestors(sortTrigger)];
   _sortMenuScrollCloseHandler = () => closeSortMenu();
-  for (const t of _sortMenuScrollCloseTargets) {
-    t.addEventListener("scroll", _sortMenuScrollCloseHandler, { passive: true });
-  }
+  requestAnimationFrame(() => {
+    if (!sortDropdown.classList.contains("open")) return;
+    for (const t of _sortMenuScrollCloseTargets) {
+      t.addEventListener("scroll", _sortMenuScrollCloseHandler, { passive: true });
+    }
+  });
 
   // Focus the currently-active option so keyboard users land on it.
   // `preventScroll` avoids a layout shake on iOS Safari when focus moves to
