@@ -2383,17 +2383,20 @@ footer .small-link {
 .compare-avatars {
   display: inline-flex;
   align-items: center;
-  margin-inline-end: 4px;
+  margin-inline-end: 6px;
+  flex: 0 0 auto;
 }
 .compare-avatar {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--r-pill);
-  border: 2px solid var(--filter-bg);
+  /* Use a theme-aware ring so the white border doesn't fight the new
+     teal-tinted compare-bar background in either light or dark mode. */
+  border: 2px solid var(--modal-bg);
   background: var(--image-placeholder);
-  margin-inline-start: -10px;
+  margin-inline-start: -12px;
   overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
   flex: 0 0 auto;
 }
 .compare-avatar:first-child { margin-inline-start: 0; }
@@ -3688,10 +3691,15 @@ a.pill-btn-wiki:hover {
     ) !important;
   color: var(--text) !important;
   border-radius: var(--r-pill) !important;
-  padding: 8px 12px !important;
+  /* Roomier padding + gap so the avatars + counter + CTAs all fit on one
+     line and the avatars don't kiss the pill's rounded edge. */
+  padding: 12px 18px !important;
   display: inline-flex !important;
   align-items: center;
-  gap: 8px;
+  gap: 12px !important;
+  /* Keep everything on a single row – wrapping was rounding the pill into
+     a near-circle and pushing the avatars over the border. */
+  flex-wrap: nowrap !important;
   border: 1px solid color-mix(in srgb, var(--tool-1) 45%, transparent) !important;
   box-shadow:
     0 18px 40px rgba(15, 23, 42, 0.22),
@@ -3700,7 +3708,7 @@ a.pill-btn-wiki:hover {
   backdrop-filter: blur(14px) saturate(1.1);
   -webkit-backdrop-filter: blur(14px) saturate(1.1);
   width: auto !important;
-  max-width: calc(100vw - 32px);
+  max-width: calc(100vw - 24px);
   transition: transform 0.45s cubic-bezier(0.2, 1, 0.2, 1), opacity 0.3s ease;
 }
 .compare-bar.visible {
@@ -3708,9 +3716,18 @@ a.pill-btn-wiki:hover {
 }
 .compare-bar .compare-bar-text {
   color: var(--text) !important;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
+  /* Counter sits next to the avatar stack on one line – never wrap. */
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.compare-bar .pill-btn {
+  /* Don't let the CTAs shrink past their text. */
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 .compare-bar .pill-btn {
   background: white;
@@ -3751,6 +3768,39 @@ a.pill-btn-wiki:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #f8fafc;
   border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Counter labels: one is shown at a time depending on viewport. */
+.compare-bar-counter-full { display: inline; }
+.compare-bar-counter-short { display: none; }
+
+/* Narrow phones: trim padding, gaps and avatars so the whole bar still
+   fits on one line and nothing overflows the rounded pill. The verbose
+   counter "📋 נבחרו 4 גזעים" is swapped for the compact "📋 4" – the
+   avatars next to it already say "these are the breeds you picked", so
+   the long form is redundant on a small screen. */
+@media (max-width: 600px) {
+  .compare-bar-counter-full { display: none; }
+  .compare-bar-counter-short { display: inline; }
+  .compare-bar {
+    padding: 10px 14px !important;
+    gap: 8px !important;
+  }
+  .compare-bar .compare-bar-text { font-size: 13px; }
+  .compare-bar .pill-btn { font-size: 12.5px; padding: 6px 12px; }
+  .compare-avatar {
+    width: 32px;
+    height: 32px;
+    margin-inline-start: -10px;
+  }
+  .compare-avatars { margin-inline-end: 4px; }
+}
+/* Very narrow phones (≤ ~360 px / older iPhones): hide the avatar stack
+   altogether – the compact counter + the active CTA still communicate
+   the state, and the avatars are shown in the comparison modal itself. */
+@media (max-width: 360px) {
+  .compare-bar .compare-avatars { display: none; }
+  .compare-bar { padding: 10px 12px !important; }
 }
 
 /* =====================================================================
@@ -4018,8 +4068,24 @@ button:active:not(:disabled),
      scroll container so floating buttons + content don't sit under it. */
   .mobile-nav { display: flex; }
   body { padding-bottom: 64px; }
-  .scroll-top { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  .scroll-top {
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    /* Animate vertical shift so the button doesn't snap when the compare
+       bar slides in/out (the JS toggles `compare-active` on <body>). */
+    transition: bottom 0.32s cubic-bezier(0.2, 1, 0.2, 1),
+                opacity 0.2s ease,
+                transform 0.2s ease,
+                box-shadow 0.2s ease;
+  }
   .compare-bar { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  /* Lift the scroll-top button above the compare bar while it's visible,
+     so the bar doesn't overlap the floating arrow. The JS sets
+     `compare-active` on <body>; the `:has()` selector is a progressive
+     enhancement for browsers that support it. */
+  body.compare-active .scroll-top,
+  body:has(.compare-bar.visible) .scroll-top {
+    bottom: calc(150px + env(safe-area-inset-bottom, 0px));
+  }
 
   /* Hide the mobile-only nav buttons on desktop and reveal them only here. */
 

@@ -2636,9 +2636,16 @@ function updateCompareUI() {
       const name = bName(breed);
       return `<span class="compare-avatar" data-name="${escapeHTML(name)}" data-breed-key="${escapeHTML(key)}" tabindex="0"><img alt="${escapeHTML(name)}"/></span>`;
     }).join("");
+    // Render both a verbose ("📋 נבחרו 4 גזעים") and a short ("📋 4") version
+    // of the counter; CSS picks which one is visible based on viewport so the
+    // bar never overflows on narrow phones.
+    const fullCounter = escapeHTML(t("compareSelected", compareList.length));
+    const shortCounter = escapeHTML(t("compareSelectedShort", compareList.length));
     compareBarText.innerHTML = (compareList.length
       ? `<span class="compare-avatars">${avatarsHTML}</span>`
-      : "") + escapeHTML(t("compareSelected", compareList.length));
+      : "") +
+      `<span class="compare-bar-counter-full">${fullCounter}</span>` +
+      `<span class="compare-bar-counter-short">${shortCounter}</span>`;
     // Hydrate each avatar's <img> with the best available photo.
     compareBarText.querySelectorAll(".compare-avatar").forEach((avatar) => {
       const breed = breedByKey(avatar.dataset.breedKey);
@@ -2649,6 +2656,9 @@ function updateCompareUI() {
   }
   if (compareList.length > 0) compareBar.classList.add("visible");
   else compareBar.classList.remove("visible");
+  // Body class powers the scroll-top button's "lift above the bar" rule
+  // for browsers that don't support :has().
+  document.body.classList.toggle("compare-active", compareList.length > 0);
   compareOpenBtn.disabled = compareList.length < 2;
   cards.forEach((card) => {
     card.classList.toggle("compare-selected", compareList.includes(card.dataset.breed));

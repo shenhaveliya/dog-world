@@ -110,6 +110,7 @@ const I18N = {
     cacheCleared: "מטמון התמונות נוקה ונטענות תמונות חדשות",
 
     compareSelected: (n) => `📋 נבחרו ${n} גזעים`,
+    compareSelectedShort: (n) => `📋 ${n}`,
     compareOpen: "פתח השוואה",
     compareClear: "נקה",
     compareTitle: "השוואת גזעים",
@@ -382,6 +383,7 @@ const I18N = {
     cacheCleared: "Image cache cleared and new photos are loading",
 
     compareSelected: (n) => `📋 ${n} breeds selected`,
+    compareSelectedShort: (n) => `📋 ${n}`,
     compareOpen: "Open comparison",
     compareClear: "Clear",
     compareTitle: "Compare breeds",
