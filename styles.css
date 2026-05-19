@@ -3770,9 +3770,18 @@ a.pill-btn-wiki:hover {
   border-color: rgba(255, 255, 255, 0.12);
 }
 
+/* Counter labels: one is shown at a time depending on viewport. */
+.compare-bar-counter-full { display: inline; }
+.compare-bar-counter-short { display: none; }
+
 /* Narrow phones: trim padding, gaps and avatars so the whole bar still
-   fits on one line and nothing overflows the rounded pill. */
-@media (max-width: 480px) {
+   fits on one line and nothing overflows the rounded pill. The verbose
+   counter "📋 נבחרו 4 גזעים" is swapped for the compact "📋 4" – the
+   avatars next to it already say "these are the breeds you picked", so
+   the long form is redundant on a small screen. */
+@media (max-width: 600px) {
+  .compare-bar-counter-full { display: none; }
+  .compare-bar-counter-short { display: inline; }
   .compare-bar {
     padding: 10px 14px !important;
     gap: 8px !important;
@@ -3787,8 +3796,8 @@ a.pill-btn-wiki:hover {
   .compare-avatars { margin-inline-end: 4px; }
 }
 /* Very narrow phones (≤ ~360 px / older iPhones): hide the avatar stack
-   altogether – the counter + the active CTA still communicate the state,
-   and the avatars are shown in the comparison modal itself. */
+   altogether – the compact counter + the active CTA still communicate
+   the state, and the avatars are shown in the comparison modal itself. */
 @media (max-width: 360px) {
   .compare-bar .compare-avatars { display: none; }
   .compare-bar { padding: 10px 12px !important; }

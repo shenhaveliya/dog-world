@@ -1,11 +1,11 @@
 "use strict";
 
-const CACHE_NAME = "dog-world-v25";
+const CACHE_NAME = "dog-world-v26";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=20260519-compare-bar2",
-  "./script.js?v=20260519-compare-bar2",
+  "./styles.css?v=20260519-compare-bar3",
+  "./script.js?v=20260519-compare-bar3",
   "./breeds.js",
   "./wiki-images.js",
   "./i18n.js",
