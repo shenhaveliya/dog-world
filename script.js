@@ -1439,10 +1439,64 @@ function renderSortMenu() {
   }
 }
 
+/** Position the popover so it never overflows the viewport.
+ *
+ *  The static CSS anchors the menu to its inline-block parent (the trigger),
+ *  which works on wide screens but breaks on mobile: the toolbar wraps and
+ *  the trigger can land hard against either viewport edge, leaving no room
+ *  for the menu to extend. Worse, in RTL `inset-inline-end` maps to `left`,
+ *  so the menu pops out of the right side of the screen entirely.
+ *
+ *  We switch the menu to `position: fixed` while open and pick the anchor
+ *  side (right edge vs. left edge of the trigger) based on whichever side
+ *  of the viewport the trigger is closer to – then clamp to the viewport
+ *  with a small padding so the menu is always fully on-screen. Vertical
+ *  flipping handles short pages too. */
+function positionSortMenu() {
+  if (!sortTrigger || !sortMenu) return;
+  // Reset any inline overrides so we can measure the menu's natural size
+  // (the CSS rules will re-apply: position:absolute with default insets).
+  Object.assign(sortMenu.style, {
+    position: "", top: "", left: "", right: "",
+    insetInlineStart: "", insetInlineEnd: "",
+  });
+
+  const tr = sortTrigger.getBoundingClientRect();
+  const menuWidth = sortMenu.offsetWidth;
+  const menuHeight = sortMenu.offsetHeight;
+  const vw = window.innerWidth || document.documentElement.clientWidth;
+  const vh = window.innerHeight || document.documentElement.clientHeight;
+  const pad = 8;
+
+  // Anchor to whichever trigger edge is closer to a viewport edge, so the
+  // menu extends inward (into the available space) rather than outward.
+  let left = tr.right > vw / 2
+    ? tr.right - menuWidth        // align menu's right edge with trigger's right edge
+    : tr.left;                    // align menu's left edge with trigger's left edge
+  left = Math.max(pad, Math.min(left, vw - menuWidth - pad));
+
+  // Drop below the trigger; flip above if there isn't enough room and the
+  // space above is sufficient.
+  let top = tr.bottom + 8;
+  if (top + menuHeight > vh - pad && tr.top - menuHeight - 8 >= pad) {
+    top = tr.top - menuHeight - 8;
+  }
+
+  Object.assign(sortMenu.style, {
+    position: "fixed",
+    top: `${top}px`,
+    left: `${left}px`,
+    insetInlineStart: "auto",
+    insetInlineEnd: "auto",
+    right: "auto",
+  });
+}
+
 function openSortMenu() {
   if (!sortDropdown || !sortTrigger) return;
   sortDropdown.classList.add("open");
   sortTrigger.setAttribute("aria-expanded", "true");
+  positionSortMenu();
   // Focus the currently-active option so keyboard users land on it.
   const active = sortMenu.querySelector(".sort-option.is-active") || sortMenu.querySelector(".sort-option");
   if (active) active.focus();
@@ -1525,6 +1579,14 @@ if (sortTrigger && sortMenu) {
     if (!sortDropdown.classList.contains("open")) return;
     if (!sortDropdown.contains(e.target)) closeSortMenu();
   });
+
+  // Keep the popover anchored to the trigger when the layout shifts
+  // (orientation change, browser chrome show/hide, scroll, soft keyboard, ...).
+  const reposition = () => {
+    if (sortDropdown.classList.contains("open")) positionSortMenu();
+  };
+  window.addEventListener("resize", reposition);
+  window.addEventListener("scroll", reposition, { passive: true });
 }
 
 // Make .sort-option focusable. Native tabindex on dynamic elements is
