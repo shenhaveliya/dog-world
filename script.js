@@ -2656,6 +2656,9 @@ function updateCompareUI() {
   }
   if (compareList.length > 0) compareBar.classList.add("visible");
   else compareBar.classList.remove("visible");
+  // Body class powers the scroll-top button's "lift above the bar" rule
+  // for browsers that don't support :has().
+  document.body.classList.toggle("compare-active", compareList.length > 0);
   compareOpenBtn.disabled = compareList.length < 2;
   cards.forEach((card) => {
     card.classList.toggle("compare-selected", compareList.includes(card.dataset.breed));

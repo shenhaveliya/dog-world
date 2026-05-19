@@ -4068,8 +4068,24 @@ button:active:not(:disabled),
      scroll container so floating buttons + content don't sit under it. */
   .mobile-nav { display: flex; }
   body { padding-bottom: 64px; }
-  .scroll-top { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  .scroll-top {
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    /* Animate vertical shift so the button doesn't snap when the compare
+       bar slides in/out (the JS toggles `compare-active` on <body>). */
+    transition: bottom 0.32s cubic-bezier(0.2, 1, 0.2, 1),
+                opacity 0.2s ease,
+                transform 0.2s ease,
+                box-shadow 0.2s ease;
+  }
   .compare-bar { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  /* Lift the scroll-top button above the compare bar while it's visible,
+     so the bar doesn't overlap the floating arrow. The JS sets
+     `compare-active` on <body>; the `:has()` selector is a progressive
+     enhancement for browsers that support it. */
+  body.compare-active .scroll-top,
+  body:has(.compare-bar.visible) .scroll-top {
+    bottom: calc(150px + env(safe-area-inset-bottom, 0px));
+  }
 
   /* Hide the mobile-only nav buttons on desktop and reveal them only here. */
 
