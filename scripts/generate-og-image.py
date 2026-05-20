@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import cv2
 import numpy as np
 from bidi.algorithm import get_display
 from PIL import Image, ImageDraw, ImageFont
@@ -17,12 +18,8 @@ W, H = 1200, 630
 TEXT_RIGHT = 430
 TEXT_LEFT = 72
 
-# Original baked UI spans y≈184 (orange bar) through y≈430 (subtitle/dots).
-TEXT_BAND = (175, 435)
-# Replace the entire dark left column so nothing from the source photo bleeds through.
-LEFT_PANEL_X = 480
-# Fade the text-band wipe back into the dog photo on the right edge.
-TEXT_FADE_X = (540, 920)
+DOG_CROP_X = 580
+DOG_PASTE_X = 400
 
 
 def load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
@@ -34,8 +31,7 @@ def load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
     return ImageFont.load_default()
 
 
-def left_bg_color(y: int) -> tuple[int, int, int]:
-    """Vertical gradient sampled from the original dark left panel."""
+def bg_color(y: int) -> tuple[int, int, int]:
     t = y / (H - 1)
     r = int(12 + (16 - 12) * t)
     g = int(18 + (22 - 18) * t)
@@ -43,34 +39,58 @@ def left_bg_color(y: int) -> tuple[int, int, int]:
     return r, g, b
 
 
-def paint_left_panel(canvas: Image.Image) -> None:
-    """Solid dark panel on the left — removes all original typography there."""
-    arr = np.array(canvas, dtype=np.float32)
+def build_text_mask(ref: np.ndarray) -> np.ndarray:
+    mask = np.zeros((H, W), dtype=np.uint8)
     for y in range(H):
-        bg = np.array(left_bg_color(y), dtype=np.float32)
-        arr[y, :LEFT_PANEL_X] = bg
-    canvas.paste(Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8)))
+        for x in range(W):
+            r, g, b = ref[y, x]
+            if r >= 248 and g >= 248 and b >= 248:
+                mask[y, x] = 255
+            elif r >= 235 and g >= 100 and g <= 135 and b <= 35:
+                mask[y, x] = 255
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    return cv2.dilate(mask, kernel, iterations=2)
 
 
-def clear_text_band(canvas: Image.Image) -> None:
-    """Fully cover the original title/subtitle/orange bar over the dogs."""
-    arr = np.array(canvas, dtype=np.float32)
-    y0, y1 = TEXT_BAND
-    fade_start, fade_end = TEXT_FADE_X
+def clean_reference(ref: Image.Image) -> Image.Image:
+    rgb = np.array(ref.convert("RGB"))
+    mask = build_text_mask(rgb)
+    if not mask.any():
+        return ref
+    bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+    cleaned = cv2.inpaint(bgr, mask, inpaintRadius=4, flags=cv2.INPAINT_TELEA)
+    return Image.fromarray(cv2.cvtColor(cleaned, cv2.COLOR_BGR2RGB))
 
-    for y in range(y0, y1 + 1):
-        bg = np.array(left_bg_color(y), dtype=np.float32)
-        for x in range(LEFT_PANEL_X, fade_end + 1):
-            if x <= fade_start:
-                alpha = 1.0
-            else:
-                t = (x - fade_start) / (fade_end - fade_start)
-                alpha = max(0.0, 1.0 - t**0.75)
-            if alpha <= 0:
-                continue
-            arr[y, x] = arr[y, x] * (1.0 - alpha) + bg * alpha
 
-    canvas.paste(Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8)))
+def draw_background() -> Image.Image:
+    base = Image.new("RGB", (W, H))
+    draw = ImageDraw.Draw(base)
+    for y in range(H):
+        draw.line([(0, y), (W, y)], fill=bg_color(y))
+
+    glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    gdraw = ImageDraw.Draw(glow)
+    gdraw.ellipse((520, -80, 1100, 420), fill=(249, 115, 22, 36))
+    gdraw.ellipse((680, 180, 1180, 680), fill=(20, 184, 166, 28))
+    return Image.alpha_composite(base.convert("RGBA"), glow).convert("RGB")
+
+
+def feather_mask(width: int, height: int, feather: int) -> Image.Image:
+    mask = Image.new("L", (width, height), 255)
+    ramp = np.linspace(0, 255, feather, dtype=np.uint8)
+    px = mask.load()
+    for x in range(feather):
+        for y in range(height):
+            px[x, y] = int(ramp[x])
+    return mask
+
+
+def paste_dogs(canvas: Image.Image, ref: Image.Image) -> None:
+    src = ref.crop((DOG_CROP_X, 0, W, H))
+    target_w = W - DOG_PASTE_X
+    dogs = src.resize((target_w, H), Image.Resampling.LANCZOS)
+    mask = feather_mask(target_w, H, feather=140)
+    canvas.paste(dogs, (DOG_PASTE_X, 0), mask)
 
 
 def draw_text(canvas: Image.Image) -> None:
@@ -95,9 +115,9 @@ def draw_text(canvas: Image.Image) -> None:
 
 
 def build_canvas(ref: Image.Image) -> Image.Image:
-    canvas = ref.convert("RGB").copy()
-    paint_left_panel(canvas)
-    clear_text_band(canvas)
+    cleaned = clean_reference(ref)
+    canvas = draw_background()
+    paste_dogs(canvas, cleaned)
     return canvas
 
 
@@ -107,7 +127,7 @@ def main() -> None:
 
     canvas = build_canvas(Image.open(REF))
     draw_text(canvas)
-    canvas.save(OUT, format="JPEG", quality=90, optimize=True, progressive=True)
+    canvas.save(OUT, format="JPEG", quality=92, optimize=True, progressive=False)
     print(f"Wrote {OUT} ({OUT.stat().st_size // 1024} KB)")
 
 
