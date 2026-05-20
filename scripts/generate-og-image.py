@@ -18,8 +18,9 @@ W, H = 1200, 630
 TEXT_RIGHT = 430
 TEXT_LEFT = 72
 
-DOG_CROP_X = 580
-DOG_PASTE_X = 400
+# Strip with zero baked subtitle/title pixels in the text band.
+DOG_CROP_X = 668
+DOG_PASTE_X = 520
 
 
 def load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
@@ -46,9 +47,23 @@ def build_text_mask(ref: np.ndarray) -> np.ndarray:
             r, g, b = ref[y, x]
             if r >= 248 and g >= 248 and b >= 248:
                 mask[y, x] = 255
-            elif r >= 235 and g >= 100 and g <= 135 and b <= 35:
+            elif r >= 235 and 100 <= g <= 135 and b <= 35:
                 mask[y, x] = 255
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+
+    for y in range(H):
+        for x in range(W):
+            if mask[y, x]:
+                continue
+            r, g, b = ref[y, x]
+            if r < 90 and g < 110 and b < 130:
+                for dy in range(-3, 4):
+                    for dx in range(-3, 4):
+                        ny, nx = y + dy, x + dx
+                        if 0 <= ny < H and 0 <= nx < W and mask[ny, nx]:
+                            mask[y, x] = 255
+                            break
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
     return cv2.dilate(mask, kernel, iterations=2)
 
 
@@ -57,8 +72,9 @@ def clean_reference(ref: Image.Image) -> Image.Image:
     mask = build_text_mask(rgb)
     if not mask.any():
         return ref
+
     bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-    cleaned = cv2.inpaint(bgr, mask, inpaintRadius=4, flags=cv2.INPAINT_TELEA)
+    cleaned = cv2.inpaint(bgr, mask, inpaintRadius=5, flags=cv2.INPAINT_NS)
     return Image.fromarray(cv2.cvtColor(cleaned, cv2.COLOR_BGR2RGB))
 
 
@@ -89,7 +105,7 @@ def paste_dogs(canvas: Image.Image, ref: Image.Image) -> None:
     src = ref.crop((DOG_CROP_X, 0, W, H))
     target_w = W - DOG_PASTE_X
     dogs = src.resize((target_w, H), Image.Resampling.LANCZOS)
-    mask = feather_mask(target_w, H, feather=140)
+    mask = feather_mask(target_w, H, feather=70)
     canvas.paste(dogs, (DOG_PASTE_X, 0), mask)
 
 
@@ -115,9 +131,8 @@ def draw_text(canvas: Image.Image) -> None:
 
 
 def build_canvas(ref: Image.Image) -> Image.Image:
-    cleaned = clean_reference(ref)
     canvas = draw_background()
-    paste_dogs(canvas, cleaned)
+    paste_dogs(canvas, clean_reference(ref))
     return canvas
 
 
