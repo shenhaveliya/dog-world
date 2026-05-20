@@ -1609,6 +1609,15 @@ function shouldUseInlineSortMenu() {
   return document.body.classList.contains("filters-open");
 }
 
+/** Floating fixed positioning is only needed on narrow viewports where the
+ *  toolbar wraps and the trigger can sit flush against a viewport edge.
+ *  On desktop the menu stays in the trigger's DOM home and CSS absolute
+ *  anchoring is reliable (and avoids the mis-placement that hoisting to
+ *  <body> causes when the page layout is wide). */
+function shouldUseFloatingSortMenu() {
+  return window.matchMedia("(max-width: 800px)").matches && !shouldUseInlineSortMenu();
+}
+
 function openSortMenu() {
   if (!sortDropdown || !sortTrigger) return;
 
@@ -1616,15 +1625,15 @@ function openSortMenu() {
   if (sortMenu.children.length === 0) renderSortMenu();
 
   const inline = shouldUseInlineSortMenu();
+  const floating = shouldUseFloatingSortMenu();
 
-  if (inline) {
-    // Inline mode: make sure the menu is back in its original DOM home
-    // (in case a previous open hoisted it).
+  if (inline || !floating) {
+    // Inline + desktop anchored modes: keep the menu in its original DOM
+    // home (in case a previous open hoisted it) and drop any JS positioning.
     if (_sortMenuOriginalParent && sortMenu.parentElement === document.body) {
       _sortMenuOriginalParent.appendChild(sortMenu);
       _sortMenuOriginalParent = null;
     }
-    // Clear any inline positioning left over from a previous floating open.
     Object.assign(sortMenu.style, {
       position: "", top: "", left: "", right: "",
       insetInlineStart: "", insetInlineEnd: "",
@@ -1645,7 +1654,7 @@ function openSortMenu() {
   sortMenu.classList.toggle("is-inline", inline);
   sortTrigger.setAttribute("aria-expanded", "true");
 
-  if (!inline) {
+  if (floating) {
     positionSortMenu();
     // Close on any scroll – of the page or of an internal scroll container.
     // Deferred by one frame so any layout-settling scroll on open doesn't
@@ -1783,7 +1792,9 @@ if (sortTrigger && sortMenu) {
   // per-open inside openSortMenu so it can also catch internal scrollers
   // like the mobile filter sheet.
   window.addEventListener("resize", () => {
-    if (sortDropdown.classList.contains("open")) positionSortMenu();
+    if (sortDropdown.classList.contains("open") && shouldUseFloatingSortMenu()) {
+      positionSortMenu();
+    }
   });
 }
 
