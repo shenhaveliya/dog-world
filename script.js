@@ -2140,8 +2140,12 @@ clearFiltersBtn.addEventListener("click", () => {
   resetPageAndApply();
 });
 
+let _filterSheetScrollY = 0;
+
 function openFilterSheet() {
   if (!filtersEl) return;
+  _filterSheetScrollY = window.scrollY;
+  document.body.style.top = `-${_filterSheetScrollY}px`;
   document.body.classList.add("filters-open");
   if (filterSheetOverlay) filterSheetOverlay.hidden = false;
   filtersEl.setAttribute("aria-modal", "true");
@@ -2151,6 +2155,8 @@ function openFilterSheet() {
 
 function closeFilterSheet() {
   document.body.classList.remove("filters-open");
+  document.body.style.top = "";
+  window.scrollTo(0, _filterSheetScrollY);
   if (filterSheetOverlay) filterSheetOverlay.hidden = true;
   if (filtersEl) filtersEl.removeAttribute("aria-modal");
 }

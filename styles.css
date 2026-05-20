@@ -4005,17 +4005,24 @@ button:active:not(:disabled),
        page underneath. */
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    padding: 16px 16px max(24px, calc(16px + env(safe-area-inset-bottom, 0px)));
     margin: 0;
     border-radius: 24px 24px 0 0;
     transform: translateY(105%);
     transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Solid panel – the desktop glass/backdrop-filter frosts the page through
+       the sheet, which on mobile reads as breed cards "bleeding in". */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    isolation: isolate;
   }
   body.filters-open .filters {
     transform: translateY(0);
   }
   body.filters-open {
     overflow: hidden;
+    position: fixed;
+    width: 100%;
   }
   /* The sheet is modal (it has a backdrop and traps interaction). Hide the
      bottom tab bar while it's open so it doesn't cover the last rows of the
@@ -4023,6 +4030,18 @@ button:active:not(:disabled),
      sit behind it. */
   body.filters-open .mobile-nav {
     display: none;
+  }
+  /* Floating chrome that lives outside .container would otherwise paint
+     over / around the sheet while the page underneath keeps moving on iOS. */
+  body.filters-open .scroll-top,
+  body.filters-open .compare-bar {
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  /* Lift the whole page shell above other body-level floats (compare bar,
+     scroll-top) so the dim overlay + sheet reliably cover the breed grid. */
+  body.filters-open .container {
+    z-index: 100;
   }
   .modal-content { padding: 22px; }
   .detail-modal-inner { padding: 22px; }
