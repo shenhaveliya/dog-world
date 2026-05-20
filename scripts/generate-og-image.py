@@ -1,24 +1,34 @@
 #!/usr/bin/env python3
-"""Regenerate og-image.jpg (1200x630) for Open Graph / social sharing."""
+"""Regenerate og-image.jpg (1200x630) for Open Graph / social sharing.
+
+Builds a clean banner from dog.ceo photos (no baked-in text).
+Source photos are cached in scripts/og-dogs/.
+"""
 
 from __future__ import annotations
 
+import io
+import urllib.request
 from pathlib import Path
 
 from bidi.algorithm import get_display
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
-REF = Path(__file__).resolve().parent / "og-original-bbe40ef.jpg"
+ASSETS = Path(__file__).resolve().parent / "og-dogs"
 OUT = ROOT / "og-image.jpg"
 W, H = 1200, 630
 
 TEXT_RIGHT = 430
 TEXT_LEFT = 72
-LEFT_PANEL_X = 470
 
-# Original baked text ends ~x667; this strip has clean dog pixels only.
-DOG_STRIP_X = 670
+# Pinned dog.ceo photos (front-facing, landscape-friendly).
+DOG_SOURCES = {
+    "golden": "https://images.dog.ceo/breeds/retriever-golden/n02099601_831.jpg",
+    "beagle": "https://images.dog.ceo/breeds/beagle/n02088364_4473.jpg",
+    "spaniel": "https://images.dog.ceo/breeds/spaniel-blenheim/n02086646_4045.jpg",
+}
+DOG_FILES = {key: ASSETS / f"{key}.jpg" for key in DOG_SOURCES}
 
 
 def load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
@@ -30,42 +40,67 @@ def load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
     return ImageFont.load_default()
 
 
-def bg_color(y: int) -> tuple[int, int, int]:
-    t = y / (H - 1)
-    r = int(12 + (16 - 12) * t)
-    g = int(18 + (22 - 18) * t)
-    b = int(34 + (30 - 34) * t)
-    return r, g, b
+def fetch_url(url: str) -> bytes:
+    req = urllib.request.Request(url, headers={"User-Agent": "dog-world-og-generator/1.0"})
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        return resp.read()
+
+
+def load_dog(key: str) -> Image.Image:
+    path = DOG_FILES[key]
+    if not path.exists():
+        ASSETS.mkdir(exist_ok=True)
+        path.write_bytes(fetch_url(DOG_SOURCES[key]))
+    return Image.open(path).convert("RGBA")
+
+
+def fit_cover(img: Image.Image, tw: int, th: int, *, focus_x: float = 0.5, focus_y: float = 0.18) -> Image.Image:
+    sw, sh = img.size
+    scale = max(tw / sw, th / sh)
+    nw, nh = int(sw * scale), int(sh * scale)
+    resized = img.resize((nw, nh), Image.Resampling.LANCZOS)
+    left = max(0, min(nw - tw, int((nw - tw) * focus_x)))
+    top = max(0, min(nh - th, int((nh - th) * focus_y)))
+    return resized.crop((left, top, left + tw, top + th))
+
+
+def oval_mask(width: int, height: int) -> Image.Image:
+    mask = Image.new("L", (width, height), 0)
+    draw = ImageDraw.Draw(mask)
+    pad_x, pad_y = int(width * 0.06), int(height * 0.04)
+    draw.ellipse((pad_x, pad_y, width - pad_x, height - pad_y), fill=255)
+    return mask.filter(ImageFilter.GaussianBlur(radius=10))
 
 
 def draw_background() -> Image.Image:
     base = Image.new("RGB", (W, H))
     draw = ImageDraw.Draw(base)
     for y in range(H):
-        draw.line([(0, y), (W, y)], fill=bg_color(y))
+        t = y / (H - 1)
+        r = int(12 + (16 - 12) * t)
+        g = int(18 + (22 - 18) * t)
+        b = int(34 + (30 - 34) * t)
+        draw.line([(0, y), (W, y)], fill=(r, g, b))
 
     glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     gdraw = ImageDraw.Draw(glow)
     gdraw.ellipse((520, -80, 1120, 420), fill=(249, 115, 22, 38))
     gdraw.ellipse((680, 180, 1220, 700), fill=(20, 184, 166, 30))
-    return Image.alpha_composite(base.convert("RGBA"), glow).convert("RGB")
+    return Image.alpha_composite(base.convert("RGBA"), glow)
 
 
-def left_feather_mask(width: int, height: int, feather: int) -> Image.Image:
-    mask = Image.new("L", (width, height), 255)
-    px = mask.load()
-    for x in range(min(feather, width)):
-        alpha = int(255 * (x / feather) ** 0.85)
-        for y in range(height):
-            px[x, y] = alpha
-    return mask
-
-
-def paste_original_dogs(canvas: Image.Image, ref: Image.Image) -> None:
-    """Paste the untouched dog photo (no baked text) at full resolution."""
-    strip = ref.crop((DOG_STRIP_X, 0, W, H))
-    mask = left_feather_mask(strip.width, strip.height, feather=90)
-    canvas.paste(strip, (LEFT_PANEL_X, 0), mask)
+def paste_dog(
+    canvas: Image.Image,
+    key: str,
+    box: tuple[int, int, int, int],
+    *,
+    focus_x: float = 0.5,
+    focus_y: float = 0.18,
+) -> None:
+    x0, y0, x1, y1 = box
+    tw, th = x1 - x0, y1 - y0
+    dog = fit_cover(load_dog(key), tw, th, focus_x=focus_x, focus_y=focus_y)
+    canvas.paste(dog, (x0, y0), oval_mask(tw, th))
 
 
 def draw_text(canvas: Image.Image) -> None:
@@ -89,24 +124,16 @@ def draw_text(canvas: Image.Image) -> None:
         dot_x += 22
 
 
-def build_canvas(ref: Image.Image) -> Image.Image:
-    canvas = draw_background()
-    px = canvas.load()
-    for y in range(H):
-        color = bg_color(y)
-        for x in range(LEFT_PANEL_X):
-            px[x, y] = color
-    paste_original_dogs(canvas, ref)
-    return canvas
-
-
 def main() -> None:
-    if not REF.exists():
-        raise SystemExit(f"Missing reference image: {REF}")
+    canvas = draw_background()
 
-    canvas = build_canvas(Image.open(REF))
+    # Back → front
+    paste_dog(canvas, "golden", (770, 70, 1190, 610), focus_x=0.52, focus_y=0.12)
+    paste_dog(canvas, "beagle", (600, 210, 960, 610), focus_x=0.5, focus_y=0.08)
+    paste_dog(canvas, "spaniel", (480, 330, 730, 610), focus_x=0.48, focus_y=0.1)
+
     draw_text(canvas)
-    canvas.save(OUT, format="JPEG", quality=92, optimize=True, progressive=False)
+    canvas.convert("RGB").save(OUT, format="JPEG", quality=92, optimize=True, progressive=False)
     print(f"Wrote {OUT} ({OUT.stat().st_size // 1024} KB)")
 
 
