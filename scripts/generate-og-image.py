@@ -5,7 +5,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import numpy as np
 from bidi.algorithm import get_display
 from PIL import Image, ImageDraw, ImageFont
 
@@ -16,9 +15,10 @@ W, H = 1200, 630
 
 TEXT_RIGHT = 430
 TEXT_LEFT = 72
-LEFT_PANEL_X = 480
-TEXT_BAND = (175, 435)
-TEXT_MASK_X = 478
+LEFT_PANEL_X = 470
+
+# Original baked text ends ~x667; this strip has clean dog pixels only.
+DOG_STRIP_X = 670
 
 
 def load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
@@ -38,55 +38,34 @@ def bg_color(y: int) -> tuple[int, int, int]:
     return r, g, b
 
 
-def build_text_mask(ref: np.ndarray) -> np.ndarray:
-    """Mask baked white/orange UI pixels only — no drop-shadow dilation."""
-    mask = np.zeros((H, W), dtype=bool)
-    y0, y1 = TEXT_BAND
-    for y in range(y0, y1 + 1):
-        for x in range(TEXT_MASK_X, W):
-            r, g, b = ref[y, x]
-            if r >= 248 and g >= 248 and b >= 248:
-                mask[y, x] = True
-            elif r >= 235 and 100 <= g <= 135 and b <= 35:
-                mask[y, x] = True
+def draw_background() -> Image.Image:
+    base = Image.new("RGB", (W, H))
+    draw = ImageDraw.Draw(base)
+    for y in range(H):
+        draw.line([(0, y), (W, y)], fill=bg_color(y))
+
+    glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    gdraw = ImageDraw.Draw(glow)
+    gdraw.ellipse((520, -80, 1120, 420), fill=(249, 115, 22, 38))
+    gdraw.ellipse((680, 180, 1220, 700), fill=(20, 184, 166, 30))
+    return Image.alpha_composite(base.convert("RGBA"), glow).convert("RGB")
+
+
+def left_feather_mask(width: int, height: int, feather: int) -> Image.Image:
+    mask = Image.new("L", (width, height), 255)
+    px = mask.load()
+    for x in range(min(feather, width)):
+        alpha = int(255 * (x / feather) ** 0.85)
+        for y in range(height):
+            px[x, y] = alpha
     return mask
 
 
-def sample_fur(ref: np.ndarray, mask: np.ndarray, x: int, y: int) -> tuple[int, int, int]:
-    """Pick a nearby non-text pixel on the same column to replace a text pixel."""
-    y0, y1 = TEXT_BAND
-    for sy in range(y1 + 8, min(H, y1 + 100)):
-        if not mask[sy, x]:
-            return tuple(int(v) for v in ref[sy, x])
-    for sy in range(y0 - 8, max(-1, y0 - 100), -1):
-        if not mask[sy, x]:
-            return tuple(int(v) for v in ref[sy, x])
-    for dx in (1, -1, 2, -2, 3, -3):
-        nx = x + dx
-        if 0 <= nx < W and not mask[y, nx]:
-            return tuple(int(v) for v in ref[y, nx])
-    return bg_color(y)
-
-
-def remove_baked_text(ref: Image.Image) -> Image.Image:
-    rgb = np.array(ref.convert("RGB"))
-    mask = build_text_mask(rgb)
-    if not mask.any():
-        return ref
-
-    out = rgb.copy()
-    ys, xs = np.where(mask)
-    for y, x in zip(ys, xs):
-        out[y, x] = sample_fur(rgb, mask, int(x), int(y))
-    return Image.fromarray(out)
-
-
-def paint_left_panel(canvas: Image.Image) -> None:
-    px = canvas.load()
-    for y in range(H):
-        color = bg_color(y)
-        for x in range(LEFT_PANEL_X):
-            px[x, y] = color
+def paste_original_dogs(canvas: Image.Image, ref: Image.Image) -> None:
+    """Paste the untouched dog photo (no baked text) at full resolution."""
+    strip = ref.crop((DOG_STRIP_X, 0, W, H))
+    mask = left_feather_mask(strip.width, strip.height, feather=90)
+    canvas.paste(strip, (LEFT_PANEL_X, 0), mask)
 
 
 def draw_text(canvas: Image.Image) -> None:
@@ -111,8 +90,13 @@ def draw_text(canvas: Image.Image) -> None:
 
 
 def build_canvas(ref: Image.Image) -> Image.Image:
-    canvas = remove_baked_text(ref)
-    paint_left_panel(canvas)
+    canvas = draw_background()
+    px = canvas.load()
+    for y in range(H):
+        color = bg_color(y)
+        for x in range(LEFT_PANEL_X):
+            px[x, y] = color
+    paste_original_dogs(canvas, ref)
     return canvas
 
 
