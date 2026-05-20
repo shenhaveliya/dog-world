@@ -14,13 +14,15 @@ REF = Path(__file__).resolve().parent / "og-original-bbe40ef.jpg"
 OUT = ROOT / "og-image.jpg"
 W, H = 1200, 630
 
-# Keep all typography inside the dark left panel (dogs begin ~x520).
 TEXT_RIGHT = 430
 TEXT_LEFT = 72
-SOLID_WIPE_X = 520
 
-# Cover the original baked title/subtitle (spans x≈87–667 on the photo).
-TEXT_ZONE = (0, 215, 780, 425)
+# Original baked UI spans y≈184 (orange bar) through y≈430 (subtitle/dots).
+TEXT_BAND = (175, 435)
+# Replace the entire dark left column so nothing from the source photo bleeds through.
+LEFT_PANEL_X = 480
+# Fade the text-band wipe back into the dog photo on the right edge.
+TEXT_FADE_X = (540, 920)
 
 
 def load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
@@ -41,26 +43,29 @@ def left_bg_color(y: int) -> tuple[int, int, int]:
     return r, g, b
 
 
-def clear_baked_text(canvas: Image.Image) -> None:
-    """Replace the original title/subtitle band with a smooth left-to-right fade."""
+def paint_left_panel(canvas: Image.Image) -> None:
+    """Solid dark panel on the left — removes all original typography there."""
     arr = np.array(canvas, dtype=np.float32)
-    x0, y0, x1, y1 = TEXT_ZONE
-    mid_y = (y0 + y1) / 2
-    half_h = (y1 - y0) / 2
+    for y in range(H):
+        bg = np.array(left_bg_color(y), dtype=np.float32)
+        arr[y, :LEFT_PANEL_X] = bg
+    canvas.paste(Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8)))
+
+
+def clear_text_band(canvas: Image.Image) -> None:
+    """Fully cover the original title/subtitle/orange bar over the dogs."""
+    arr = np.array(canvas, dtype=np.float32)
+    y0, y1 = TEXT_BAND
+    fade_start, fade_end = TEXT_FADE_X
 
     for y in range(y0, y1 + 1):
         bg = np.array(left_bg_color(y), dtype=np.float32)
-        y_weight = 1.0 - abs(y - mid_y) / half_h
-        y_weight = max(0.0, min(1.0, y_weight))
-        y_weight = y_weight**0.65
-
-        for x in range(x0, x1 + 1):
-            if x < SOLID_WIPE_X:
-                alpha = y_weight
+        for x in range(LEFT_PANEL_X, fade_end + 1):
+            if x <= fade_start:
+                alpha = 1.0
             else:
-                x_weight = 1.0 - (x - SOLID_WIPE_X) / (x1 - SOLID_WIPE_X)
-                x_weight = max(0.0, min(1.0, x_weight))
-                alpha = (x_weight**1.2) * y_weight
+                t = (x - fade_start) / (fade_end - fade_start)
+                alpha = max(0.0, 1.0 - t**0.75)
             if alpha <= 0:
                 continue
             arr[y, x] = arr[y, x] * (1.0 - alpha) + bg * alpha
@@ -73,7 +78,6 @@ def draw_text(canvas: Image.Image) -> None:
     title_font = load_font(62, bold=True)
     sub_font = load_font(30)
 
-    # Vertically center the text block in the banner.
     bar_top = 238
     draw.rounded_rectangle((TEXT_LEFT, bar_top, TEXT_LEFT + 92, bar_top + 8), radius=4, fill="#f97316")
     draw.text((TEXT_RIGHT, bar_top + 18), get_display("עולם הכלבים"), font=title_font, fill="#f8fafc", anchor="ra")
@@ -90,12 +94,18 @@ def draw_text(canvas: Image.Image) -> None:
         dot_x += 22
 
 
+def build_canvas(ref: Image.Image) -> Image.Image:
+    canvas = ref.convert("RGB").copy()
+    paint_left_panel(canvas)
+    clear_text_band(canvas)
+    return canvas
+
+
 def main() -> None:
     if not REF.exists():
         raise SystemExit(f"Missing reference image: {REF}")
 
-    canvas = Image.open(REF).convert("RGB")
-    clear_baked_text(canvas)
+    canvas = build_canvas(Image.open(REF))
     draw_text(canvas)
     canvas.save(OUT, format="JPEG", quality=90, optimize=True, progressive=True)
     print(f"Wrote {OUT} ({OUT.stat().st_size // 1024} KB)")
