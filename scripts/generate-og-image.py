@@ -14,11 +14,13 @@ REF = Path(__file__).resolve().parent / "og-original-bbe40ef.jpg"
 OUT = ROOT / "og-image.jpg"
 W, H = 1200, 630
 
-TEXT_RIGHT = 460
+# Keep all typography inside the dark left panel (dogs begin ~x520).
+TEXT_RIGHT = 430
 TEXT_LEFT = 72
+SOLID_WIPE_X = 520
 
-# Wipe original baked typography in this rectangle (left + overlap onto dogs).
-TEXT_ZONE = (0, 228, 700, 418)
+# Cover the original baked title/subtitle (spans x≈87–667 on the photo).
+TEXT_ZONE = (0, 215, 780, 425)
 
 
 def load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
@@ -53,9 +55,12 @@ def clear_baked_text(canvas: Image.Image) -> None:
         y_weight = y_weight**0.65
 
         for x in range(x0, x1 + 1):
-            x_weight = 1.0 - (x - x0) / (x1 - x0)
-            x_weight = max(0.0, min(1.0, x_weight))
-            alpha = (x_weight**1.35) * y_weight
+            if x < SOLID_WIPE_X:
+                alpha = y_weight
+            else:
+                x_weight = 1.0 - (x - SOLID_WIPE_X) / (x1 - SOLID_WIPE_X)
+                x_weight = max(0.0, min(1.0, x_weight))
+                alpha = (x_weight**1.2) * y_weight
             if alpha <= 0:
                 continue
             arr[y, x] = arr[y, x] * (1.0 - alpha) + bg * alpha
@@ -65,20 +70,23 @@ def clear_baked_text(canvas: Image.Image) -> None:
 
 def draw_text(canvas: Image.Image) -> None:
     draw = ImageDraw.Draw(canvas)
-    title_font = load_font(68, bold=True)
-    sub_font = load_font(32)
+    title_font = load_font(62, bold=True)
+    sub_font = load_font(30)
 
-    draw.rounded_rectangle((TEXT_LEFT, 248, TEXT_LEFT + 92, 256), radius=4, fill="#f97316")
-    draw.text((TEXT_RIGHT, 250), get_display("עולם הכלבים"), font=title_font, fill="#f8fafc", anchor="ra")
+    # Vertically center the text block in the banner.
+    bar_top = 238
+    draw.rounded_rectangle((TEXT_LEFT, bar_top, TEXT_LEFT + 92, bar_top + 8), radius=4, fill="#f97316")
+    draw.text((TEXT_RIGHT, bar_top + 18), get_display("עולם הכלבים"), font=title_font, fill="#f8fafc", anchor="ra")
 
-    sub_y = 338
+    sub_y = bar_top + 100
     for line in ("מדריך אינטראקטיבי לבחירת", "הגזע המתאים"):
         draw.text((TEXT_RIGHT, sub_y), get_display(line), font=sub_font, fill="#f8fafc", anchor="ra")
-        sub_y += 44
+        sub_y += 40
 
     dot_x = TEXT_LEFT
+    dot_y = sub_y + 10
     for color in ("#5eead4", "#14b8a6", "#fb923c", "#f97316"):
-        draw.ellipse((dot_x, 398, dot_x + 12, 410), fill=color)
+        draw.ellipse((dot_x, dot_y, dot_x + 12, dot_y + 12), fill=color)
         dot_x += 22
 
 
