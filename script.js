@@ -37,6 +37,8 @@
  * @property {1|2|3|4|5} trainingDifficulty
  * @property {boolean} goodWithCats
  * @property {boolean} goodWithKids
+ * @property {string} foodHe
+ * @property {string} foodEn
  */
 
 /* =====================================================================
@@ -244,6 +246,7 @@ function showToast(message, opts = {}) {
 /** @param {Breed} b */ function bOrigin(b) { return currentLang === "en" ? b.originEn : b.origin; }
 /** @param {Breed} b */ function bWeight(b) { return currentLang === "en" ? b.weightEn : b.weight; }
 /** @param {Breed} b */ function bPrice(b) { return currentLang === "en" ? b.priceLabelEn : b.priceLabel; }
+/** @param {Breed} b */ function bFood(b) { return currentLang === "en" ? b.foodEn : b.foodHe; }
 /** @param {Breed} b */
 function bSize(b) {
   const map = { 1: "sizeSmall", 2: "sizeMedium", 3: "sizeLarge" };
@@ -288,6 +291,7 @@ function cardStatTilesHTML(breed) {
     statTile("💰", "infoPrice", bPrice(breed), false, "price"),
     statTile("🧠", "infoCharacter", bCharacter(breed), true, "character"),
     statTile("🏠", "infoSuitable", bSuitable(breed), true, "suitable"),
+    statTile("🍽️", "infoFood", bFood(breed), true, "food"),
   ].join("");
 }
 
@@ -307,6 +311,7 @@ function detailStatTilesHTML(breed) {
     statTile("👶", "infoKids", breed.goodWithKids ? dict.yes : dict.kidsBad, false, "kids"),
     statTile("🧠", "infoCharacter", bCharacter(breed), false, "character"),
     statTile("🏠", "infoSuitable", bSuitable(breed), false, "suitable"),
+    statTile("🍽️", "infoFood", bFood(breed), true, "food"),
   ].join("");
 }
 
@@ -728,8 +733,8 @@ function renderCard(breed) {
              data-breed="${escapeHTML(breed.key)}"
              data-name-he="${escapeHTML(breed.nameHe.toLowerCase())}"
              data-name-en="${escapeHTML(breed.nameEn.toLowerCase())}"
-             data-search-he="${escapeHTML((breed.description + " " + breed.character + " " + breed.suitableFor + " " + breed.origin).toLowerCase())}"
-             data-search-en="${escapeHTML((breed.descriptionEn + " " + breed.characterEn + " " + breed.suitableForEn + " " + breed.originEn).toLowerCase())}"
+             data-search-he="${escapeHTML((breed.description + " " + breed.character + " " + breed.suitableFor + " " + breed.origin + " " + breed.foodHe).toLowerCase())}"
+             data-search-en="${escapeHTML((breed.descriptionEn + " " + breed.characterEn + " " + breed.suitableForEn + " " + breed.originEn + " " + breed.foodEn).toLowerCase())}"
              data-size-rank="${breed.sizeRank}"
              data-energy="${breed.energy}"
              data-shedding="${breed.shedding}"
@@ -2452,6 +2457,7 @@ function openDetailModal(card, trigger) {
       <p class="description">${escapeHTML(bDesc(breed))}</p>
       <div class="info">${detailStatTilesHTML(breed)}</div>
       <p class="price-disclaimer">${escapeHTML(t("priceDisclaimer"))}</p>
+      <p class="food-disclaimer">${escapeHTML(t("foodDisclaimer"))}</p>
       <p class="adoption-note">${escapeHTML(t("adoptionNote"))}</p>
 
       ${thumbsHTML}

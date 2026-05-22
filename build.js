@@ -170,7 +170,9 @@ function renderBreedPage(breed, lang) {
         <p><strong>${escapeHTML(dict.infoTraining)}</strong> ${escapeHTML(trainingLabel(breed, lang))}</p>
         <p><strong>${escapeHTML(dict.infoCats)}</strong> ${breed.goodWithCats ? escapeHTML(dict.yes) : escapeHTML(dict.catsBad)}</p>
         <p><strong>${escapeHTML(dict.infoKids)}</strong> ${breed.goodWithKids ? escapeHTML(dict.yes) : escapeHTML(dict.kidsBad)}</p>
+        <p><strong>${escapeHTML(dict.infoFood)}</strong> ${escapeHTML(lang === "en" ? breed.foodEn : breed.foodHe)}</p>
       </div>
+      <p class="food-disclaimer">${escapeHTML(dict.foodDisclaimer)}</p>
       <p style="margin-top:18px;">
         <a class="pill-btn pill-btn-link" href="${escapeHTML(wiki)}" target="_blank" rel="noopener noreferrer">
           ${escapeHTML(dict.detailWiki)}

@@ -1634,11 +1634,13 @@ select.sort-select { display: none; }
 .stat[data-stat="cats"]      .stat-icon { color: #ec4899; }
 .stat[data-stat="kids"]      .stat-icon { color: #fbbf24; }
 .stat[data-stat="price"]     .stat-icon { color: #10b981; }
+.stat[data-stat="food"]      .stat-icon { color: #ea580c; }
 .stat[data-stat="price"]     .stat-value { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 
 /* Small italic note shown right under the detail-modal stat grid, so
    readers don't take the price range as a hard quote. */
-.price-disclaimer {
+.price-disclaimer,
+.food-disclaimer {
   font-size: 12px;
   font-style: italic;
   color: var(--text-muted);

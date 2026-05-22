@@ -29,6 +29,7 @@
  *   trainingDifficulty – 1=very easy … 5=very hard
  *   goodWithCats       – gets along with cats
  *   goodWithKids       – good with kids
+ *   foodHe / foodEn    – recommended food (computed; optional override)
  */
 const BREEDS = [
   {
@@ -4577,6 +4578,49 @@ function _defaultPriceFor(b) {
   return [lo, hi];
 }
 
+/**
+ * General food recommendation from size, energy, shedding and exercise.
+ * Override per breed with foodHe / foodEn when needed.
+ */
+function _recommendedFoodFor(b) {
+  if (b.foodHe && b.foodEn) return { foodHe: b.foodHe, foodEn: b.foodEn };
+
+  const partsHe = [];
+  const partsEn = [];
+
+  if (b.sizeRank === 1) {
+    partsHe.push("מזון יבש לגזעים קטנים (גר גדול)");
+    partsEn.push("Small-breed dry food (large kibble)");
+  } else if (b.sizeRank === 2) {
+    partsHe.push("מזון מאוזן לגזעים בינוניים");
+    partsEn.push("Balanced medium-breed formula");
+  } else {
+    partsHe.push("מזון לגזעים גדולים, תומך מפרקים");
+    partsEn.push("Large-breed formula with joint support");
+  }
+
+  if (b.energy >= 4 || b.exerciseHours >= 2) {
+    partsHe.push("עשיר בחלבון לכלבים פעילים");
+    partsEn.push("high-protein for active dogs");
+  } else if (b.energy <= 2 && b.exerciseHours <= 1) {
+    partsHe.push("מעט שומן לשמירה על משקל");
+    partsEn.push("lower fat for weight control");
+  }
+
+  if (b.shedding >= 3) {
+    partsHe.push("עם אומגה 3 לבריאות הפרווה");
+    partsEn.push("omega-3 for coat health");
+  }
+
+  const mealsHe = b.sizeRank === 1 ? "2–3 ארוחות קטנות ביום" : "2 ארוחות ביום";
+  const mealsEn = b.sizeRank === 1 ? "2–3 small meals daily" : "2 meals daily";
+
+  return {
+    foodHe: `${partsHe.join(", ")}. ${mealsHe}.`,
+    foodEn: `${partsEn.join(", ")}. ${mealsEn}.`,
+  };
+}
+
 // Rough USD → ILS conversion (shekels). Update if rates shift dramatically.
 const _USD_TO_ILS = 3.7;
 function _formatRange(min, max, sign) {
@@ -4595,6 +4639,10 @@ BREEDS.forEach((b) => {
   const ilsMax = Math.round((usdMax * _USD_TO_ILS) / 100) * 100;
   b.priceLabel = _formatRange(ilsMin, ilsMax, "₪");
   b.priceLabelEn = _formatRange(usdMin, usdMax, "$");
+
+  const food = _recommendedFoodFor(b);
+  b.foodHe = food.foodHe;
+  b.foodEn = food.foodEn;
 });
 
 if (typeof module !== "undefined" && module.exports) {
