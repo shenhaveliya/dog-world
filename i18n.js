@@ -43,6 +43,7 @@ const I18N = {
     sizeSmall: "קטן",
     sizeMedium: "בינוני",
     sizeLarge: "גדול",
+    sizeGiant: "ענק",
 
     resultsCounter: (visible, total) => `מציג ${visible} מתוך ${total} גזעים`,
     favOnly: "❤️ רק מועדפים",
@@ -67,7 +68,7 @@ const I18N = {
     attrApartmentFriendly: "🏢 מתאימים לדירה",
     attrActivePeople: "🏃 לאנשים פעילים",
 
-    sectionHeader: { 1: "כלבים קטנים", 2: "כלבים בינוניים", 3: "כלבים גדולים" },
+    sectionHeader: { 1: "כלבים קטנים", 2: "כלבים בינוניים", 3: "כלבים גדולים", 4: "כלבים ענקיים" },
     cardsLabel: "גזעי כלבים",
 
     cardOpenLabel: (name) => `פתח פרטים של ${name}`,
@@ -188,6 +189,7 @@ const I18N = {
     sizeIconSmall: "🐕",
     sizeIconMedium: "🐕‍🦺",
     sizeIconLarge: "🐶",
+    sizeIconGiant: "🦴",
     quizMatch: (pct) => `${pct}% התאמה`,
     quizReasonLowEnergy: "מתאים לאנרגיה נמוכה",
     quizReasonHighEnergy: "אוהב פעילות אינטנסיבית",
@@ -326,6 +328,7 @@ const I18N = {
     sizeSmall: "Small",
     sizeMedium: "Medium",
     sizeLarge: "Large",
+    sizeGiant: "Giant",
 
     resultsCounter: (visible, total) => `Showing ${visible} of ${total} breeds`,
     favOnly: "❤️ Favorites only",
@@ -350,7 +353,7 @@ const I18N = {
     attrApartmentFriendly: "🏢 Apartment-friendly",
     attrActivePeople: "🏃 For active people",
 
-    sectionHeader: { 1: "Small dogs", 2: "Medium dogs", 3: "Large dogs" },
+    sectionHeader: { 1: "Small dogs", 2: "Medium dogs", 3: "Large dogs", 4: "Giant dogs" },
     cardsLabel: "Dog breeds",
 
     cardOpenLabel: (name) => `Open details for ${name}`,
@@ -471,6 +474,7 @@ const I18N = {
     sizeIconSmall: "🐕",
     sizeIconMedium: "🐕‍🦺",
     sizeIconLarge: "🐶",
+    sizeIconGiant: "🦴",
     quizMatch: (pct) => `${pct}% match`,
     quizReasonLowEnergy: "Matches your low-energy preference",
     quizReasonHighEnergy: "Loves intense activity",

@@ -294,6 +294,7 @@ function renderFoodModalBody(breed) {
 }
 /** @param {Breed} b */
 function bSize(b) {
+  if (b.sizeRank === 4) return t("sizeGiant");
   const map = { 1: "sizeSmall", 2: "sizeMedium", 3: "sizeLarge" };
   return t(map[b.sizeRank]);
 }
@@ -1916,8 +1917,8 @@ function reorderCards() {
 
   if (currentSort === "size") {
     const dict = I18N[currentLang];
-    const iconKey = { 1: "sizeIconSmall", 2: "sizeIconMedium", 3: "sizeIconLarge" };
-    const counts = { 1: 0, 2: 0, 3: 0 };
+    const iconKey = { 1: "sizeIconSmall", 2: "sizeIconMedium", 3: "sizeIconLarge", 4: "sizeIconGiant" };
+    const counts = { 1: 0, 2: 0, 3: 0, 4: 0 };
     arr.forEach((c) => { counts[parseInt(c.dataset.sizeRank, 10)]++; });
 
     let lastRank = null;
@@ -2009,7 +2010,9 @@ function applyFilters() {
     const breed = card.dataset.breed;
 
     const matchSearch = cardMatchesSearch(card, searchText);
-    const matchSize = selectedSizes.size === 0 || selectedSizes.has(sizeRank);
+    const matchSize = selectedSizes.size === 0 ||
+      selectedSizes.has(sizeRank) ||
+      (selectedSizes.has(3) && sizeRank === 4);
     const matchFav = !favOnly || isFavorite(breed);
     const matchAttrs = cardMatchesAttrs(card);
 
@@ -2135,7 +2138,8 @@ function renderFilterChips(searchText) {
     chips.push(chipHTML("search", t("chipSearch", searchInput.value.trim())));
   }
   selectedSizes.forEach((rank) => {
-    const breed = BREEDS.find((b) => b.sizeRank === rank);
+    const breed = BREEDS.find((b) => b.sizeRank === rank) ||
+      (rank === 3 ? BREEDS.find((b) => b.sizeRank === 4) : null);
     if (breed) chips.push(chipHTML("size:" + rank, t("chipSize", bSize(breed))));
   });
   activeAttrs.forEach((attr) => {
