@@ -247,6 +247,51 @@ function showToast(message, opts = {}) {
 /** @param {Breed} b */ function bWeight(b) { return currentLang === "en" ? b.weightEn : b.weight; }
 /** @param {Breed} b */ function bPrice(b) { return currentLang === "en" ? b.priceLabelEn : b.priceLabel; }
 /** @param {Breed} b */ function bFood(b) { return currentLang === "en" ? b.foodEn : b.foodHe; }
+/** @param {Breed} b */ function bFoodStruct(b) { return currentLang === "en" ? b.foodStructEn : b.foodStructHe; }
+
+/** Structured HTML for the food recommendation popup. */
+function foodModalBodyHTML(breed) {
+  const struct = bFoodStruct(breed);
+  if (!struct) {
+    return `<p class="food-modal-fallback">${escapeHTML(bFood(breed))}</p>`;
+  }
+
+  const tipsHTML = struct.highlights.length
+    ? `<section class="food-section">
+        <h3 class="food-section-title">${escapeHTML(t("foodLabelHighlights"))}</h3>
+        <ul class="food-tips">${struct.highlights.map((item) =>
+          `<li><span class="food-tip-dot" aria-hidden="true"></span>${escapeHTML(item)}</li>`
+        ).join("")}</ul>
+      </section>`
+    : "";
+
+  return `
+    <div class="food-formula-card">
+      <span class="food-formula-icon" aria-hidden="true">🍽️</span>
+      <p class="food-formula-text">${escapeHTML(struct.formula)}</p>
+    </div>
+    <div class="food-macros">
+      <div class="food-macro">
+        <span class="food-macro-label">${escapeHTML(t("foodLabelProtein"))}</span>
+        <span class="food-macro-value">${escapeHTML(struct.protein)}</span>
+      </div>
+      <div class="food-macro">
+        <span class="food-macro-label">${escapeHTML(t("foodLabelFat"))}</span>
+        <span class="food-macro-value">${escapeHTML(struct.fat)}</span>
+      </div>
+    </div>
+    ${tipsHTML}
+    <section class="food-section food-schedule">
+      <h3 class="food-section-title">${escapeHTML(t("foodLabelSchedule"))}</h3>
+      <p class="food-schedule-text">${escapeHTML(struct.schedule)}</p>
+      <p class="food-portion-note">${escapeHTML(struct.portionNote)}</p>
+    </section>`;
+}
+
+function renderFoodModalBody(breed) {
+  if (!foodModalBody) return;
+  foodModalBody.innerHTML = foodModalBodyHTML(breed);
+}
 /** @param {Breed} b */
 function bSize(b) {
   const map = { 1: "sizeSmall", 2: "sizeMedium", 3: "sizeLarge" };
@@ -2277,7 +2322,7 @@ function openFoodModal(breedKey, trigger) {
   const name = bName(breed);
   foodModal.dataset.breedKey = breedKey;
   if (foodModalTitle) foodModalTitle.textContent = t("foodModalTitle", name);
-  if (foodModalBody) foodModalBody.textContent = bFood(breed);
+  renderFoodModalBody(breed);
   if (foodModalDisclaimer) foodModalDisclaimer.textContent = t("foodDisclaimer");
   openModal(foodModal, trigger);
   trackEvent("Open food modal", { breed: breedKey });
@@ -3606,7 +3651,7 @@ function applyLanguage(lang) {
     const breed = breedKey ? breedByKey(breedKey) : null;
     if (breed) {
       if (foodModalTitle) foodModalTitle.textContent = t("foodModalTitle", bName(breed));
-      foodModalBody.textContent = bFood(breed);
+      renderFoodModalBody(breed);
       if (foodModalDisclaimer) foodModalDisclaimer.textContent = t("foodDisclaimer");
     }
   }

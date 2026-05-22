@@ -4608,6 +4608,8 @@ BREEDS.forEach((b) => {
   const food = _recommendedFoodFor(b);
   b.foodHe = food.foodHe;
   b.foodEn = food.foodEn;
+  b.foodStructHe = food.foodStructHe;
+  b.foodStructEn = food.foodStructEn;
 });
 
 if (typeof module !== "undefined" && module.exports) {

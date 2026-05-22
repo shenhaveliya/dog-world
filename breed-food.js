@@ -285,23 +285,31 @@ function macroProfile(b) {
     return {
       he: "חלבון 24–28%, שומן 8–12%",
       en: "24–28% protein, 8–12% fat",
+      protein: "24–28%",
+      fat: "8–12%",
     };
   }
   if (isActive(b)) {
     return {
       he: "חלבון 26–30%, שומן 14–18%",
       en: "26–30% protein, 14–18% fat",
+      protein: "26–30%",
+      fat: "14–18%",
     };
   }
   if (isSedentary(b)) {
     return {
       he: "חלבון 22–26%, שומן 10–14%",
       en: "22–26% protein, 10–14% fat",
+      protein: "22–26%",
+      fat: "10–14%",
     };
   }
   return {
     he: "חלבון 22–26%, שומן 12–15%",
     en: "22–26% protein, 12–15% fat",
+    protein: "22–26%",
+    fat: "12–15%",
   };
 }
 
@@ -392,10 +400,12 @@ function extraNutrients(b, partsHe, partsEn) {
 
 /**
  * @param {object} b – breed object from breeds.js
- * @returns {{ foodHe: string, foodEn: string }}
+ * @returns {{ foodHe: string, foodEn: string, foodStructHe: object|null, foodStructEn: object|null }}
  */
 function recommendedFoodFor(b) {
-  if (b.foodHe && b.foodEn) return { foodHe: b.foodHe, foodEn: b.foodEn };
+  if (b.foodHe && b.foodEn) {
+    return { foodHe: b.foodHe, foodEn: b.foodEn, foodStructHe: null, foodStructEn: null };
+  }
 
   const base = baseFormula(b);
   const macros = macroProfile(b);
@@ -409,6 +419,14 @@ function recommendedFoodFor(b) {
   const noteHe = note && note.he ? note.he : null;
   const noteEn = note && note.en ? note.en : null;
 
+  const highlightsHe = extrasHe.slice();
+  const highlightsEn = extrasEn.slice();
+  if (noteHe) highlightsHe.push(noteHe);
+  if (noteEn) highlightsEn.push(noteEn);
+
+  const portionHe = "כמות לפי משקל, גיל ופעילות (וטרינר).";
+  const portionEn = "Amount by weight, age, and activity (vet).";
+
   const partsHe = [base.he, macros.he];
   const partsEn = [base.en, macros.en];
 
@@ -419,12 +437,28 @@ function recommendedFoodFor(b) {
   if (noteHe) partsHe.push(noteHe);
   if (noteEn) partsEn.push(noteEn);
 
-  partsHe.push(meals.he + " — כמות לפי משקל, גיל ופעילות (וטרינר).");
-  partsEn.push(meals.en + " — amount by weight, age, and activity (vet).");
+  partsHe.push(meals.he + " — " + portionHe);
+  partsEn.push(meals.en + " — " + portionEn);
 
   return {
     foodHe: sentenceJoin(partsHe),
     foodEn: sentenceJoin(partsEn),
+    foodStructHe: {
+      formula: base.he,
+      protein: macros.protein,
+      fat: macros.fat,
+      highlights: highlightsHe,
+      schedule: meals.he,
+      portionNote: portionHe,
+    },
+    foodStructEn: {
+      formula: base.en,
+      protein: macros.protein,
+      fat: macros.fat,
+      highlights: highlightsEn,
+      schedule: meals.en,
+      portionNote: portionEn,
+    },
   };
 }
 
