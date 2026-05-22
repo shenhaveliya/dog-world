@@ -1635,6 +1635,53 @@ select.sort-select { display: none; }
 .stat[data-stat="kids"]      .stat-icon { color: #fbbf24; }
 .stat[data-stat="price"]     .stat-icon { color: #10b981; }
 .stat[data-stat="food"]      .stat-icon { color: #ea580c; }
+
+/* Food recommendation popup trigger (card + detail). */
+.food-open-btn {
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--info-bg);
+  font: inherit;
+  text-align: inherit;
+  width: 100%;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.food-open-btn:hover,
+.food-open-btn:focus-visible {
+  border-color: color-mix(in srgb, #ea580c 45%, var(--border));
+  background: color-mix(in srgb, #ea580c 8%, var(--info-bg));
+  box-shadow: 0 0 0 2px color-mix(in srgb, #ea580c 18%, transparent);
+  outline: none;
+}
+.food-open-cta {
+  color: var(--accent);
+  font-weight: 600;
+}
+.detail-food-wrap {
+  margin-top: 10px;
+}
+.detail-food-btn {
+  grid-column: 1 / -1;
+}
+
+/* Food recommendation modal. */
+.food-modal {
+  max-width: 520px;
+}
+.food-modal h2 {
+  font-size: 22px;
+  margin: 0 0 14px;
+  line-height: 1.35;
+}
+.food-modal-body {
+  margin: 0 0 12px;
+  line-height: 1.65;
+  font-size: 15px;
+  color: var(--text);
+}
+.food-modal .food-disclaimer {
+  margin: 0;
+}
 .stat[data-stat="price"]     .stat-value { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 
 /* Small italic note shown right under the detail-modal stat grid, so
@@ -3518,7 +3565,7 @@ a.pill-btn-wiki:hover {
   border-radius: var(--r-pill);
   font-size: 11px;
 }
-.cards.is-list .stat.full { display: none; } /* hide long ones in list view */
+.cards.is-list .stat.full:not(.food-open-btn) { display: none; } /* hide long ones in list view */
 .cards.is-list .card::before { display: none; }
 .cards.is-list .card::after { display: none; }
 

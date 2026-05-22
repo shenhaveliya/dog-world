@@ -282,6 +282,22 @@ function statTile(icon, labelKey, value, full, kind) {
   `;
 }
 
+/** Compact button that opens the food recommendation popup. */
+function foodOpenBtnHTML(breed, variant) {
+  const name = bName(breed);
+  const extraClass = variant === "detail" ? " detail-food-btn" : " full";
+  return `
+    <button type="button" class="stat food-open-btn${extraClass}" data-stat="food"
+            data-breed="${escapeHTML(breed.key)}"
+            aria-label="${escapeHTML(t("foodOpenAria", name))}">
+      <span class="stat-icon" aria-hidden="true">🍽️</span>
+      <span class="stat-text">
+        <span class="stat-label">${escapeHTML(t("infoFood").replace(/[:：]\s*$/, ""))}</span>
+        <span class="stat-value food-open-cta">${escapeHTML(t("foodOpenBtn"))} →</span>
+      </span>
+    </button>`;
+}
+
 /** Tiles shown on every card (5 quick-glance facts + price). */
 function cardStatTilesHTML(breed) {
   return [
@@ -291,7 +307,7 @@ function cardStatTilesHTML(breed) {
     statTile("💰", "infoPrice", bPrice(breed), false, "price"),
     statTile("🧠", "infoCharacter", bCharacter(breed), true, "character"),
     statTile("🏠", "infoSuitable", bSuitable(breed), true, "suitable"),
-    statTile("🍽️", "infoFood", bFood(breed), true, "food"),
+    foodOpenBtnHTML(breed),
   ].join("");
 }
 
@@ -311,7 +327,6 @@ function detailStatTilesHTML(breed) {
     statTile("👶", "infoKids", breed.goodWithKids ? dict.yes : dict.kidsBad, false, "kids"),
     statTile("🧠", "infoCharacter", bCharacter(breed), false, "character"),
     statTile("🏠", "infoSuitable", bSuitable(breed), false, "suitable"),
-    statTile("🍽️", "infoFood", bFood(breed), true, "food"),
   ].join("");
 }
 
@@ -341,6 +356,10 @@ const compareModal = document.getElementById("compareModal");
 const compareModalContent = document.getElementById("compareModalContent");
 const detailModal = document.getElementById("detailModal");
 const detailModalContent = document.getElementById("detailModalContent");
+const foodModal = document.getElementById("foodModal");
+const foodModalTitle = document.getElementById("foodModalTitle");
+const foodModalBody = document.getElementById("foodModalBody");
+const foodModalDisclaimer = document.getElementById("foodModalDisclaimer");
 const quizBtn = document.getElementById("quizBtn");
 const quizModal = document.getElementById("quizModal");
 const quizBody = document.getElementById("quizBody");
@@ -2237,7 +2256,8 @@ function openModal(modal, trigger) {
 
 function closeModal(modal) {
   modal.classList.remove("open");
-  document.body.style.overflow = "";
+  const anyOpen = document.querySelector(".modal.open");
+  if (!anyOpen) document.body.style.overflow = "";
   if (lastFocusedElement && typeof lastFocusedElement.focus === "function") {
     lastFocusedElement.focus();
   }
@@ -2250,6 +2270,25 @@ function closeModal(modal) {
     history.replaceState(null, "", location.pathname + location.search);
   }
 }
+
+function openFoodModal(breedKey, trigger) {
+  const breed = breedByKey(breedKey);
+  if (!breed || !foodModal) return;
+  const name = bName(breed);
+  foodModal.dataset.breedKey = breedKey;
+  if (foodModalTitle) foodModalTitle.textContent = t("foodModalTitle", name);
+  if (foodModalBody) foodModalBody.textContent = bFood(breed);
+  if (foodModalDisclaimer) foodModalDisclaimer.textContent = t("foodDisclaimer");
+  openModal(foodModal, trigger);
+  trackEvent("Open food modal", { breed: breedKey });
+}
+
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".food-open-btn");
+  if (!btn) return;
+  e.stopPropagation();
+  openFoodModal(btn.dataset.breed, btn);
+});
 
 document.querySelectorAll(".modal").forEach((modal) => {
   modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(modal); });
@@ -2279,7 +2318,8 @@ document.querySelectorAll(".modal").forEach((modal) => {
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     closeFilterSheet();
-    document.querySelectorAll(".modal.open").forEach(closeModal);
+    const openModals = Array.from(document.querySelectorAll(".modal.open"));
+    if (openModals.length) closeModal(openModals[openModals.length - 1]);
   }
 });
 
@@ -2456,8 +2496,8 @@ function openDetailModal(card, trigger) {
     <div class="detail-modal-inner">
       <p class="description">${escapeHTML(bDesc(breed))}</p>
       <div class="info">${detailStatTilesHTML(breed)}</div>
+      <div class="detail-food-wrap">${foodOpenBtnHTML(breed, "detail")}</div>
       <p class="price-disclaimer">${escapeHTML(t("priceDisclaimer"))}</p>
-      <p class="food-disclaimer">${escapeHTML(t("foodDisclaimer"))}</p>
       <p class="adoption-note">${escapeHTML(t("adoptionNote"))}</p>
 
       ${thumbsHTML}
@@ -3560,6 +3600,16 @@ function applyLanguage(lang) {
   // applyLanguage updates those via data-i18n, but the custom dropdown
   // mirrors them so it needs a refresh too.
   if (typeof renderSortMenu === "function") renderSortMenu();
+
+  if (foodModal && foodModal.classList.contains("open") && foodModalBody) {
+    const breedKey = foodModal.dataset.breedKey;
+    const breed = breedKey ? breedByKey(breedKey) : null;
+    if (breed) {
+      if (foodModalTitle) foodModalTitle.textContent = t("foodModalTitle", bName(breed));
+      foodModalBody.textContent = bFood(breed);
+      if (foodModalDisclaimer) foodModalDisclaimer.textContent = t("foodDisclaimer");
+    }
+  }
 }
 
 if (langToggle) {
