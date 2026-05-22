@@ -330,15 +330,20 @@ function statTile(icon, labelKey, value, full, kind) {
 /** Compact button that opens the food recommendation popup. */
 function foodOpenBtnHTML(breed, variant) {
   const name = bName(breed);
-  const extraClass = variant === "detail" ? " detail-food-btn" : " full";
+  const variantClass = variant === "detail" ? " food-open-btn--detail" : " food-open-btn--card";
   return `
-    <button type="button" class="stat food-open-btn${extraClass}" data-stat="food"
+    <button type="button" class="food-open-btn${variantClass}" data-stat="food"
             data-breed="${escapeHTML(breed.key)}"
             aria-label="${escapeHTML(t("foodOpenAria", name))}">
-      <span class="stat-icon" aria-hidden="true">🍽️</span>
-      <span class="stat-text">
-        <span class="stat-label">${escapeHTML(t("infoFood").replace(/[:：]\s*$/, ""))}</span>
-        <span class="stat-value food-open-cta">${escapeHTML(t("foodOpenBtn"))} →</span>
+      <span class="food-open-icon-wrap" aria-hidden="true">
+        <span class="food-open-icon">🍽️</span>
+      </span>
+      <span class="food-open-copy">
+        <span class="food-open-label">${escapeHTML(t("infoFood").replace(/[:：]\s*$/, ""))}</span>
+      </span>
+      <span class="food-open-action">
+        <span class="food-open-action-text">${escapeHTML(t("foodOpenBtn"))}</span>
+        <span class="food-open-chevron" aria-hidden="true"></span>
       </span>
     </button>`;
 }

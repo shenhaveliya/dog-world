@@ -1638,30 +1638,121 @@ select.sort-select { display: none; }
 
 /* Food recommendation popup trigger (card + detail). */
 .food-open-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, #ea580c 24%, var(--border));
+  border-radius: var(--r-lg);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #ea580c 10%, var(--info-bg)) 0%,
+    var(--info-bg) 55%
+  );
   cursor: pointer;
-  border: 1px solid var(--border);
-  background: var(--info-bg);
   font: inherit;
   text-align: inherit;
-  width: 100%;
-  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+.food-open-btn--card {
+  grid-column: 1 / -1;
 }
 .food-open-btn:hover,
 .food-open-btn:focus-visible {
-  border-color: color-mix(in srgb, #ea580c 45%, var(--border));
-  background: color-mix(in srgb, #ea580c 8%, var(--info-bg));
-  box-shadow: 0 0 0 2px color-mix(in srgb, #ea580c 18%, transparent);
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, #ea580c 50%, var(--border));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #ea580c 16%, var(--info-bg)) 0%,
+    var(--info-bg) 60%
+  );
+  box-shadow: 0 6px 18px color-mix(in srgb, #ea580c 16%, transparent);
   outline: none;
 }
-.food-open-cta {
-  color: var(--accent);
+.food-open-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+.food-open-icon-wrap {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  background: linear-gradient(145deg, #fb923c, #ea580c);
+  box-shadow: 0 2px 10px color-mix(in srgb, #ea580c 38%, transparent);
+}
+.food-open-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+.food-open-copy {
+  flex: 1;
+  min-width: 0;
+  text-align: start;
+}
+.food-open-label {
+  display: block;
+  font-size: 13px;
   font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+}
+.food-open-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, #ea580c 14%, var(--card-bg, var(--modal-bg)));
+  border: 1px solid color-mix(in srgb, #ea580c 28%, transparent);
+  font-size: 12px;
+  font-weight: 700;
+  color: #ea580c;
+  transition: background 0.15s ease, gap 0.15s ease;
+}
+[data-theme="dark"] .food-open-action {
+  color: #fb923c;
+  background: color-mix(in srgb, #ea580c 18%, var(--info-bg));
+}
+.food-open-btn:hover .food-open-action,
+.food-open-btn:focus-visible .food-open-action {
+  background: color-mix(in srgb, #ea580c 22%, var(--card-bg, var(--modal-bg)));
+  gap: 8px;
+}
+.food-open-chevron {
+  width: 7px;
+  height: 7px;
+  border-inline-end: 2px solid currentColor;
+  border-block-start: 2px solid currentColor;
+  transform: rotate(45deg);
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+[dir="rtl"] .food-open-chevron {
+  transform: rotate(-135deg);
+}
+.food-open-btn:hover .food-open-chevron,
+.food-open-btn:focus-visible .food-open-chevron {
+  transform: rotate(45deg) translate(1px, -1px);
+}
+[dir="rtl"] .food-open-btn:hover .food-open-chevron,
+[dir="rtl"] .food-open-btn:focus-visible .food-open-chevron {
+  transform: rotate(-135deg) translate(-1px, -1px);
 }
 .detail-food-wrap {
   margin-top: 10px;
 }
-.detail-food-btn {
-  grid-column: 1 / -1;
+.food-open-btn--detail {
+  max-width: 100%;
 }
 
 /* Food recommendation modal. */
@@ -3680,7 +3771,24 @@ a.pill-btn-wiki:hover {
   border-radius: var(--r-pill);
   font-size: 11px;
 }
-.cards.is-list .stat.full:not(.food-open-btn) { display: none; } /* hide long ones in list view */
+.cards.is-list .stat.full { display: none; } /* hide long ones in list view */
+.cards.is-list .food-open-btn {
+  flex: 1 1 100%;
+  margin-top: 2px;
+  padding: 8px 10px;
+  gap: 10px;
+}
+.cards.is-list .food-open-icon-wrap {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+}
+.cards.is-list .food-open-icon { font-size: 15px; }
+.cards.is-list .food-open-label { font-size: 11px; }
+.cards.is-list .food-open-action {
+  padding: 5px 9px;
+  font-size: 11px;
+}
 .cards.is-list .card::before { display: none; }
 .cards.is-list .card::after { display: none; }
 
