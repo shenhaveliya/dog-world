@@ -55,6 +55,7 @@ const WEIGHT_PRONE = new Set([
   "english-mastiff", "saint-bernard", "chow-chow", "bullmastiff",
   "american-bully", "boston-terrier", "brussels-griffon", "norwich-terrier",
   "norfolk-terrier", "papillon", "pomeranian",
+  "pitbull", "amstaff", "staffordshire-bull-terrier",
 ]);
 
 const JOINT_PRONE = new Set([
@@ -66,6 +67,7 @@ const JOINT_PRONE = new Set([
   "samoyed", "akita", "american-akita", "tibetan-mastiff",
   "bullmastiff", "cane-corso", "presa-canario", "boerboel", "fila-brasileiro",
   "flatcoat-retriever", "chesapeake-retriever", "old-english-sheepdog",
+  "pitbull", "amstaff", "staffordshire-bull-terrier",
 ]);
 
 const GI_SENSITIVE = new Set([
@@ -106,6 +108,7 @@ const WORKING_SPORT = new Set([
   "wirehaired-pointing-griffon", "spinone-italiano", "bracco-italiano",
   "jack-russell-terrier", "parson-russell", "russell-terrier", "rat-terrier",
   "catahoula", "chinook", "karelian-bear-dog", "lapponian-herder",
+  "pitbull", "amstaff", "staffordshire-bull-terrier", "bull-terrier",
 ]);
 
 /** One-line breed-specific notes (Hebrew + English). */
@@ -246,6 +249,18 @@ const BREED_NOTES = {
     he: "חלבון איכותי; מתאים לרגישויות; אומגה 3 לפרווה.",
     en: "Quality protein; good for sensitivities; omega-3 for coat.",
   },
+  pitbull: {
+    he: "חלבון איכותי לתמיכה בשרירים; שליטה במשקל ופעילות יומית.",
+    en: "Quality protein for muscle support; weight control and daily activity.",
+  },
+  amstaff: {
+    he: "חלבון גבוה לכלב פעיל; שליטה במשקל; רגישויות עור — מזון מוגבל מרכיבים אפשרי.",
+    en: "Higher protein for active dogs; weight control; skin sensitivities — limited-ingredient option.",
+  },
+  "staffordshire-bull-terrier": {
+    he: "חלבון איכותי לשרירים; ארוחות מדודות — נטייה לעודף משקל.",
+    en: "Quality protein for muscles; measured meals — obesity-prone.",
+  },
   xoloitzcuintli: {
     he: "עור רגיש — חלבון איכותי; הגנה מהשמש.",
     en: "Sensitive skin — quality protein; sun protection.",
@@ -365,6 +380,96 @@ function noteMentionsWeight(note) {
   return note && /weight|משקל|overfeed|obesity|עודף/i.test(note.he + note.en);
 }
 
+function hasWeightTip(list) {
+  return list.some((t) => /משקל|weight|calor|קלור/i.test(t));
+}
+
+function hasOmegaTip(list) {
+  return list.some((t) => /אומגה|omega/i.test(t));
+}
+
+function hasMealTip(list) {
+  return list.some((t) => /ארוחות|meals|סוכר|hypogly/i.test(t));
+}
+
+function noteMentionsActivity(note) {
+  return note && /activ|פעיל|protein|חלבון|muscle|שריר|exercise/i.test(note.he + note.en);
+}
+
+/**
+ * Data-driven tips so every breed gets at least one accurate highlight
+ * when no trait-set or breed note already covers it.
+ */
+function fillContextualHighlights(b, highlightsHe, highlightsEn) {
+  const add = (he, en) => {
+    if (!highlightsHe.includes(he)) {
+      highlightsHe.push(he);
+      highlightsEn.push(en);
+    }
+  };
+
+  const note = BREED_NOTES[b.key];
+  const moderateActivity = !isActive(b) && (b.energy >= 3 || b.exerciseHours >= 1);
+  const lowActivity = b.energy <= 2 && b.exerciseHours <= 1;
+
+  if (isActive(b) && !noteMentionsActivity(note)) {
+    add(
+      "חלבון איכותי — התאימו כמות לעומס הפעילות",
+      "Quality protein — match portions to activity load"
+    );
+  } else if (moderateActivity && !noteMentionsActivity(note)) {
+    add(
+      "התאימו כמות מזון לפעילות היומית",
+      "Adjust food amount to daily activity"
+    );
+  }
+
+  if (lowActivity && !hasWeightTip(highlightsHe)) {
+    add(
+      "הימנעו מעודף קלוריות — גזע רגוע יחסית",
+      "Avoid excess calories — relatively calm breed"
+    );
+  }
+
+  if (
+    (TOY_HYPOGLYCEMIA.has(b.key) || (b.sizeRank === 1 && maxWeightKg(b) <= 6)) &&
+    !hasMealTip(highlightsHe)
+  ) {
+    add(
+      "ארוחות קטנות ותכופות — יציבות סוכר",
+      "Frequent small meals — blood sugar stability"
+    );
+  }
+
+  if (b.shedding === 2 && !hasOmegaTip(highlightsHe)) {
+    add("אומגה 3 לתמיכה בבריאות הפרווה", "Omega-3 to support coat health");
+  }
+
+  if (b.sizeRank === 1 && maxWeightKg(b) > 6 && maxWeightKg(b) <= 14 && !hasWeightTip(highlightsHe)) {
+    add(
+      "גר גדול ומנות מדודות — מניעת עודף משקל",
+      "Large kibble and measured portions — prevent weight gain"
+    );
+  }
+
+  if (
+    (b.sizeRank >= 3 || isGiant(b)) &&
+    !highlightsHe.some((t) => /מפרק|joint|glucosamine|condroitin/i.test(t))
+  ) {
+    add(
+      "תמיכה במפרקים — חשוב בגזעים גדולים",
+      "Joint support — important in large breeds"
+    );
+  }
+
+  if (highlightsHe.length === 0) {
+    add(
+      "מזון מלא ומאוזן (AAFCO) — מים טריים תמיד",
+      "Complete balanced diet (AAFCO) — fresh water always"
+    );
+  }
+}
+
 function extraNutrients(b, partsHe, partsEn) {
   const add = (he, en) => {
     if (!partsHe.includes(he)) {
@@ -423,6 +528,7 @@ function recommendedFoodFor(b) {
   const highlightsEn = extrasEn.slice();
   if (noteHe) highlightsHe.push(noteHe);
   if (noteEn) highlightsEn.push(noteEn);
+  fillContextualHighlights(b, highlightsHe, highlightsEn);
 
   const portionHe = "כמות לפי משקל, גיל ופעילות (וטרינר).";
   const portionEn = "Amount by weight, age, and activity (vet).";
