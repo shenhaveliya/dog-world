@@ -4594,6 +4594,27 @@ function _formatRange(min, max, sign) {
   return `${sign}${fmt(min)}–${fmt(max)}`;
 }
 
+/** @returns {1|2|3} 1 = indoor-oriented, 2 = flexible, 3 = outdoor-oriented */
+function _inferLivingPref(b) {
+  const blob = [
+    b.suitableFor, b.suitableForEn, b.description, b.descriptionEn,
+  ].join(" ").toLowerCase();
+
+  let score = 0;
+  if (/דיר|apartment|flat\b|condo|urban|בית עיר/.test(blob)) score -= 2;
+  if (/שטח|outdoor|farm|חווה|livestock|שמירה|\bguard|צייד|hunt|fenced yard|large yard|חצר גדול|\byards?\b|רועה|shepherd dog/.test(blob)) score += 2;
+  if (/חצר|yard|גינה|garden/.test(blob)) score += 1;
+
+  if (b.sizeRank === 1) score -= 1;
+  if (b.sizeRank === 4) score += 1;
+  if (b.energy >= 4) score += 1;
+  if (b.energy <= 2 && b.sizeRank === 1) score -= 1;
+
+  if (score <= -1) return 1;
+  if (score >= 2) return 3;
+  return 2;
+}
+
 // Enrich every breed with priceMin/priceMax (USD numeric) plus localized
 // display labels. Keeping this here means filtering, sorting, and the UI
 // all read consistent data without any extra plumbing.
@@ -4611,6 +4632,7 @@ BREEDS.forEach((b) => {
   b.foodEn = food.foodEn;
   b.foodStructHe = food.foodStructHe;
   b.foodStructEn = food.foodStructEn;
+  b.livingPref = _inferLivingPref(b);
 });
 
 if (typeof module !== "undefined" && module.exports) {

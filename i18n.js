@@ -198,6 +198,8 @@ const I18N = {
     quizReasonBeginner: "מתאים לכלב ראשון",
     quizReasonLowShedding: "נושר מעט",
     quizReasonRightSize: "בדיוק הגודל שביקשת",
+    quizReasonIndoor: "מתאים לחיים בפנים",
+    quizReasonOutdoor: "מתאים לחיים בחוץ",
     footerAboutTitle: "על האתר",
     footerAboutBody: "מדריך אינטראקטיבי לבחירת הגזע המתאים לך. נבנה כמיזם קוד פתוח.",
     footerDisclaimer: "המידע באתר הוא להכוונה כללית בלבד, וייתכנו הבדלים בין כלבים מאותו גזע.",
@@ -275,6 +277,10 @@ const I18N = {
         { label: "🆕 כלב ראשון", value: 1 },
         { label: "🐾 קצת ניסיון", value: 2 },
         { label: "🎓 מנוסה / מאלף", value: 3 },
+      ]},
+      { key: "living", text: "האם מעדיפים שהכלב יהיה בחוץ או בפנים?", options: [
+        { label: "🏠 בפנים – דירה או בית", value: "indoor" },
+        { label: "🌳 בחוץ – חצר או שטח פתוח", value: "outdoor" },
       ]},
       { key: "kids", text: "האם יש בבית ילדים קטנים?", options: [
         { label: "👶 כן – חשוב שיתאים לילדים", value: "yes" },
@@ -483,6 +489,8 @@ const I18N = {
     quizReasonBeginner: "Beginner-friendly",
     quizReasonLowShedding: "Low shedding",
     quizReasonRightSize: "Exactly the size you wanted",
+    quizReasonIndoor: "Suited to indoor living",
+    quizReasonOutdoor: "Suited to outdoor living",
     footerAboutTitle: "About",
     footerAboutBody: "An interactive guide to finding the right breed for you. Built as an open-source project.",
     footerDisclaimer: "The information is general guidance only; individual dogs can vary within the same breed.",
@@ -560,6 +568,10 @@ const I18N = {
         { label: "🆕 First dog", value: 1 },
         { label: "🐾 Some experience", value: 2 },
         { label: "🎓 Experienced / trainer", value: 3 },
+      ]},
+      { key: "living", text: "Do you prefer an indoor or outdoor dog?", options: [
+        { label: "🏠 Indoors – apartment or home", value: "indoor" },
+        { label: "🌳 Outdoors – yard or open space", value: "outdoor" },
       ]},
       { key: "kids", text: "Are there small kids at home?", options: [
         { label: "👶 Yes – it should suit kids", value: "yes" },

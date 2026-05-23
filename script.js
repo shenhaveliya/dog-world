@@ -41,6 +41,7 @@
  * @property {boolean} goodWithKids
  * @property {string} foodHe
  * @property {string} foodEn
+ * @property {1|2|3} [livingPref]
  */
 
 /* =====================================================================
@@ -2992,7 +2993,9 @@ function renderQuizStep() {
   quizBody.querySelectorAll(".quiz-option").forEach((btn) => {
     btn.addEventListener("click", () => {
       const v = btn.dataset.value;
-      quizAnswers[q.key] = isNaN(Number(v)) || v === "skip" || v === "yes" || v === "no" ? v : Number(v);
+      quizAnswers[q.key] = isNaN(Number(v)) || v === "skip" || v === "yes" || v === "no" || v === "indoor" || v === "outdoor"
+        ? v
+        : Number(v);
       quizBody.querySelectorAll(".quiz-option").forEach((b) => b.classList.remove("selected"));
       btn.classList.add("selected");
       quizBody.querySelector(".quiz-next").disabled = false;
@@ -3020,6 +3023,7 @@ function maxQuizDistance() {
   if (quizAnswers.experience !== "skip" && quizAnswers.experience != null) max += 2 * 2;
   if (quizAnswers.kids === "yes") max += 4;
   if (quizAnswers.cats === "yes") max += 4;
+  if (quizAnswers.living === "indoor" || quizAnswers.living === "outdoor") max += 4;
   return Math.max(max, 1); // never zero, to avoid div-by-zero
 }
 
@@ -3035,6 +3039,8 @@ function quizReasonsFor(breed) {
   if (quizAnswers.experience === 1 && breed.experience === 1) reasons.push(t("quizReasonBeginner"));
   if (quizAnswers.kids === "yes" && breed.goodWithKids) reasons.push(t("quizReasonGoodKids"));
   if (quizAnswers.cats === "yes" && breed.goodWithCats) reasons.push(t("quizReasonGoodCats"));
+  if (quizAnswers.living === "indoor" && breed.livingPref === 1) reasons.push(t("quizReasonIndoor"));
+  if (quizAnswers.living === "outdoor" && breed.livingPref === 3) reasons.push(t("quizReasonOutdoor"));
   return reasons.slice(0, 2); // keep the podium card compact
 }
 
@@ -3061,6 +3067,10 @@ function renderQuizResult() {
     }
     if (quizAnswers.kids === "yes" && !breed.goodWithKids) dist += 4;
     if (quizAnswers.cats === "yes" && !breed.goodWithCats) dist += 4;
+    if (quizAnswers.living === "indoor" && breed.livingPref === 3) dist += 4;
+    if (quizAnswers.living === "outdoor" && breed.livingPref === 1) dist += 4;
+    if (quizAnswers.living === "indoor" && breed.livingPref === 2) dist += 2;
+    if (quizAnswers.living === "outdoor" && breed.livingPref === 2) dist += 1;
     return { breed, dist };
   }).sort((a, b) => {
     if (a.dist !== b.dist) return a.dist - b.dist;
