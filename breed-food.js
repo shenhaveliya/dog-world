@@ -359,8 +359,8 @@ function mealSchedule(b) {
   }
   if (BLOAT_RISK.has(b.key) || isGiant(b)) {
     return {
-      he: "2–3 ארוחות קטנות, אכילה לאט (מזין איטי)",
-      en: "2–3 smaller meals, slow feeder",
+      he: "2–3 ארוחות קטנות בקערת האכלה האיטית",
+      en: "2–3 smaller meals, slow-feed bowl",
     };
   }
   if (b.sizeRank === 1) {
