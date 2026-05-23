@@ -1618,10 +1618,15 @@ function positionSortMenu() {
     maxHeight: "",
     overflowY: "",
   });
-  const menuWidth = sortMenu.offsetWidth || sortMenu.scrollWidth || 260;
+  const menuWidth = Math.max(
+    sortMenu.getBoundingClientRect().width,
+    sortMenu.offsetWidth,
+    sortMenu.scrollWidth,
+    260,
+  );
   const menuHeight = sortMenu.offsetHeight;
 
-  // RTL: align menu's trailing edge with the trigger; LTR: leading edge.
+  // Align with the trigger; in RTL match trailing edges, in LTR match leading edges.
   let left = isRtl ? tr.right - menuWidth : tr.left;
   left = Math.max(pad, Math.min(left, vw - menuWidth - pad));
 
@@ -1646,8 +1651,10 @@ function positionSortMenu() {
     top: `${top}px`,
     left: `${left}px`,
     right: "auto",
+    bottom: "auto",
     insetInlineStart: "auto",
     insetInlineEnd: "auto",
+    width: `${menuWidth}px`,
     zIndex: "200",
   });
   if (cappedHeight != null) {
@@ -1695,9 +1702,10 @@ function shouldUseInlineSortMenu() {
   return document.body.classList.contains("filters-open");
 }
 
-/** Hoist the menu to <body> whenever we're not in inline accordion mode. */
+/** Hoist the menu to <body> only on narrow viewports (not inline accordion). */
 function shouldHoistSortMenu() {
-  return !shouldUseInlineSortMenu();
+  return !shouldUseInlineSortMenu() &&
+    window.matchMedia("(max-width: 800px)").matches;
 }
 
 /** Close the popover when the page scrolls on narrow viewports only. */
@@ -1725,21 +1733,33 @@ function openSortMenu() {
       insetInlineStart: "", insetInlineEnd: "",
       maxHeight: "", overflowY: "", zIndex: "",
     });
-  } else {
-    // Hoist to <body> + fixed coords so breed cards never paint over the menu.
+  } else if (hoist) {
+    // Mobile floating: hoist to <body> + fixed coords.
     if (sortMenu.parentElement !== document.body) {
       _sortMenuOriginalParent = sortMenu.parentElement;
       document.body.appendChild(sortMenu);
     }
+  } else {
+    // Desktop: CSS-anchored popover stays inside .sort-dropdown.
+    if (_sortMenuOriginalParent && sortMenu.parentElement === document.body) {
+      _sortMenuOriginalParent.appendChild(sortMenu);
+      _sortMenuOriginalParent = null;
+    }
+    Object.assign(sortMenu.style, {
+      position: "", top: "", left: "", right: "",
+      insetInlineStart: "", insetInlineEnd: "",
+      maxHeight: "", overflowY: "", zIndex: "",
+    });
   }
 
   sortDropdown.classList.add("open");
   sortDropdown.classList.toggle("has-inline-menu", inline);
   sortMenu.classList.add("is-open");
   sortMenu.classList.toggle("is-inline", inline);
+  sortMenu.classList.toggle("is-floating", hoist);
   sortTrigger.setAttribute("aria-expanded", "true");
 
-  if (!inline) {
+  if (hoist) {
     positionSortMenu();
     if (shouldCloseSortMenuOnScroll()) {
       // Close on any scroll – of the page or of an internal scroll container.
@@ -1771,6 +1791,7 @@ function closeSortMenu() {
   sortDropdown.classList.remove("has-inline-menu");
   sortMenu.classList.remove("is-open");
   sortMenu.classList.remove("is-inline");
+  sortMenu.classList.remove("is-floating");
   sortTrigger.setAttribute("aria-expanded", "false");
 
   if (_sortMenuScrollCloseHandler) {
@@ -1784,9 +1805,9 @@ function closeSortMenu() {
   // Clear any leftover inline positioning styles so the next open starts
   // from a clean slate, regardless of mode.
   Object.assign(sortMenu.style, {
-    position: "", top: "", left: "", right: "",
+    position: "", top: "", left: "", right: "", bottom: "",
     insetInlineStart: "", insetInlineEnd: "",
-    maxHeight: "", overflowY: "", zIndex: "",
+    maxHeight: "", overflowY: "", zIndex: "", width: "",
   });
 
   // Return the menu to its original DOM home so accessibility relationships

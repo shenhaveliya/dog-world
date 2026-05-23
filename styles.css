@@ -549,7 +549,7 @@ header p {
   gap: 14px;
   align-items: center;
   position: relative;
-  z-index: 2;
+  z-index: 50;
 }
 
 .search-wrapper { position: relative; width: 100%; }
@@ -870,6 +870,13 @@ select.sort-select { display: none; }
 /* `.is-open` is set directly on the menu (in addition to `.sort-dropdown.open`)
    so the open state still applies once the menu has been hoisted to <body>
    to escape a transformed ancestor (see openSortMenu in script.js). */
+.sort-menu.is-floating {
+  position: fixed !important;
+  inset: auto !important;
+  margin: 0;
+  min-width: 260px;
+}
+
 .sort-dropdown.open .sort-menu,
 .sort-menu.is-open {
   visibility: visible;
