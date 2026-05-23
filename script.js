@@ -10,6 +10,8 @@
  * @property {string} key
  * @property {string} nameHe
  * @property {string} nameEn
+ * @property {string} [searchAliasesHe]
+ * @property {string} [searchAliasesEn]
  * @property {string} apiName
  * @property {string} size
  * @property {1|2|3} sizeRank
@@ -237,6 +239,8 @@ function showToast(message, opts = {}) {
 }
 
 /** @param {Breed} b */ function bName(b) { return currentLang === "en" ? b.nameEn : b.nameHe; }
+/** @param {Breed} b */ function bSearchAliasesHe(b) { return b.searchAliasesHe || ""; }
+/** @param {Breed} b */ function bSearchAliasesEn(b) { return b.searchAliasesEn || ""; }
 /** @param {Breed} b */ function bDesc(b) { return currentLang === "en" ? b.descriptionEn : b.description; }
 /** @param {Breed} b */ function bEnergy(b) { return currentLang === "en" ? b.energyLabelEn : b.energyLabel; }
 /** @param {Breed} b */ function bLifespan(b) { return currentLang === "en" ? b.lifespanLabelEn : b.lifespanLabel; }
@@ -803,8 +807,8 @@ function renderCard(breed) {
              data-breed="${escapeHTML(breed.key)}"
              data-name-he="${escapeHTML(breed.nameHe.toLowerCase())}"
              data-name-en="${escapeHTML(breed.nameEn.toLowerCase())}"
-             data-search-he="${escapeHTML((breed.description + " " + breed.character + " " + breed.suitableFor + " " + breed.origin + " " + breed.foodHe).toLowerCase())}"
-             data-search-en="${escapeHTML((breed.descriptionEn + " " + breed.characterEn + " " + breed.suitableForEn + " " + breed.originEn + " " + breed.foodEn).toLowerCase())}"
+             data-search-he="${escapeHTML((bSearchAliasesHe(breed) + " " + breed.description + " " + breed.character + " " + breed.suitableFor + " " + breed.origin + " " + breed.foodHe).toLowerCase())}"
+             data-search-en="${escapeHTML((bSearchAliasesEn(breed) + " " + breed.descriptionEn + " " + breed.characterEn + " " + breed.suitableForEn + " " + breed.originEn + " " + breed.foodEn).toLowerCase())}"
              data-size-rank="${breed.sizeRank}"
              data-energy="${breed.energy}"
              data-shedding="${breed.shedding}"
@@ -1405,7 +1409,8 @@ function renderSearchSuggestions() {
   const matches = BREEDS
     .filter((breed) => {
       const text = [
-        breed.nameHe, breed.nameEn, breed.description, breed.descriptionEn,
+        breed.nameHe, breed.nameEn, bSearchAliasesHe(breed), bSearchAliasesEn(breed),
+        breed.description, breed.descriptionEn,
         breed.character, breed.characterEn, breed.suitableFor, breed.suitableForEn,
         breed.origin, breed.originEn,
       ].join(" ").toLowerCase();

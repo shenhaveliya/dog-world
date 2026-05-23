@@ -57,8 +57,8 @@ function pickField(breed, lang, field) {
 }
 
 function sizeLabel(breed, lang) {
-  const map = { 1: "sizeSmall", 2: "sizeMedium", 3: "sizeLarge" };
-  return I18N[lang][map[breed.sizeRank]];
+  const map = { 1: "sizeSmall", 2: "sizeMedium", 3: "sizeLarge", 4: "sizeGiant" };
+  return I18N[lang][map[breed.sizeRank]] || breed.size;
 }
 
 function trainingLabel(breed, lang) {
