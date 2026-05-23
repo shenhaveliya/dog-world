@@ -1690,13 +1690,11 @@ function shouldUseInlineSortMenu() {
   return document.body.classList.contains("filters-open");
 }
 
-/** Floating fixed positioning is only needed on narrow viewports where the
- *  toolbar wraps and the trigger can sit flush against a viewport edge.
- *  On desktop the menu stays in the trigger's DOM home and CSS absolute
- *  anchoring is reliable (and avoids the mis-placement that hoisting to
- *  <body> causes when the page layout is wide). */
+/** Hoist the menu to <body> and use fixed positioning whenever we're not
+ *  in inline accordion mode (mobile filter sheet). Escapes the filter bar's
+ *  stacking context so breed cards never show through the menu background. */
 function shouldUseFloatingSortMenu() {
-  return window.matchMedia("(max-width: 800px)").matches && !shouldUseInlineSortMenu();
+  return !shouldUseInlineSortMenu();
 }
 
 function openSortMenu() {
