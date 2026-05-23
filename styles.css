@@ -851,11 +851,11 @@ select.sort-select { display: none; }
   box-shadow: 0 22px 50px rgba(15, 23, 42, 0.32),
               0 4px 12px rgba(15, 23, 42, 0.12);
   z-index: 60;
-  opacity: 0;
   visibility: hidden;
+  pointer-events: none;
   transform: translateY(-8px) scale(0.97);
   transform-origin: top right;
-  transition: opacity 0.18s ease, transform 0.2s cubic-bezier(0.2, 1, 0.2, 1),
+  transition: transform 0.2s cubic-bezier(0.2, 1, 0.2, 1),
               visibility 0s linear 0.18s;
 }
 /* Dark mode: slightly brighter than the page so the menu lifts clearly. */
@@ -872,16 +872,14 @@ select.sort-select { display: none; }
    to escape a transformed ancestor (see openSortMenu in script.js). */
 .sort-dropdown.open .sort-menu,
 .sort-menu.is-open {
-  opacity: 1;
   visibility: visible;
+  pointer-events: auto;
   transform: translateY(0) scale(1);
-  transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.2, 1, 0.2, 1),
+  transition: transform 0.22s cubic-bezier(0.2, 1, 0.2, 1),
               visibility 0s linear 0s;
   /* When hoisted to <body> the menu sits in the page's root stacking
-     context, so it has to outrank the mobile filter sheet (z-index 80)
-     and the bottom nav (z-index 90) – otherwise it disappears behind
-     them. The default z-index of 60 is fine when nested in the trigger. */
-  z-index: 110;
+     context, so it has to outrank breed cards and the mobile filter sheet. */
+  z-index: 200;
 }
 
 .sort-option {
@@ -899,7 +897,7 @@ select.sort-select { display: none; }
 }
 .sort-option:hover,
 .sort-option:focus-visible {
-  background: color-mix(in srgb, var(--accent-1) 12%, transparent);
+  background: color-mix(in srgb, var(--accent-1) 12%, var(--modal-bg));
   outline: none;
 }
 .sort-option:active { transform: scale(0.98); }
@@ -943,8 +941,8 @@ select.sort-select { display: none; }
 /* Active option: tinted background + emphasized icon + check shown. */
 .sort-option.is-active {
   background: linear-gradient(135deg,
-    color-mix(in srgb, var(--accent-1) 14%, transparent),
-    color-mix(in srgb, var(--accent-2) 14%, transparent));
+    color-mix(in srgb, var(--accent-1) 14%, var(--modal-bg)),
+    color-mix(in srgb, var(--accent-2) 14%, var(--modal-bg)));
   color: var(--text);
   font-weight: 600;
 }
@@ -1000,8 +998,8 @@ select.sort-select { display: none; }
   background-color: #233044;
 }
 .sort-menu.is-inline.is-open {
-  opacity: 1;
   visibility: visible;
+  pointer-events: auto;
 }
 /* When the menu is opened inline, let the dropdown take a full row so the
    menu has room to expand under it. The toolbar uses flex-wrap, so this

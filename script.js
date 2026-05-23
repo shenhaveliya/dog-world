@@ -1648,6 +1648,7 @@ function positionSortMenu() {
     right: "auto",
     insetInlineStart: "auto",
     insetInlineEnd: "auto",
+    zIndex: "200",
   });
   if (cappedHeight != null) {
     sortMenu.style.maxHeight = `${cappedHeight}px`;
@@ -1694,11 +1695,14 @@ function shouldUseInlineSortMenu() {
   return document.body.classList.contains("filters-open");
 }
 
-/** Floating fixed positioning on narrow viewports where the toolbar wraps.
- *  On desktop the menu stays anchored to its trigger via CSS absolute
- *  positioning (reliable in RTL) while the opaque background prevents bleed-through. */
-function shouldUseFloatingSortMenu() {
-  return window.matchMedia("(max-width: 800px)").matches && !shouldUseInlineSortMenu();
+/** Hoist the menu to <body> whenever we're not in inline accordion mode. */
+function shouldHoistSortMenu() {
+  return !shouldUseInlineSortMenu();
+}
+
+/** Close the popover when the page scrolls on narrow viewports only. */
+function shouldCloseSortMenuOnScroll() {
+  return window.matchMedia("(max-width: 800px)").matches;
 }
 
 function openSortMenu() {
@@ -1708,11 +1712,10 @@ function openSortMenu() {
   if (sortMenu.children.length === 0) renderSortMenu();
 
   const inline = shouldUseInlineSortMenu();
-  const floating = shouldUseFloatingSortMenu();
+  const hoist = shouldHoistSortMenu();
 
-  if (inline || !floating) {
-    // Inline + desktop anchored modes: keep the menu in its original DOM
-    // home (in case a previous open hoisted it) and drop any JS positioning.
+  if (inline) {
+    // Inline accordion: keep the menu in its original DOM home.
     if (_sortMenuOriginalParent && sortMenu.parentElement === document.body) {
       _sortMenuOriginalParent.appendChild(sortMenu);
       _sortMenuOriginalParent = null;
@@ -1723,8 +1726,7 @@ function openSortMenu() {
       maxHeight: "", overflowY: "", zIndex: "",
     });
   } else {
-    // Floating mode: hoist to <body> so `position: fixed` is anchored to
-    // the actual viewport rather than a transformed ancestor.
+    // Hoist to <body> + fixed coords so breed cards never paint over the menu.
     if (sortMenu.parentElement !== document.body) {
       _sortMenuOriginalParent = sortMenu.parentElement;
       document.body.appendChild(sortMenu);
@@ -1737,19 +1739,21 @@ function openSortMenu() {
   sortMenu.classList.toggle("is-inline", inline);
   sortTrigger.setAttribute("aria-expanded", "true");
 
-  if (floating) {
+  if (!inline) {
     positionSortMenu();
-    // Close on any scroll – of the page or of an internal scroll container.
-    // Deferred by one frame so any layout-settling scroll on open doesn't
-    // immediately close the menu.
-    _sortMenuScrollCloseTargets = [window, ...collectScrollableAncestors(sortTrigger)];
-    _sortMenuScrollCloseHandler = () => closeSortMenu();
-    requestAnimationFrame(() => {
-      if (!sortDropdown.classList.contains("open")) return;
-      for (const t of _sortMenuScrollCloseTargets) {
-        t.addEventListener("scroll", _sortMenuScrollCloseHandler, { passive: true });
-      }
-    });
+    if (shouldCloseSortMenuOnScroll()) {
+      // Close on any scroll – of the page or of an internal scroll container.
+      // Deferred by one frame so any layout-settling scroll on open doesn't
+      // immediately close the menu.
+      _sortMenuScrollCloseTargets = [window, ...collectScrollableAncestors(sortTrigger)];
+      _sortMenuScrollCloseHandler = () => closeSortMenu();
+      requestAnimationFrame(() => {
+        if (!sortDropdown.classList.contains("open")) return;
+        for (const t of _sortMenuScrollCloseTargets) {
+          t.addEventListener("scroll", _sortMenuScrollCloseHandler, { passive: true });
+        }
+      });
+    }
   }
 
   // Focus the currently-active option so keyboard users land on it.
@@ -1875,7 +1879,7 @@ if (sortTrigger && sortMenu) {
   // per-open inside openSortMenu so it can also catch internal scrollers
   // like the mobile filter sheet.
   window.addEventListener("resize", () => {
-    if (sortDropdown.classList.contains("open") && shouldUseFloatingSortMenu()) {
+    if (sortDropdown.classList.contains("open") && shouldHoistSortMenu()) {
       positionSortMenu();
     }
   });
