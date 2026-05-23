@@ -1600,30 +1600,31 @@ function renderSortMenu() {
  *  flipping handles short pages too. */
 function positionSortMenu() {
   if (!sortTrigger || !sortMenu) return;
-  // Reset any inline overrides so we can measure the menu's natural size
-  // (the CSS rules will re-apply: position:absolute with default insets).
-  Object.assign(sortMenu.style, {
-    position: "", top: "", left: "", right: "",
-    insetInlineStart: "", insetInlineEnd: "",
-    maxHeight: "", overflowY: "",
-  });
 
   const tr = sortTrigger.getBoundingClientRect();
-  const menuWidth = sortMenu.offsetWidth;
-  const menuHeight = sortMenu.offsetHeight;
   const vw = window.innerWidth || document.documentElement.clientWidth;
   const vh = window.innerHeight || document.documentElement.clientHeight;
   const pad = 8;
+  const isRtl = document.documentElement.dir === "rtl";
 
-  // Anchor to whichever trigger edge is closer to a viewport edge, so the
-  // menu extends inward (into the available space) rather than outward.
-  let left = tr.right > vw / 2
-    ? tr.right - menuWidth        // align menu's right edge with trigger's right edge
-    : tr.left;                    // align menu's left edge with trigger's left edge
+  // Measure at natural width without absolute/RTL inset rules fighting fixed coords.
+  Object.assign(sortMenu.style, {
+    position: "fixed",
+    top: "-9999px",
+    left: "0",
+    right: "auto",
+    insetInlineStart: "auto",
+    insetInlineEnd: "auto",
+    maxHeight: "",
+    overflowY: "",
+  });
+  const menuWidth = sortMenu.offsetWidth || sortMenu.scrollWidth || 260;
+  const menuHeight = sortMenu.offsetHeight;
+
+  // RTL: align menu's trailing edge with the trigger; LTR: leading edge.
+  let left = isRtl ? tr.right - menuWidth : tr.left;
   left = Math.max(pad, Math.min(left, vw - menuWidth - pad));
 
-  // Vertical placement: prefer below, fall back to above, then to whichever
-  // side has more room (with an internal scroll if the menu still can't fit).
   const spaceBelow = vh - tr.bottom - pad;
   const spaceAbove = tr.top - pad;
   let top;
@@ -1644,13 +1645,16 @@ function positionSortMenu() {
     position: "fixed",
     top: `${top}px`,
     left: `${left}px`,
+    right: "auto",
     insetInlineStart: "auto",
     insetInlineEnd: "auto",
-    right: "auto",
   });
   if (cappedHeight != null) {
     sortMenu.style.maxHeight = `${cappedHeight}px`;
     sortMenu.style.overflowY = "auto";
+  } else {
+    sortMenu.style.maxHeight = "";
+    sortMenu.style.overflowY = "";
   }
 }
 
@@ -1690,11 +1694,11 @@ function shouldUseInlineSortMenu() {
   return document.body.classList.contains("filters-open");
 }
 
-/** Hoist the menu to <body> and use fixed positioning whenever we're not
- *  in inline accordion mode (mobile filter sheet). Escapes the filter bar's
- *  stacking context so breed cards never show through the menu background. */
+/** Floating fixed positioning on narrow viewports where the toolbar wraps.
+ *  On desktop the menu stays anchored to its trigger via CSS absolute
+ *  positioning (reliable in RTL) while the opaque background prevents bleed-through. */
 function shouldUseFloatingSortMenu() {
-  return !shouldUseInlineSortMenu();
+  return window.matchMedia("(max-width: 800px)").matches && !shouldUseInlineSortMenu();
 }
 
 function openSortMenu() {
