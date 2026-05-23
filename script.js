@@ -2015,9 +2015,7 @@ function applyFilters() {
     const breed = card.dataset.breed;
 
     const matchSearch = cardMatchesSearch(card, searchText);
-    const matchSize = selectedSizes.size === 0 ||
-      selectedSizes.has(sizeRank) ||
-      (selectedSizes.has(3) && sizeRank === 4);
+    const matchSize = selectedSizes.size === 0 || selectedSizes.has(sizeRank);
     const matchFav = !favOnly || isFavorite(breed);
     const matchAttrs = cardMatchesAttrs(card);
 
@@ -2143,9 +2141,8 @@ function renderFilterChips(searchText) {
     chips.push(chipHTML("search", t("chipSearch", searchInput.value.trim())));
   }
   selectedSizes.forEach((rank) => {
-    const breed = BREEDS.find((b) => b.sizeRank === rank) ||
-      (rank === 3 ? BREEDS.find((b) => b.sizeRank === 4) : null);
-    if (breed) chips.push(chipHTML("size:" + rank, t("chipSize", bSize(breed))));
+    const sizeKey = { 1: "sizeSmall", 2: "sizeMedium", 3: "sizeLarge", 4: "sizeGiant" }[rank];
+    if (sizeKey) chips.push(chipHTML("size:" + rank, t("chipSize", t(sizeKey))));
   });
   activeAttrs.forEach((attr) => {
     chips.push(chipHTML("attr:" + attr, attrLabel(attr)));
