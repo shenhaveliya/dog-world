@@ -480,6 +480,7 @@ const CURATED_COLLECTIONS = [
   { id: "firstDog", labelKey: "collectionFirstDog", attrs: ["beginner"] },
   { id: "active", labelKey: "collectionActive", attrs: ["activePeople"] },
 ];
+let prefersReducedMotion = false;
 try {
   prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 } catch (e) { /* ignore */ }
