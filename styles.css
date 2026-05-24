@@ -4441,6 +4441,19 @@ button:active:not(:disabled),
     color: var(--text);
     font-weight: 900;
   }
+  /* Size filters: keep all five pills on one row inside the filter sheet. */
+  .buttons {
+    flex-wrap: nowrap;
+    gap: 5px;
+  }
+  .buttons .size-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 9px 4px;
+    font-size: 13px;
+    text-align: center;
+    white-space: nowrap;
+  }
   .filters {
     position: fixed;
     inset-inline: 0;
