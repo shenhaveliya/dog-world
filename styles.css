@@ -4070,7 +4070,8 @@ a.pill-btn-wiki:hover {
     letter-spacing: 0.02em;
     box-shadow: 0 12px 28px rgba(249, 115, 22, 0.4);
   }
-  /* Density toggle is desktop-only — compact grid crashes mobile Safari. */
+  /* Grid-only on mobile — hide list + density toggles. */
+  .view-toggle.is-mobile-hidden,
   .density-toggle.is-mobile-hidden { display: none !important; }
 }
 

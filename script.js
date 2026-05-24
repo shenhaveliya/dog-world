@@ -436,6 +436,7 @@ const filterChipsEl = document.getElementById("filterChips");
 const favoritesHeadingEl = document.getElementById("favoritesHeading");
 const mobileNavEl = document.getElementById("mobileNav");
 const densityToggleBtn = document.getElementById("densityToggle");
+const viewToggleGroup = document.querySelector(".view-toggle");
 const viewToggleEls = document.querySelectorAll(".view-btn");
 const quickPeekEl = document.getElementById("quickPeek");
 const mobileFilterOpenBtn = document.getElementById("mobileFilterOpen");
@@ -2296,23 +2297,43 @@ function isMobileViewport() {
   return window.matchMedia("(max-width: 800px)").matches;
 }
 
-/** Compact density is desktop-only; hide the toggle on mobile and keep
- *  comfortable grid cards so toggling density cannot crash iOS Safari. */
+/** On mobile: grid view only (hide list + density toggles). Desktop keeps both. */
 function syncLayoutControls() {
   if (!cardsContainer) return;
   const mobile = isMobileViewport();
+  if (viewToggleGroup) {
+    viewToggleGroup.classList.toggle("is-mobile-hidden", mobile);
+    viewToggleGroup.setAttribute("aria-hidden", mobile ? "true" : "false");
+  }
   if (densityToggleBtn) {
     densityToggleBtn.classList.toggle("is-mobile-hidden", mobile);
     densityToggleBtn.disabled = mobile;
     densityToggleBtn.setAttribute("aria-hidden", mobile ? "true" : "false");
   }
-  if (mobile && cardsContainer.classList.contains("is-compact")) {
-    cardsContainer.classList.remove("is-compact");
-    if (densityToggleBtn) {
-      densityToggleBtn.setAttribute("aria-pressed", "false");
-      densityToggleBtn.textContent = "▤";
+  if (mobile) {
+    cardsContainer.classList.remove("is-list");
+    viewToggleEls.forEach((b) => {
+      const active = b.dataset.view === "grid";
+      b.classList.toggle("active", active);
+      b.setAttribute("aria-pressed", active);
+    });
+    if (cardsContainer.classList.contains("is-compact")) {
+      cardsContainer.classList.remove("is-compact");
+      if (densityToggleBtn) {
+        densityToggleBtn.setAttribute("aria-pressed", "false");
+        densityToggleBtn.textContent = "▤";
+      }
+      try { localStorage.setItem(DENSITY_KEY, "comfortable"); } catch (e) { /* ignore */ }
     }
-    try { localStorage.setItem(DENSITY_KEY, "comfortable"); } catch (e) { /* ignore */ }
+  } else {
+    let savedView = "grid";
+    try { savedView = localStorage.getItem(VIEW_KEY) || "grid"; } catch (e) { /* ignore */ }
+    cardsContainer.classList.toggle("is-list", savedView === "list");
+    viewToggleEls.forEach((b) => {
+      const active = b.dataset.view === savedView;
+      b.classList.toggle("active", active);
+      b.setAttribute("aria-pressed", active);
+    });
   }
 }
 
@@ -3402,6 +3423,7 @@ function applyDensity(mode) {
 
 function applyView(mode) {
   if (mode !== "grid" && mode !== "list") return;
+  if (isMobileViewport()) mode = "grid";
   runAfterFilterSheet(() => {
     if (!cardsContainer) return;
     cardsContainer.classList.toggle("is-list", mode === "list");
@@ -3419,11 +3441,13 @@ function applyView(mode) {
 /** Restore saved layout prefs on first paint (no deferred reflow). */
 function restoreLayoutPrefs(density, view) {
   if (!cardsContainer) return;
-  const compact = density === "compact" && !isMobileViewport();
-  cardsContainer.classList.toggle("is-list", view === "list");
+  const mobile = isMobileViewport();
+  const effectiveView = mobile ? "grid" : view;
+  const compact = density === "compact" && !mobile;
+  cardsContainer.classList.toggle("is-list", effectiveView === "list");
   cardsContainer.classList.toggle("is-compact", compact);
   viewToggleEls.forEach((b) => {
-    const active = b.dataset.view === view;
+    const active = b.dataset.view === effectiveView;
     b.classList.toggle("active", active);
     b.setAttribute("aria-pressed", active);
   });
