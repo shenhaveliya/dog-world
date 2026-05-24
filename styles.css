@@ -3870,37 +3870,107 @@ a.pill-btn-wiki:hover {
 .cards.is-list .image-action-btn:hover { background: var(--input-border); }
 /* Tighten the action column so the icons + button don't get extra padding. */
 .cards.is-list .card-open-btn { margin-inline-end: 4px; }
-@media (max-width: 600px) {
-  /* List collapses back to a stacked card on phones to stay readable. */
-  .cards.is-list .card {
-    grid-template-columns: 1fr;
+
+/* List view on phones/tablets: stack like a normal card instead of the
+   desktop horizontal row (image | body | actions | CTA). The compact-list
+   rules above use higher class specificity and would otherwise keep the
+   110px side-by-side grid on narrow screens. */
+@media (max-width: 800px) {
+  .cards.is-list .card,
+  .cards.is-list.is-compact .card {
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: unset;
+    grid-template-rows: unset;
+    grid-auto-rows: unset;
+    align-items: stretch;
+    padding: 14px;
+    padding-bottom: 0;
+    gap: 0;
   }
-  .cards.is-list .dog-image-wrapper {
-    grid-column: 1;
-    grid-row: 1;
+  .cards.is-list .dog-image-wrapper,
+  .cards.is-list.is-compact .dog-image-wrapper {
+    order: 0;
+    grid-column: unset;
+    grid-row: unset;
     width: 100%;
     height: 180px;
+    margin: -14px -14px 12px -14px;
+    align-self: stretch;
   }
   .cards.is-list .card h2,
   .cards.is-list .size,
   .cards.is-list .description,
-  .cards.is-list .info { grid-column: 1; }
-  .cards.is-list .card h2          { grid-row: 2; }
-  .cards.is-list .size             { grid-row: 3; }
-  .cards.is-list .description      { grid-row: 4; }
-  .cards.is-list .info             { grid-row: 5; }
+  .cards.is-list .info,
   .cards.is-list .card-open-btn {
-    grid-column: 1;
-    grid-row: 6;
-    width: 100%;
+    grid-column: unset;
+    grid-row: unset;
+    width: auto;
+    max-width: none;
   }
-  /* On phones, restore the image-actions to their absolute hover position
-     over the (now full-width) image — no separate column on small screens. */
+  .cards.is-list .card h2 {
+    order: 1;
+    margin: 0 0 8px;
+    font-size: 20px;
+  }
+  .cards.is-list .size {
+    order: 2;
+    margin: 0 0 10px;
+  }
+  .cards.is-list .description {
+    order: 3;
+    display: block;
+    margin: 0 0 12px;
+  }
+  .cards.is-list.is-compact .description { display: block; }
+  .cards.is-list .info {
+    order: 4;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    flex-wrap: unset;
+    gap: 6px;
+    margin-top: 0;
+  }
+  .cards.is-list .stat {
+    flex: unset;
+    font-size: 12px;
+    padding: 8px 10px;
+    border-radius: var(--r-md);
+  }
+  .cards.is-list .stat.full { display: flex; }
+  .cards.is-list .food-open-btn {
+    flex: unset;
+    grid-column: 1 / -1;
+    width: 100%;
+    margin-top: 4px;
+    padding: 10px 12px;
+    gap: 12px;
+  }
+  .cards.is-list .food-open-icon-wrap {
+    width: 36px;
+    height: 36px;
+  }
+  .cards.is-list .food-open-label { font-size: 12px; }
+  .cards.is-list .food-open-action {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .cards.is-list .card-open-btn {
+    order: 5;
+    align-self: stretch;
+    width: auto;
+    margin: 12px -14px 0;
+    padding: 12px 16px;
+    border-radius: 0 0 var(--r-xl) var(--r-xl);
+  }
+  /* Restore hover-style image actions over the full-width photo. */
   .cards.is-list .image-actions {
     position: absolute;
     top: 22px;
     inset-inline-end: 22px;
     flex-direction: row;
+    grid-column: unset;
+    grid-row: unset;
     background: rgba(15, 23, 42, 0.55);
     border: 1px solid rgba(255, 255, 255, 0.14);
     backdrop-filter: blur(14px);
@@ -3912,6 +3982,9 @@ a.pill-btn-wiki:hover {
   .cards.is-list .image-action-btn {
     background: rgba(255, 255, 255, 0.12);
     color: white;
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
   }
   .cards.is-list .image-action-btn:hover { background: rgba(255, 255, 255, 0.28); }
 }
