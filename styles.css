@@ -3900,14 +3900,26 @@ a.pill-btn-wiki:hover {
     flex: 0 0 auto;
     border-radius: 0;
     overflow: hidden;
-    background: var(--info-bg);
+    background: var(--image-placeholder);
+  }
+  .cards.is-list .dog-image-wrapper:not(.no-image) {
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    padding: 10px 12px 0;
   }
   .cards.is-list .dog-image-wrapper .dog-image {
-    width: 100%;
-    height: 156px;
-    object-fit: cover;
-    border-radius: 0;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: min(56vw, 240px);
+    object-fit: contain;
+    object-position: center;
+    border-radius: var(--r-md);
     flex: 0 0 auto;
+  }
+  .cards.is-list .card:hover .dog-image {
+    transform: none;
   }
   .cards.is-list .dog-image-wrapper.no-image {
     display: flex;
@@ -4040,9 +4052,23 @@ a.pill-btn-wiki:hover {
     font-size: 12px;
   }
   .cards.is-list .card-open-btn {
-    margin: 14px 0 0;
-    padding: 14px 16px;
-    border-radius: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 16px 16px 18px;
+    padding: 14px 20px;
+    border-radius: var(--r-pill);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    box-shadow: 0 10px 24px rgba(249, 115, 22, 0.32);
+  }
+  .cards.is-list .card-open-btn:hover,
+  .cards.is-list .card-open-btn:focus-visible {
+    padding-block: 14px;
+    letter-spacing: 0.02em;
+    box-shadow: 0 12px 28px rgba(249, 115, 22, 0.4);
   }
   /* Density toggle is desktop-only — compact grid crashes mobile Safari. */
   .density-toggle.is-mobile-hidden { display: none !important; }
