@@ -4434,6 +4434,7 @@ button:active:not(:disabled),
    SITE ENHANCEMENTS (discovery, collections, compare hints, food callout)
 ===================================================================== */
 .discovery-banner {
+  position: relative;
   margin: 0 0 16px;
   border: 1px solid color-mix(in srgb, var(--accent-1) 35%, var(--input-border));
   border-radius: var(--r-lg);
@@ -4441,17 +4442,18 @@ button:active:not(:disabled),
   box-shadow: 0 12px 28px rgba(249, 115, 22, 0.12);
 }
 .discovery-banner-inner {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
   padding: 14px 16px;
+  padding-inline-end: 44px;
 }
+.discovery-banner-copy { min-width: 0; }
 .discovery-banner-title { display: block; font-size: 16px; margin-bottom: 4px; }
 .discovery-banner-text { margin: 0 0 10px; color: var(--text-muted); font-size: 14px; line-height: 1.45; }
 .discovery-banner-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .discovery-banner-actions .pill-btn { padding: 8px 14px; font-size: 13px; }
 .discovery-dismiss {
-  flex-shrink: 0;
+  position: absolute;
+  top: 12px;
+  inset-inline-end: 12px;
   width: 32px;
   height: 32px;
   border: 1px solid var(--input-border);
@@ -4460,6 +4462,11 @@ button:active:not(:disabled),
   color: var(--text);
   cursor: pointer;
   font-weight: 900;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 
 .collections-section { margin: 0 0 20px; }
