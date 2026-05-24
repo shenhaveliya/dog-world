@@ -3873,12 +3873,12 @@ a.pill-btn-wiki:hover {
 /* Tighten the action column so the icons + button don't get extra padding. */
 .cards.is-list .card-open-btn { margin-inline-end: 4px; }
 
-/* List view on phones/tablets: full-width photo strip + flowing body. */
+/* List view on phones/tablets: banner photo, action bar, scannable body. */
 @media (max-width: 800px) {
   .cards.is-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
   }
   .cards.is-list .card {
     display: flex;
@@ -3889,99 +3889,57 @@ a.pill-btn-wiki:hover {
     transform: none !important;
     overflow: hidden;
   }
+  /* Photo block: image on top, action buttons in a bar underneath — never on the photo. */
   .cards.is-list .dog-image-wrapper {
     position: relative;
+    display: flex;
+    flex-direction: column;
     width: 100%;
-    height: 148px;
+    height: auto;
     margin: 0;
     flex: 0 0 auto;
     border-radius: 0;
     overflow: hidden;
+    background: var(--info-bg);
   }
   .cards.is-list .dog-image-wrapper .dog-image {
     width: 100%;
-    height: 100%;
+    height: 156px;
     object-fit: cover;
     border-radius: 0;
+    flex: 0 0 auto;
   }
   .cards.is-list .dog-image-wrapper.no-image {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 148px;
-    height: 148px;
+    min-height: 156px;
+    height: 156px;
     border-radius: 0;
   }
   .cards.is-list .dog-image-wrapper.no-image .no-image-initial {
-    font-size: 48px;
+    font-size: 52px;
   }
   .cards.is-list .dog-image-wrapper.no-image .no-image-label {
     display: none;
   }
-  .cards.is-list .card h2 {
-    margin: 0;
-    padding: 12px 14px 0;
-    font-size: 18px;
-    line-height: 1.25;
-  }
-  .cards.is-list .size {
-    margin: 6px 14px 0;
-    padding: 4px 10px;
-    font-size: 12px;
-    align-self: flex-start;
-  }
-  .cards.is-list .description { display: none; }
-  .cards.is-list .info {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    margin: 10px 14px 0;
-    padding: 0;
-  }
-  .cards.is-list .stat {
-    flex: unset;
-    font-size: 11px;
-    padding: 7px 8px;
-    border-radius: var(--r-md);
-  }
-  .cards.is-list .stat.full { display: none; }
-  .cards.is-list .food-open-btn {
-    flex: unset;
-    grid-column: 1 / -1;
-    width: auto;
-    margin: 8px 14px 0;
-    padding: 9px 11px;
-    gap: 10px;
-  }
-  .cards.is-list .food-open-icon-wrap {
-    width: 32px;
-    height: 32px;
-  }
-  .cards.is-list .food-open-label { font-size: 12px; }
-  .cards.is-list .food-open-action {
-    padding: 5px 9px;
-    font-size: 11px;
-  }
-  .cards.is-list .card-open-btn {
-    margin: 12px 0 0;
-    padding: 12px 16px;
-    border-radius: 0;
-  }
   .cards.is-list .image-actions {
-    position: absolute;
-    bottom: 8px;
-    inset-inline-end: 10px;
-    top: auto;
-    left: auto;
-    z-index: 4;
-    display: inline-flex;
+    position: static;
+    inset: auto;
+    order: 2;
+    display: flex;
     flex-direction: row;
-    gap: 4px;
-    padding: 4px;
-    background: rgba(15, 23, 42, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: var(--r-pill);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 16px;
+    margin: 0;
+    background: color-mix(in srgb, var(--info-bg) 88%, var(--card-bg));
+    border: none;
+    border-top: 1px solid var(--input-border);
+    border-radius: 0;
+    box-shadow: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     opacity: 1;
@@ -3989,15 +3947,102 @@ a.pill-btn-wiki:hover {
     pointer-events: auto;
   }
   .cards.is-list .image-action-btn {
-    background: rgba(255, 255, 255, 0.14);
-    color: white;
-    border: none;
-    width: 32px;
-    height: 32px;
-    font-size: 13px;
+    background: var(--card-bg);
+    color: var(--text);
+    border: 1px solid var(--input-border);
+    width: 40px;
+    height: 40px;
+    font-size: 15px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
   }
-  .cards.is-list .image-action-btn:hover {
-    background: rgba(255, 255, 255, 0.28);
+  .cards.is-list .image-action-btn:hover,
+  .cards.is-list .image-action-btn:focus-visible {
+    background: var(--input-bg);
+    transform: none;
+  }
+  .cards.is-list .card h2 {
+    margin: 0;
+    padding: 14px 16px 0;
+    font-size: 20px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+  .cards.is-list .size {
+    margin: 8px 16px 0;
+    padding: 5px 11px;
+    font-size: 12px;
+    align-self: flex-start;
+  }
+  .cards.is-list .description { display: none; }
+  .cards.is-list .info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 12px 16px 0;
+    padding: 0;
+  }
+  .cards.is-list .stat {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--r-md);
+    font-size: 13px;
+    line-height: 1.35;
+    background: var(--info-bg);
+  }
+  .cards.is-list .stat-icon {
+    font-size: 18px;
+    margin-top: 0;
+    flex: 0 0 22px;
+    text-align: center;
+  }
+  .cards.is-list .stat-text {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 6px;
+    min-width: 0;
+  }
+  .cards.is-list .stat-label {
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-muted);
+  }
+  .cards.is-list .stat-label::after {
+    content: ":";
+  }
+  .cards.is-list .stat-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    word-break: normal;
+  }
+  .cards.is-list .stat.full { display: none; }
+  .cards.is-list .food-open-btn {
+    flex: unset;
+    grid-column: unset;
+    width: auto;
+    margin: 10px 16px 0;
+    padding: 11px 12px;
+    gap: 10px;
+  }
+  .cards.is-list .food-open-icon-wrap {
+    width: 34px;
+    height: 34px;
+  }
+  .cards.is-list .food-open-label { font-size: 13px; }
+  .cards.is-list .food-open-action {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .cards.is-list .card-open-btn {
+    margin: 14px 0 0;
+    padding: 14px 16px;
+    border-radius: 0;
   }
   /* Density toggle is desktop-only — compact grid crashes mobile Safari. */
   .density-toggle.is-mobile-hidden { display: none !important; }
