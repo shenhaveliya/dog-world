@@ -3695,16 +3695,16 @@ a.pill-btn-wiki:hover {
   border-color: var(--accent-1);
 }
 
-/* COMPACT density: smaller cards, tighter padding, info collapses to one line */
-.cards.is-compact { gap: 14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-.cards.is-compact .card { padding: 14px; padding-bottom: 0; }
-.cards.is-compact .dog-image-wrapper { margin: -14px -14px 12px -14px; height: 170px; }
-.cards.is-compact .card h2 { font-size: 17px; margin-bottom: 6px; }
-.cards.is-compact .description { font-size: 12px; -webkit-line-clamp: 2; }
-.cards.is-compact .info { gap: 4px; }
-.cards.is-compact .stat { font-size: 11px; }
-.cards.is-compact .card-open-btn { padding: 10px; font-size: 13px; margin: 10px -14px 0; }
-.cards.is-compact .size { font-size: 12px; padding: 4px 10px; margin-bottom: 8px; }
+/* COMPACT density: smaller grid cards only — list view has its own layout. */
+.cards.is-compact:not(.is-list) { gap: 14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.cards.is-compact:not(.is-list) .card { padding: 14px; padding-bottom: 0; }
+.cards.is-compact:not(.is-list) .dog-image-wrapper { margin: -14px -14px 12px -14px; height: 170px; }
+.cards.is-compact:not(.is-list) .card h2 { font-size: 17px; margin-bottom: 6px; }
+.cards.is-compact:not(.is-list) .description { font-size: 12px; -webkit-line-clamp: 2; }
+.cards.is-compact:not(.is-list) .info { gap: 4px; }
+.cards.is-compact:not(.is-list) .stat { font-size: 11px; }
+.cards.is-compact:not(.is-list) .card-open-btn { padding: 10px; font-size: 13px; margin: 10px -14px 0; }
+.cards.is-compact:not(.is-list) .size { font-size: 12px; padding: 4px 10px; margin-bottom: 8px; }
 
 /* LIST view: each card becomes a wide horizontal row.
    Layout is a 3-column grid: [image] [body content stacked across rows] [action].
@@ -3813,17 +3813,12 @@ a.pill-btn-wiki:hover {
   font-size: 10px;
   padding: 2px 8px;
 }
-.cards.is-list.is-compact .dog-image-wrapper.no-image .no-image-initial {
-  font-size: 28px;
-}
-.cards.is-list.is-compact .dog-image-wrapper.no-image .no-image-label {
-  display: none;
-}
-.cards.is-compact .dog-image-wrapper.no-image .no-image-initial {
+.cards.is-compact:not(.is-list) .dog-image-wrapper.no-image .no-image-initial {
   font-size: clamp(40px, 7vw, 56px);
 }
 
-/* COMPACT × LIST: denser rows for power-users skimming the catalog. */
+/* COMPACT × LIST: denser rows on desktop only. */
+@media (min-width: 801px) {
 .cards.is-list.is-compact { gap: 8px; }
 .cards.is-list.is-compact .card {
   grid-template-columns: 110px minmax(0, 1fr) auto auto;
@@ -3838,6 +3833,13 @@ a.pill-btn-wiki:hover {
 .cards.is-list.is-compact .stat { font-size: 10px; padding: 2px 6px; }
 .cards.is-list.is-compact .card-open-btn { padding: 6px 12px; font-size: 12px; }
 .cards.is-list.is-compact .image-action-btn { width: 26px; height: 26px; font-size: 12px; }
+.cards.is-list.is-compact .dog-image-wrapper.no-image .no-image-initial {
+  font-size: 28px;
+}
+.cards.is-list.is-compact .dog-image-wrapper.no-image .no-image-label {
+  display: none;
+}
+}
 
 /* In list view the image is small (180×130) so the actions would crowd it.
    Lift them OUT of the image and stack them vertically next to the
@@ -3871,43 +3873,55 @@ a.pill-btn-wiki:hover {
 /* Tighten the action column so the icons + button don't get extra padding. */
 .cards.is-list .card-open-btn { margin-inline-end: 4px; }
 
-/* List view on phones/tablets: compact horizontal rows (thumb + summary)
-   so it reads clearly different from the grid. The desktop compact-list
-   rules above would otherwise keep a broken multi-column grid here. */
+/* List view on phones/tablets: thumb column (photo + actions below it)
+   beside a text summary — clearly different from the grid cards. */
 @media (max-width: 800px) {
   .cards.is-list {
     display: flex;
     flex-direction: column;
     gap: 10px;
   }
-  .cards.is-list .card,
-  .cards.is-list.is-compact .card {
+  .cards.is-list .card {
     display: grid;
-    grid-template-columns: 92px minmax(0, 1fr);
-    grid-template-rows: auto auto auto auto auto;
+    grid-template-columns: 96px minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto;
     align-items: start;
     padding: 10px 10px 0;
-    gap: 2px 10px;
+    gap: 6px 10px;
     transform: none !important;
   }
-  .cards.is-list.is-compact .card {
-    grid-template-columns: 72px minmax(0, 1fr);
-    padding: 8px 8px 0;
-    gap: 2px 8px;
-  }
-  .cards.is-list .dog-image-wrapper,
-  .cards.is-list.is-compact .dog-image-wrapper {
+  /* Photo on top, action buttons underneath — never over the image. */
+  .cards.is-list .dog-image-wrapper {
     grid-column: 1;
-    grid-row: 1 / 4;
-    width: 92px;
-    height: 92px;
+    grid-row: 1 / 3;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    width: 96px;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    border-radius: 0;
+    align-self: start;
+    overflow: visible;
+  }
+  .cards.is-list .dog-image-wrapper .dog-image,
+  .cards.is-list .dog-image-wrapper.no-image {
+    width: 96px;
+    height: 80px;
     margin: 0;
     border-radius: var(--r-md);
-    align-self: start;
+    flex: 0 0 auto;
   }
-  .cards.is-list.is-compact .dog-image-wrapper {
-    width: 72px;
-    height: 72px;
+  .cards.is-list .dog-image-wrapper.no-image {
+    min-height: 80px;
+  }
+  .cards.is-list .dog-image-wrapper.no-image .no-image-initial {
+    font-size: 32px;
+  }
+  .cards.is-list .dog-image-wrapper.no-image .no-image-label {
+    display: none;
   }
   .cards.is-list .card h2 {
     grid-column: 2;
@@ -3915,25 +3929,26 @@ a.pill-btn-wiki:hover {
     margin: 0;
     font-size: 16px;
     line-height: 1.25;
+    align-self: end;
   }
-  .cards.is-list.is-compact .card h2 { font-size: 14px; }
   .cards.is-list .size {
     grid-column: 2;
     grid-row: 2;
-    margin: 4px 0 0;
+    margin: 0;
     padding: 3px 8px;
     font-size: 11px;
     justify-self: start;
+    align-self: start;
   }
   .cards.is-list .description { display: none; }
   .cards.is-list .info {
     grid-column: 1 / -1;
-    grid-row: 4;
+    grid-row: 3;
     display: grid;
     grid-template-columns: 1fr 1fr;
     flex-wrap: unset;
     gap: 4px;
-    margin-top: 8px;
+    margin-top: 2px;
   }
   .cards.is-list .stat {
     flex: unset;
@@ -3961,44 +3976,45 @@ a.pill-btn-wiki:hover {
   }
   .cards.is-list .card-open-btn {
     grid-column: 1 / -1;
-    grid-row: 5;
+    grid-row: 4;
     align-self: stretch;
     width: auto;
     margin: 8px -10px 0;
     padding: 10px 12px;
     border-radius: 0 0 var(--r-xl) var(--r-xl);
   }
-  .cards.is-list.is-compact .card-open-btn {
-    margin: 6px -8px 0;
-    padding: 8px 10px;
-    font-size: 12px;
-  }
   .cards.is-list .image-actions {
-    position: absolute;
-    top: 4px;
-    inset-inline-end: 4px;
+    position: static;
+    inset: auto;
+    display: flex;
     flex-direction: row;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
     grid-column: unset;
     grid-row: unset;
-    background: rgba(15, 23, 42, 0.88);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: transparent;
+    border: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
-    padding: 2px;
+    box-shadow: none;
+    padding: 0;
     margin: 0;
     opacity: 1;
     transform: none;
     pointer-events: auto;
   }
   .cards.is-list .image-action-btn {
-    background: rgba(255, 255, 255, 0.14);
-    color: white;
-    width: 24px;
-    height: 24px;
-    font-size: 10px;
+    background: var(--info-bg);
+    color: var(--text);
+    border: 1px solid var(--input-border);
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
   }
-  .cards.is-list .image-action-btn:hover { background: rgba(255, 255, 255, 0.28); }
+  .cards.is-list .image-action-btn:hover { background: var(--input-border); }
+  /* Density toggle only applies to grid on mobile. */
+  .density-toggle.is-mobile-hidden { display: none !important; }
 }
 
 /* =====================================================================

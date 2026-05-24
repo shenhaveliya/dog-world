@@ -2274,14 +2274,45 @@ function closeFilterSheet() {
  *  Reflowing the breed grid while `body` is `position: fixed` (sheet open)
  *  can crash iOS Safari ("a problem repeatedly occurred"). */
 function runAfterFilterSheet(update) {
-  if (!document.body.classList.contains("filters-open")) {
+  const sheetWasOpen = document.body.classList.contains("filters-open");
+  if (sheetWasOpen) closeFilterSheet();
+
+  const runUpdate = () => {
+    if (!cardsContainer) return;
     update();
-    return;
+  };
+
+  if (sheetWasOpen) {
+    // Give iOS time to unlock body scroll before the heavy card reflow.
+    setTimeout(runUpdate, 120);
+  } else if (window.matchMedia("(max-width: 800px)").matches) {
+    setTimeout(runUpdate, 32);
+  } else {
+    runUpdate();
   }
-  closeFilterSheet();
-  requestAnimationFrame(() => {
-    requestAnimationFrame(update);
-  });
+}
+
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 800px)").matches;
+}
+
+/** Compact density only applies to grid view; on mobile list it is hidden
+ *  and cleared so it cannot fight the list layout or crash the page. */
+function syncLayoutControls() {
+  if (!cardsContainer) return;
+  const listOnMobile = isMobileViewport() && cardsContainer.classList.contains("is-list");
+  if (densityToggleBtn) {
+    densityToggleBtn.classList.toggle("is-mobile-hidden", listOnMobile);
+    densityToggleBtn.disabled = listOnMobile;
+  }
+  if (listOnMobile && cardsContainer.classList.contains("is-compact")) {
+    cardsContainer.classList.remove("is-compact");
+    if (densityToggleBtn) {
+      densityToggleBtn.setAttribute("aria-pressed", "false");
+      densityToggleBtn.textContent = "▤";
+    }
+    try { localStorage.setItem(DENSITY_KEY, "comfortable"); } catch (e) { /* ignore */ }
+  }
 }
 
 if (mobileFilterOpenBtn) mobileFilterOpenBtn.addEventListener("click", openFilterSheet);
@@ -3354,14 +3385,17 @@ const DENSITY_KEY = "dogweb-density";
 const VIEW_KEY = "dogweb-view";
 
 function applyDensity(mode) {
+  if (mode !== "compact" && mode !== "comfortable") return;
   runAfterFilterSheet(() => {
     if (!cardsContainer) return;
+    if (isMobileViewport() && cardsContainer.classList.contains("is-list")) return;
     cardsContainer.classList.toggle("is-compact", mode === "compact");
     if (densityToggleBtn) {
       densityToggleBtn.setAttribute("aria-pressed", mode === "compact");
       densityToggleBtn.textContent = mode === "compact" ? "▦" : "▤";
     }
     try { localStorage.setItem(DENSITY_KEY, mode); } catch (e) { /* ignore */ }
+    syncLayoutControls();
   });
 }
 
@@ -3376,8 +3410,26 @@ function applyView(mode) {
       b.setAttribute("aria-pressed", active);
     });
     try { localStorage.setItem(VIEW_KEY, mode); } catch (e) { /* ignore */ }
+    syncLayoutControls();
     announce(t(mode === "list" ? "viewList" : "viewGrid"));
   });
+}
+
+/** Restore saved layout prefs on first paint (no deferred reflow). */
+function restoreLayoutPrefs(density, view) {
+  if (!cardsContainer) return;
+  const compact = density === "compact";
+  cardsContainer.classList.toggle("is-list", view === "list");
+  cardsContainer.classList.toggle("is-compact", compact);
+  viewToggleEls.forEach((b) => {
+    const active = b.dataset.view === view;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-pressed", active);
+  });
+  if (densityToggleBtn) {
+    densityToggleBtn.setAttribute("aria-pressed", compact);
+    densityToggleBtn.textContent = compact ? "▦" : "▤";
+  }
 }
 
 if (densityToggleBtn) {
@@ -3800,9 +3852,11 @@ syncFromHash();
 try {
   const savedDensity = localStorage.getItem(DENSITY_KEY) || "comfortable";
   const savedView = localStorage.getItem(VIEW_KEY) || "grid";
-  applyDensity(savedDensity);
-  applyView(savedView);
+  restoreLayoutPrefs(savedDensity, savedView);
+  syncLayoutControls();
 } catch (e) { /* ignore */ }
+
+window.addEventListener("resize", debounce(syncLayoutControls, 150));
 
 wireMagneticButtons();
 
