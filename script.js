@@ -2262,11 +2262,26 @@ function openFilterSheet() {
 }
 
 function closeFilterSheet() {
+  closeSortMenu();
   document.body.classList.remove("filters-open");
   document.body.style.top = "";
   window.scrollTo(0, _filterSheetScrollY);
   if (filterSheetOverlay) filterSheetOverlay.hidden = true;
   if (filtersEl) filtersEl.removeAttribute("aria-modal");
+}
+
+/** Run a layout mutation after the mobile filter sheet closes.
+ *  Reflowing the breed grid while `body` is `position: fixed` (sheet open)
+ *  can crash iOS Safari ("a problem repeatedly occurred"). */
+function runAfterFilterSheet(update) {
+  if (!document.body.classList.contains("filters-open")) {
+    update();
+    return;
+  }
+  closeFilterSheet();
+  requestAnimationFrame(() => {
+    requestAnimationFrame(update);
+  });
 }
 
 if (mobileFilterOpenBtn) mobileFilterOpenBtn.addEventListener("click", openFilterSheet);
@@ -3339,32 +3354,44 @@ const DENSITY_KEY = "dogweb-density";
 const VIEW_KEY = "dogweb-view";
 
 function applyDensity(mode) {
-  cardsContainer.classList.toggle("is-compact", mode === "compact");
-  if (densityToggleBtn) {
-    densityToggleBtn.setAttribute("aria-pressed", mode === "compact");
-    densityToggleBtn.textContent = mode === "compact" ? "▦" : "▤";
-  }
-  try { localStorage.setItem(DENSITY_KEY, mode); } catch (e) { /* ignore */ }
+  runAfterFilterSheet(() => {
+    if (!cardsContainer) return;
+    cardsContainer.classList.toggle("is-compact", mode === "compact");
+    if (densityToggleBtn) {
+      densityToggleBtn.setAttribute("aria-pressed", mode === "compact");
+      densityToggleBtn.textContent = mode === "compact" ? "▦" : "▤";
+    }
+    try { localStorage.setItem(DENSITY_KEY, mode); } catch (e) { /* ignore */ }
+  });
 }
 
 function applyView(mode) {
-  cardsContainer.classList.toggle("is-list", mode === "list");
-  viewToggleEls.forEach((b) => {
-    const active = b.dataset.view === mode;
-    b.classList.toggle("active", active);
-    b.setAttribute("aria-pressed", active);
+  if (mode !== "grid" && mode !== "list") return;
+  runAfterFilterSheet(() => {
+    if (!cardsContainer) return;
+    cardsContainer.classList.toggle("is-list", mode === "list");
+    viewToggleEls.forEach((b) => {
+      const active = b.dataset.view === mode;
+      b.classList.toggle("active", active);
+      b.setAttribute("aria-pressed", active);
+    });
+    try { localStorage.setItem(VIEW_KEY, mode); } catch (e) { /* ignore */ }
+    announce(t(mode === "list" ? "viewList" : "viewGrid"));
   });
-  try { localStorage.setItem(VIEW_KEY, mode); } catch (e) { /* ignore */ }
 }
 
 if (densityToggleBtn) {
-  densityToggleBtn.addEventListener("click", () => {
+  densityToggleBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
     const next = cardsContainer.classList.contains("is-compact") ? "comfortable" : "compact";
     applyDensity(next);
   });
 }
 viewToggleEls.forEach((btn) => {
-  btn.addEventListener("click", () => applyView(btn.dataset.view));
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    applyView(btn.dataset.view);
+  });
 });
 
 /* =====================================================================
