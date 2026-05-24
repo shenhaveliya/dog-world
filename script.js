@@ -2296,16 +2296,17 @@ function isMobileViewport() {
   return window.matchMedia("(max-width: 800px)").matches;
 }
 
-/** Compact density only applies to grid view; on mobile list it is hidden
- *  and cleared so it cannot fight the list layout or crash the page. */
+/** Compact density is desktop-only; hide the toggle on mobile and keep
+ *  comfortable grid cards so toggling density cannot crash iOS Safari. */
 function syncLayoutControls() {
   if (!cardsContainer) return;
-  const listOnMobile = isMobileViewport() && cardsContainer.classList.contains("is-list");
+  const mobile = isMobileViewport();
   if (densityToggleBtn) {
-    densityToggleBtn.classList.toggle("is-mobile-hidden", listOnMobile);
-    densityToggleBtn.disabled = listOnMobile;
+    densityToggleBtn.classList.toggle("is-mobile-hidden", mobile);
+    densityToggleBtn.disabled = mobile;
+    densityToggleBtn.setAttribute("aria-hidden", mobile ? "true" : "false");
   }
-  if (listOnMobile && cardsContainer.classList.contains("is-compact")) {
+  if (mobile && cardsContainer.classList.contains("is-compact")) {
     cardsContainer.classList.remove("is-compact");
     if (densityToggleBtn) {
       densityToggleBtn.setAttribute("aria-pressed", "false");
@@ -3388,7 +3389,7 @@ function applyDensity(mode) {
   if (mode !== "compact" && mode !== "comfortable") return;
   runAfterFilterSheet(() => {
     if (!cardsContainer) return;
-    if (isMobileViewport() && cardsContainer.classList.contains("is-list")) return;
+    if (isMobileViewport()) return;
     cardsContainer.classList.toggle("is-compact", mode === "compact");
     if (densityToggleBtn) {
       densityToggleBtn.setAttribute("aria-pressed", mode === "compact");
@@ -3418,7 +3419,7 @@ function applyView(mode) {
 /** Restore saved layout prefs on first paint (no deferred reflow). */
 function restoreLayoutPrefs(density, view) {
   if (!cardsContainer) return;
-  const compact = density === "compact";
+  const compact = density === "compact" && !isMobileViewport();
   cardsContainer.classList.toggle("is-list", view === "list");
   cardsContainer.classList.toggle("is-compact", compact);
   viewToggleEls.forEach((b) => {
