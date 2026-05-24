@@ -3622,8 +3622,36 @@ a.pill-btn-wiki:hover {
 }
 .mobile-nav-btn:hover { color: var(--accent-1); background: var(--info-bg); }
 .mobile-nav-btn.active { color: var(--accent-1); }
-.mobile-nav-btn .mn-icon { font-size: 22px; line-height: 1; }
-.mobile-nav-btn .mn-label { font-size: 11px; }
+.mobile-nav-btn .mn-icon { font-size: 22px; line-height: 1; display: flex; align-items: center; justify-content: center; }
+.mobile-nav-btn .mn-svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.mobile-nav-btn .mn-svg path[fill],
+.mobile-nav-btn .mn-svg rect[fill],
+.mobile-nav-btn .mn-svg-fill path { fill: currentColor; stroke: none; }
+.mobile-nav-btn .mn-icon-badge-wrap { position: relative; }
+.compare-nav-badge {
+  position: absolute;
+  top: -5px;
+  inset-inline-end: -8px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent-1);
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 16px;
+  text-align: center;
+}
+.mobile-nav-btn .mn-label { font-size: 10px; }
 
 /* =====================================================================
    SKELETON STAT TILES (briefly shown until first image loads)
@@ -4400,6 +4428,147 @@ button:active:not(:disabled),
   .aurora-blob { animation: none !important; }
   .display-h1 { animation: none !important; }
   .magnetic { transform: none !important; }
+}
+
+/* =====================================================================
+   SITE ENHANCEMENTS (discovery, collections, compare hints, food callout)
+===================================================================== */
+.discovery-banner {
+  margin: 0 0 16px;
+  border: 1px solid color-mix(in srgb, var(--accent-1) 35%, var(--input-border));
+  border-radius: var(--r-lg);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-1) 12%, var(--filter-bg)), var(--filter-bg));
+  box-shadow: 0 12px 28px rgba(249, 115, 22, 0.12);
+}
+.discovery-banner-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+}
+.discovery-banner-title { display: block; font-size: 16px; margin-bottom: 4px; }
+.discovery-banner-text { margin: 0 0 10px; color: var(--text-muted); font-size: 14px; line-height: 1.45; }
+.discovery-banner-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.discovery-banner-actions .pill-btn { padding: 8px 14px; font-size: 13px; }
+.discovery-dismiss {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--input-border);
+  border-radius: 50%;
+  background: var(--info-bg);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.collections-section { margin: 0 0 20px; }
+.collections-title { margin: 0 0 10px; font-size: 18px; }
+.collections-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.collection-chip {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  border: 1px solid var(--input-border);
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: var(--filter-bg);
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.collection-chip:hover,
+.collection-chip.active {
+  border-color: var(--accent-1);
+  background: color-mix(in srgb, var(--accent-1) 10%, var(--filter-bg));
+  box-shadow: 0 8px 18px rgba(249, 115, 22, 0.15);
+}
+
+.compare-bar-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.compare-hint {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.detail-hero-wiki::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(15, 23, 42, 0.55));
+  pointer-events: none;
+}
+.detail-hero-wiki .detail-hero-overlay { z-index: 2; }
+.dog-image-wrapper.wiki-image::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--size-accent, var(--accent-1)) 18%, transparent), transparent 60%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.detail-food-callout {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  border: 1px solid color-mix(in srgb, var(--tool-1) 35%, var(--input-border));
+  background: color-mix(in srgb, var(--tool-1) 8%, var(--info-bg));
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.similar-compare-row { margin-top: 10px; }
+.similar-compare-btn { width: 100%; }
+
+.quiz-share-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 0 0 14px;
+}
+
+.footer-meta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.toast-action {
+  margin-inline-start: auto;
+  border: none;
+  border-radius: var(--r-pill);
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.2);
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.quick-peek.quick-peek-touch {
+  inset-inline: 16px !important;
+  left: 16px !important;
+  right: 16px !important;
+  width: auto !important;
+  max-width: none;
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  top: auto !important;
 }
 
 /* =====================================================================

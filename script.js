@@ -202,6 +202,7 @@ function showToast(message, opts = {}) {
   toast.innerHTML = `
     <span class="toast-icon" aria-hidden="true">${escapeHTML(icon)}</span>
     <span class="toast-message">${escapeHTML(message)}</span>
+    ${opts.action ? `<button type="button" class="toast-action">${escapeHTML(opts.action)}</button>` : ""}
     <button type="button" class="toast-close" aria-label="${escapeHTML(t("closeAria") || "סגור")}">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
@@ -226,6 +227,14 @@ function showToast(message, opts = {}) {
     // Safety net in case transitionend doesn't fire.
     setTimeout(() => toast.isConnected && toast.remove(), 500);
   };
+
+  if (opts.action && typeof opts.onAction === "function") {
+    toast.querySelector(".toast-action").addEventListener("click", (e) => {
+      e.stopPropagation();
+      opts.onAction();
+      dismiss();
+    });
+  }
 
   toast.querySelector(".toast-close").addEventListener("click", dismiss);
   // Tapping anywhere on the toast (outside the close button itself) also
@@ -450,8 +459,27 @@ const searchSuggestionsEl = document.getElementById("searchSuggestions");
 const favoriteShareRow = document.getElementById("favoriteShareRow");
 const favoriteShareBtn = document.getElementById("favoriteShareBtn");
 const favoriteCopyBtn = document.getElementById("favoriteCopyBtn");
+const compareHintEl = document.getElementById("compareHint");
+const compareNavBadge = document.getElementById("compareNavBadge");
+const collectionsRow = document.getElementById("collectionsRow");
+const discoveryBanner = document.getElementById("discoveryBanner");
+const discoveryDismissBtn = document.getElementById("discoveryDismiss");
+const discoveryQuizBtn = document.getElementById("discoveryQuizBtn");
+const discoveryCompareBtn = document.getElementById("discoveryCompareBtn");
+const footerMetaEl = document.getElementById("footerMeta");
 
-let prefersReducedMotion = false;
+let activeCollectionId = null;
+let _lastImageErrorToast = 0;
+let _quickPeekTouchMode = false;
+
+/** Curated filter presets surfaced as horizontal chips on the home page. */
+const CURATED_COLLECTIONS = [
+  { id: "apartment", labelKey: "collectionApartment", attrs: ["apartmentFriendly"] },
+  { id: "family", labelKey: "collectionFamily", attrs: ["familyFriendly"] },
+  { id: "hypo", labelKey: "collectionHypo", attrs: ["hypoallergenic"] },
+  { id: "firstDog", labelKey: "collectionFirstDog", attrs: ["beginner"] },
+  { id: "active", labelKey: "collectionActive", attrs: ["activePeople"] },
+];
 try {
   prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 } catch (e) { /* ignore */ }
@@ -765,6 +793,7 @@ function breedInitial(breed) {
 function renderCard(breed) {
   const name = bName(breed);
   const withImage = hasBreedImage(breed);
+  const ft = typeof foodTraitFlags === "function" ? foodTraitFlags(breed) : {};
   // Three image paths:
   //   - dog.ceo (breed.apiName)         → data-breed-api, refresh button shown
   //   - Wikipedia (cached URL)          → data-wiki-image, no refresh (Wikipedia
@@ -821,7 +850,10 @@ function renderCard(breed) {
              data-price-avg="${Math.round((breed.priceMin + breed.priceMax) / 2)}"
              data-exercise-hours="${breed.exerciseHours}"
              data-good-with-cats="${breed.goodWithCats}"
-             data-good-with-kids="${breed.goodWithKids}">${imageBlock}
+             data-good-with-kids="${breed.goodWithKids}"
+             data-food-bloat="${ft.bloatRisk || false}"
+             data-food-weight="${ft.weightProne || false}"
+             data-food-hypo="${ft.hypoallergenic || false}">${imageBlock}
       <h2>${escapeHTML(name)}</h2>
       <span class="size">${escapeHTML(t("sizeBadge", bSize(breed)))}</span>
       <p class="description">${escapeHTML(bDesc(breed))}</p>
@@ -885,6 +917,25 @@ function markImageError(image) {
     wrapper.classList.remove("image-loading");
     wrapper.classList.add("image-error");
   }
+  notifyImageLoadError(image);
+}
+
+function notifyImageLoadError(image) {
+  if (!image || image.dataset.wikiImage) return;
+  if (Date.now() - _lastImageErrorToast < 4000) return;
+  _lastImageErrorToast = Date.now();
+  showToast(t("imageErrorToast"), {
+    icon: "🖼️",
+    variant: "warning",
+    duration: 6000,
+    action: t("imageRetry"),
+    onAction: () => {
+      image.classList.remove("image-error");
+      const wrapper = image.closest(".dog-image-wrapper");
+      if (wrapper) wrapper.classList.remove("image-error");
+      loadOneImage(image, true);
+    },
+  });
 }
 
 function wireHydratedImage(img) {
@@ -1358,13 +1409,34 @@ function wireUpCard(card) {
 
     }
 
-    // Quick-peek: show a floating preview after a 600ms hover.
+    // Quick-peek: show a floating preview after a 600ms hover (desktop)
+    // or a 500ms long-press (touch).
     let peekTimer = 0;
+    let touchMoved = false;
     card.addEventListener("mouseenter", () => {
+      if (window.matchMedia("(hover: none)").matches) return;
       clearTimeout(peekTimer);
       peekTimer = setTimeout(() => showQuickPeek(card), 600);
     });
     card.addEventListener("mouseleave", () => {
+      clearTimeout(peekTimer);
+      hideQuickPeek();
+    });
+    card.addEventListener("touchstart", () => {
+      if (!window.matchMedia("(hover: none)").matches) return;
+      touchMoved = false;
+      clearTimeout(peekTimer);
+      peekTimer = setTimeout(() => showQuickPeek(card, { touch: true }), 500);
+    }, { passive: true });
+    card.addEventListener("touchmove", () => {
+      touchMoved = true;
+      clearTimeout(peekTimer);
+    }, { passive: true });
+    card.addEventListener("touchend", () => {
+      clearTimeout(peekTimer);
+      if (_quickPeekTouchMode) setTimeout(hideQuickPeek, 2500);
+    });
+    card.addEventListener("touchcancel", () => {
       clearTimeout(peekTimer);
       hideQuickPeek();
     });
@@ -1527,11 +1599,13 @@ advancedToggle.addEventListener("click", () => {
 
 document.querySelectorAll(".attribute-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
+    activeCollectionId = null;
     const attr = btn.dataset.attr;
     if (activeAttrs.has(attr)) activeAttrs.delete(attr);
     else activeAttrs.add(attr);
     btn.classList.toggle("active", activeAttrs.has(attr));
     btn.setAttribute("aria-pressed", activeAttrs.has(attr));
+    renderCollections();
     resetPageAndApply();
   });
 });
@@ -1997,6 +2071,9 @@ function cardMatchesAttrs(card) {
     if (attr === "familyFriendly" && !(card.dataset.goodWithKids === "true" && experience <= 2 && sizeRank <= 2)) return false;
     if (attr === "apartmentFriendly" && !(sizeRank === 1 && energy <= 2)) return false;
     if (attr === "activePeople" && !(energy >= 3 && exercise >= 1.5)) return false;
+    if (attr === "bloatRisk" && card.dataset.foodBloat !== "true") return false;
+    if (attr === "weightProne" && card.dataset.foodWeight !== "true") return false;
+    if (attr === "hypoallergenic" && card.dataset.foodHypo !== "true") return false;
   }
   return true;
 }
@@ -2012,6 +2089,9 @@ function attrLabel(attr) {
     familyFriendly: "attrFamilyFriendly",
     apartmentFriendly: "attrApartmentFriendly",
     activePeople: "attrActivePeople",
+    bloatRisk: "attrBloatRisk",
+    weightProne: "attrWeightProne",
+    hypoallergenic: "attrHypoallergenic",
   };
   const key = keyByAttr[attr];
   const value = key && I18N[currentLang][key];
@@ -2245,7 +2325,9 @@ clearFiltersBtn.addEventListener("click", () => {
   favOnlyBtn.classList.remove("active");
   favOnlyBtn.setAttribute("aria-pressed", "false");
   activeAttrs.clear();
+  activeCollectionId = null;
   syncAttributeButtons();
+  renderCollections();
   resetPageAndApply();
 });
 
@@ -2599,6 +2681,9 @@ function similarBreedsHTML(breed) {
   return `<section class="similar-breeds">
     <h3>${escapeHTML(t("similarTitle"))}</h3>
     <div class="similar-breeds-list">${similar}</div>
+    <div class="similar-compare-row">
+      <button type="button" class="pill-btn similar-compare-btn" data-base-breed="${escapeHTML(breed.key)}">${escapeHTML(t("similarCompareBtn"))}</button>
+    </div>
   </section>`;
 }
 
@@ -2619,7 +2704,7 @@ function openDetailModal(card, trigger) {
 
   const heroHTML = withImage
     ? `
-    <div class="detail-hero">
+    <div class="detail-hero${isWikiOnly ? " detail-hero-wiki" : ""}">
       <img id="detailHeroImg" src="${escapeHTML(cachedImg)}" alt="${escapeHTML(name)}"/>
       <div class="detail-hero-overlay">
         <h2 id="detailTitle">${escapeHTML(name)}</h2>
@@ -2648,6 +2733,7 @@ function openDetailModal(card, trigger) {
     <div class="detail-modal-inner">
       <p class="description">${escapeHTML(bDesc(breed))}</p>
       <div class="info">${detailStatTilesHTML(breed)}</div>
+      <p class="detail-food-callout">${escapeHTML(t("detailFoodCallout"))}</p>
       <div class="detail-food-wrap">${foodOpenBtnHTML(breed, "detail")}</div>
       <p class="price-disclaimer">${escapeHTML(t("priceDisclaimer"))}</p>
       <p class="adoption-note">${escapeHTML(t("adoptionNote"))}</p>
@@ -2749,6 +2835,26 @@ function openDetailModal(card, trigger) {
       if (nextCard) openDetailModal(nextCard, btn);
     });
   });
+  const similarCompareBtn = detailModalContent.querySelector(".similar-compare-btn");
+  if (similarCompareBtn) {
+    similarCompareBtn.addEventListener("click", () => {
+      const baseKey = similarCompareBtn.dataset.baseBreed;
+      const keys = [baseKey];
+      detailModalContent.querySelectorAll(".similar-breed").forEach((btn) => {
+        const k = btn.dataset.breedKey;
+        if (k && !keys.includes(k) && keys.length < MAX_COMPARE) keys.push(k);
+      });
+      compareList = keys.slice(0, MAX_COMPARE);
+      document.querySelectorAll(".compare-btn").forEach((b) => {
+        const cardEl = b.closest(".card");
+        setCompareBtnState(b, !!cardEl && compareList.includes(cardEl.dataset.breed));
+      });
+      updateCompareUI();
+      closeModal(detailModal);
+      if (compareList.length >= 2) openCompareModal();
+      else showToast(t("compareHintOne"), { icon: "📋", variant: "info" });
+    });
+  }
 }
 
 /** Fetch N random photos for a breed and render the hero + thumbnails.
@@ -2829,7 +2935,16 @@ function syncFromHash() {
     const card = cardForBreed(key);
     if (card && !detailModal.classList.contains("open")) openDetailModal(card);
   } else if (hash === "#quiz" && !quizModal.classList.contains("open")) {
-    startQuiz(quizBtn);
+    const raw = new URLSearchParams(location.search).get("quizResults");
+    const sharedKeys = raw
+      ? raw.split(",").map((k) => k.trim()).filter((k) => breedByKey(k))
+      : [];
+    if (sharedKeys.length) {
+      openModal(quizModal, quizBtn);
+      renderSharedQuizResults(sharedKeys);
+    } else {
+      startQuiz(quizBtn);
+    }
   } else if (hash === "#compare" && !compareModal.classList.contains("open")) {
     if (compareList.length >= 2) openCompareModal();
   }
@@ -2871,6 +2986,23 @@ function updateCompareUI() {
   }
   if (compareList.length > 0) compareBar.classList.add("visible");
   else compareBar.classList.remove("visible");
+  if (compareHintEl) {
+    if (compareList.length === 1) {
+      compareHintEl.hidden = false;
+      compareHintEl.textContent = t("compareHintOne");
+    } else {
+      compareHintEl.hidden = true;
+      compareHintEl.textContent = "";
+    }
+  }
+  if (compareNavBadge) {
+    if (compareList.length > 0) {
+      compareNavBadge.hidden = false;
+      compareNavBadge.textContent = String(compareList.length);
+    } else {
+      compareNavBadge.hidden = true;
+    }
+  }
   // Body class powers the scroll-top button's "lift above the bar" rule
   // for browsers that don't support :has().
   document.body.classList.toggle("compare-active", compareList.length > 0);
@@ -3034,6 +3166,10 @@ quizBtn.addEventListener("click", () => {
 function startQuiz(trigger) {
   quizStep = 0;
   quizAnswers = {};
+  const params = new URLSearchParams(location.search);
+  params.delete("quizResults");
+  const query = params.toString();
+  history.replaceState(null, "", `${location.pathname}${query ? "?" + query : ""}${location.hash === "#quiz" ? "#quiz" : location.hash}`);
   renderQuizStep();
   if (!quizModal.classList.contains("open")) openModal(quizModal, trigger);
 }
@@ -3220,6 +3356,10 @@ function renderQuizResult() {
       <p style="color:var(--text-muted);margin:0 0 8px;">${escapeHTML(t("quizResultIntro"))}</p>
       ${skippedNote}
       <div class="quiz-podium">${podiumHTML}</div>
+      <div class="quiz-share-row">
+        <button type="button" class="quiz-share-copy pill-btn">${escapeHTML(t("quizShareCopy"))}</button>
+        <a class="quiz-share-wa pill-btn pill-btn-link" href="#" target="_blank" rel="noopener noreferrer">${escapeHTML(t("quizShareWhatsApp"))}</a>
+      </div>
       <div class="quiz-feedback">
         <span class="quiz-feedback-prompt">${escapeHTML(t("quizFeedbackPrompt"))}</span>
         <div class="quiz-feedback-buttons">
@@ -3249,6 +3389,27 @@ function renderQuizResult() {
   quizBody.querySelector(".quiz-restart").addEventListener("click", () => startQuiz());
   quizBody.querySelector(".quiz-prev").addEventListener("click", () => closeModal(quizModal));
 
+  syncQuizResultsUrl(top3.map((e) => e.breed.key));
+
+  const shareUrl = quizResultsUrl(top3.map((e) => e.breed.key));
+  const shareText = top3.map((e, i) => `${i + 1}. ${bName(e.breed)}`).join("\n");
+  const shareCopyBtn = quizBody.querySelector(".quiz-share-copy");
+  if (shareCopyBtn) {
+    shareCopyBtn.addEventListener("click", () => {
+      copyToClipboard(shareUrl).then(
+        () => {
+          announce(t("quizShareCopied"));
+          showToast(t("quizShareCopied"), { icon: "🔗", variant: "success" });
+        },
+        () => prompt(t("quizShareCopy"), shareUrl)
+      );
+    });
+  }
+  const shareWa = quizBody.querySelector(".quiz-share-wa");
+  if (shareWa) {
+    shareWa.href = `https://wa.me/?text=${encodeURIComponent(shareText + "\n" + shareUrl)}`;
+  }
+
   // Quiz feedback: persist locally so we don't ask twice for the same set.
   const feedbackEl = quizBody.querySelector(".quiz-feedback");
   feedbackEl.querySelectorAll("[data-feedback]").forEach((b) => {
@@ -3269,17 +3430,160 @@ function renderQuizResult() {
 }
 
 /* =====================================================================
+   QUIZ RESULT SHARING
+===================================================================== */
+
+function quizResultsUrl(keys) {
+  const params = new URLSearchParams(location.search);
+  params.set("quizResults", keys.filter(Boolean).join(","));
+  const query = params.toString();
+  return `${location.origin}${location.pathname}?${query}#quiz`;
+}
+
+function syncQuizResultsUrl(keys) {
+  const params = new URLSearchParams(location.search);
+  if (keys && keys.length) params.set("quizResults", keys.join(","));
+  else params.delete("quizResults");
+  const query = params.toString();
+  const nextUrl = `${location.pathname}${query ? "?" + query : ""}${location.hash}`;
+  const currentUrl = `${location.pathname}${location.search}${location.hash}`;
+  if (nextUrl !== currentUrl) history.replaceState(null, "", nextUrl);
+}
+
+function renderSharedQuizResults(keys) {
+  const breeds = keys.map(breedByKey).filter(Boolean).slice(0, 3);
+  if (!breeds.length) return;
+  const ranks = ["gold", "silver", "bronze"];
+  const emojis = ["🥇", "🥈", "🥉"];
+  const podiumHTML = breeds.map((breed, i) => {
+    const imageBlock = `<img class="podium-img" data-breed-key="${escapeHTML(breed.key)}" alt="${escapeHTML(bName(breed))}"/>`;
+    return `
+      <div class="podium-card ${ranks[i]}">
+        <span class="podium-rank">${emojis[i]}</span>
+        ${imageBlock}
+        <h3>${escapeHTML(bName(breed))}</h3>
+        <p>${escapeHTML(bSize(breed))} · ${escapeHTML(bEnergy(breed))}</p>
+        <button type="button" data-breed="${escapeHTML(breed.key)}">${escapeHTML(t("quizDetails"))}</button>
+      </div>`;
+  }).join("");
+  quizBody.innerHTML = `
+    <div class="quiz-result">
+      <p style="color:var(--text-muted);margin:0 0 8px;">${escapeHTML(t("quizSharedIntro"))}</p>
+      <div class="quiz-podium">${podiumHTML}</div>
+      <div class="quiz-nav" style="justify-content:center;">
+        <button class="quiz-restart" type="button">${escapeHTML(t("quizRestart"))}</button>
+        <button class="quiz-prev" type="button" style="background:var(--button-bg);color:var(--button-color);">${escapeHTML(t("quizClose"))}</button>
+      </div>
+    </div>`;
+  if (quizDotsEl) quizDotsEl.innerHTML = "";
+  quizBody.querySelectorAll("img.podium-img").forEach((img) => {
+    const breed = breedByKey(img.dataset.breedKey);
+    if (breed) hydrateBreedImageInto(img, breed, swapPodiumImgToPlaceholder);
+  });
+  quizBody.querySelectorAll(".podium-card button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const card = cardForBreed(btn.dataset.breed);
+      if (card) { closeModal(quizModal); openDetailModal(card); }
+    });
+  });
+  quizBody.querySelector(".quiz-restart").addEventListener("click", () => startQuiz());
+  quizBody.querySelector(".quiz-prev").addEventListener("click", () => closeModal(quizModal));
+}
+
+function restoreQuizResultsFromUrl() {
+  const params = new URLSearchParams(location.search);
+  const raw = params.get("quizResults");
+  if (!raw) return;
+  const keys = raw.split(",").map((k) => k.trim()).filter((k) => breedByKey(k));
+  if (!keys.length) return;
+  if (location.hash !== "#quiz") history.replaceState(null, "", `${location.pathname}${location.search}#quiz`);
+  openModal(quizModal);
+  renderSharedQuizResults(keys);
+}
+
+/* =====================================================================
+   CURATED COLLECTIONS
+===================================================================== */
+
+function renderCollections() {
+  if (!collectionsRow) return;
+  collectionsRow.innerHTML = CURATED_COLLECTIONS.map((col) =>
+    `<button type="button" class="collection-chip${activeCollectionId === col.id ? " active" : ""}" role="listitem" data-collection="${escapeHTML(col.id)}">${escapeHTML(t(col.labelKey))}</button>`
+  ).join("");
+  collectionsRow.querySelectorAll(".collection-chip").forEach((btn) => {
+    btn.addEventListener("click", () => applyCollection(btn.dataset.collection));
+  });
+}
+
+function applyCollection(id) {
+  const col = CURATED_COLLECTIONS.find((c) => c.id === id);
+  if (!col) return;
+  if (activeCollectionId === id) {
+    activeCollectionId = null;
+    activeAttrs.clear();
+  } else {
+    activeCollectionId = id;
+    activeAttrs.clear();
+    col.attrs.forEach((a) => activeAttrs.add(a));
+  }
+  selectedSizes.clear();
+  syncSizeButtons();
+  syncAttributeButtons();
+  renderCollections();
+  resetPageAndApply();
+  if (cardsContainer) cardsContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* =====================================================================
+   DISCOVERY BANNER (first visit)
+===================================================================== */
+
+function initDiscoveryBanner() {
+  if (!discoveryBanner) return;
+  try {
+    if (localStorage.getItem("dogweb-discovery-dismissed") === "1") return;
+  } catch (e) { /* ignore */ }
+  discoveryBanner.hidden = false;
+}
+
+if (discoveryDismissBtn) {
+  discoveryDismissBtn.addEventListener("click", () => {
+    if (discoveryBanner) discoveryBanner.hidden = true;
+    try { localStorage.setItem("dogweb-discovery-dismissed", "1"); } catch (e) { /* ignore */ }
+  });
+}
+if (discoveryQuizBtn) {
+  discoveryQuizBtn.addEventListener("click", () => {
+    if (discoveryBanner) discoveryBanner.hidden = true;
+    quizBtn && quizBtn.click();
+  });
+}
+if (discoveryCompareBtn) {
+  discoveryCompareBtn.addEventListener("click", () => {
+    showToast(t("compareHintEmpty"), { icon: "📋", variant: "info", duration: 7000 });
+    if (cardsContainer) cardsContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
+function renderFooterMeta() {
+  if (!footerMetaEl) return;
+  const val = t("footerMeta", BREEDS.length);
+  footerMetaEl.textContent = typeof val === "string" ? val : String(BREEDS.length);
+}
+
+/* =====================================================================
    QUICK-PEEK TOOLTIP (long-hover preview over a card)
 ===================================================================== */
 
-function showQuickPeek(card) {
+function showQuickPeek(card, opts = {}) {
   if (!quickPeekEl) return;
-  if (window.matchMedia("(hover: none)").matches) return; // skip on touch devices
   const breedKey = card.dataset.breed;
   const breed = breedByKey(breedKey);
   if (!breed) return;
+  _quickPeekTouchMode = !!opts.touch;
   const accent = card.style.getPropertyValue("--size-accent") || "";
   quickPeekEl.style.setProperty("--qp-color", accent || "#f97316");
+  quickPeekEl.classList.toggle("quick-peek-touch", _quickPeekTouchMode);
   quickPeekEl.innerHTML = `
     <p class="quick-peek-title">${escapeHTML(bName(breed))}</p>
     <p class="quick-peek-desc">${escapeHTML(bDesc(breed))}</p>
@@ -3295,6 +3599,11 @@ function showQuickPeek(card) {
 }
 
 function positionQuickPeek(card) {
+  if (_quickPeekTouchMode) {
+    quickPeekEl.style.left = "";
+    quickPeekEl.style.top = "";
+    return;
+  }
   const rect = card.getBoundingClientRect();
   const peekRect = quickPeekEl.getBoundingClientRect();
   const margin = 10;
@@ -3317,7 +3626,8 @@ function positionQuickPeek(card) {
 
 function hideQuickPeek() {
   if (!quickPeekEl) return;
-  quickPeekEl.classList.remove("visible");
+  _quickPeekTouchMode = false;
+  quickPeekEl.classList.remove("visible", "quick-peek-touch");
   setTimeout(() => { if (!quickPeekEl.classList.contains("visible")) quickPeekEl.hidden = true; }, 200);
 }
 
@@ -3681,6 +3991,12 @@ if (mobileNavEl) {
         if (filtersEl) filtersEl.scrollIntoView({ behavior: "smooth", block: "start" });
         setTimeout(() => searchInput && searchInput.focus(), 350);
       }
+    } else if (action === "compare") {
+      if (compareList.length >= 2) openCompareModal();
+      else {
+        showToast(compareList.length === 1 ? t("compareHintOne") : t("compareHintEmpty"), { icon: "📋", variant: "info", duration: 6000 });
+        if (cardsContainer) cardsContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     } else if (action === "favorites") {
       if (!favOnly) favOnlyBtn.click();
       if (cardsContainer) cardsContainer.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -3791,6 +4107,8 @@ function applyLanguage(lang) {
   renderHeroStats();
   renderFeaturedBreed();
   renderRecentBreeds();
+  renderCollections();
+  renderFooterMeta();
   renderSearchSuggestions();
   updateFavoriteShareUI();
   // Localised option labels live on the hidden <select>'s textContent;
@@ -3867,11 +4185,15 @@ applyTheme(initialTheme);
 applyLanguage(currentLang);
 restoreFavoritesFromUrl();
 restoreCompareFromUrl();
+restoreQuizResultsFromUrl();
 compareUrlSyncReady = true;
 updateFavOnlyLabel();
 updateCompareUI();
 applyFilters();
 syncFromHash();
+initDiscoveryBanner();
+renderCollections();
+renderFooterMeta();
 
 // Restore density + view mode from previous session.
 try {

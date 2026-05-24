@@ -87,7 +87,7 @@
   }
   </script>
 
-  <link rel="stylesheet" href="styles.css?v=20260520-size-row1" />
+  <link rel="stylesheet" href="styles.css?v=20260520-enhance1" />
 </head>
 
 <body>
@@ -150,6 +150,21 @@
     <button id="mobileFilterOpen" class="mobile-filter-open" type="button" data-i18n="mobileFiltersOpen" aria-controls="filtersPanel">
       🔎 מסננים וחיפוש
     </button>
+
+    <aside id="discoveryBanner" class="discovery-banner" hidden>
+      <div class="discovery-banner-inner">
+        <div class="discovery-banner-copy">
+          <strong class="discovery-banner-title" data-i18n="discoveryTitle">חדש כאן?</strong>
+          <p class="discovery-banner-text" data-i18n="discoveryText">ענו על 7 שאלות קצרות, השוו עד 4 גזעים, ושמרו מועדפים — הכל בחינם.</p>
+          <div class="discovery-banner-actions">
+            <button id="discoveryQuizBtn" type="button" class="pill-btn" data-i18n="discoveryQuiz">🎯 מצא לי כלב</button>
+            <button id="discoveryCompareBtn" type="button" class="pill-btn" data-i18n="discoveryCompare">📋 איך משווים?</button>
+          </div>
+        </div>
+        <button id="discoveryDismiss" type="button" class="discovery-dismiss" data-i18n-aria-label="discoveryDismissAria" aria-label="סגור">✕</button>
+      </div>
+    </aside>
+
     <div id="filterSheetOverlay" class="filter-sheet-overlay" hidden></div>
     <section id="filtersPanel" class="filters" aria-label="מסננים וחיפוש" data-i18n-aria-label="filtersLabel">
       <div class="filter-sheet-head">
@@ -219,6 +234,9 @@
         <button class="attribute-btn" type="button" data-attr="familyFriendly" aria-pressed="false" data-i18n="attrFamilyFriendly">👨‍👩‍👧 מתאימים למשפחות</button>
         <button class="attribute-btn" type="button" data-attr="apartmentFriendly" aria-pressed="false" data-i18n="attrApartmentFriendly">🏢 מתאימים לדירה</button>
         <button class="attribute-btn" type="button" data-attr="activePeople" aria-pressed="false" data-i18n="attrActivePeople">🏃 לאנשים פעילים</button>
+        <button class="attribute-btn" type="button" data-attr="bloatRisk" aria-pressed="false" data-i18n="attrBloatRisk">⚠️ סיכון נפיחה</button>
+        <button class="attribute-btn" type="button" data-attr="weightProne" aria-pressed="false" data-i18n="attrWeightProne">⚖️ נטייה לעודף משקל</button>
+        <button class="attribute-btn" type="button" data-attr="hypoallergenic" aria-pressed="false" data-i18n="attrHypoallergenic">🌿 היפואלרגני</button>
       </div>
     </section>
 
@@ -233,6 +251,11 @@
         <button id="favoriteShareBtn" type="button" class="pill-btn" data-i18n="favoriteShare">שתף מועדפים</button>
         <button id="favoriteCopyBtn" type="button" class="pill-btn" data-i18n="favoriteCopy">העתק קישור מועדפים</button>
       </div>
+
+      <section class="collections-section" id="collectionsSection" aria-labelledby="collectionsTitle">
+        <h2 id="collectionsTitle" class="collections-title" data-i18n="collectionsTitle">רשימות מומלצות</h2>
+        <div class="collections-row" id="collectionsRow" role="list"></div>
+      </section>
 
       <section class="recent-breeds" id="recentBreeds" hidden aria-labelledby="recentBreedsTitle">
         <div class="recent-breeds-head">
@@ -307,6 +330,7 @@
       </div>
       <div class="footer-bottom">
         <p data-i18n="footerCopy">© 2026 עולם הכלבים</p>
+        <p id="footerMeta" class="footer-meta"></p>
         <button id="clearCacheBtn" class="small-link" type="button" data-i18n="clearCache">נקה מטמון תמונות</button>
       </div>
     </footer>
@@ -314,7 +338,10 @@
 
   <!-- COMPARE BAR -->
   <div id="compareBar" class="compare-bar" role="region" aria-label="השוואת גזעים" data-i18n-aria-label="compareTitle">
-    <span class="compare-bar-text" id="compareBarText">📋 נבחרו 0 גזעים</span>
+    <div class="compare-bar-main">
+      <span class="compare-bar-text" id="compareBarText">📋 נבחרו 0 גזעים</span>
+      <p id="compareHint" class="compare-hint" hidden></p>
+    </div>
     <button id="compareOpenBtn" class="pill-btn active" type="button" disabled data-i18n="compareOpen">פתח השוואה</button>
     <button id="compareClearBtn" class="pill-btn" type="button" data-i18n="compareClear">נקה</button>
   </div>
@@ -329,19 +356,26 @@
   <!-- MOBILE BOTTOM NAV (visible only on narrow screens) -->
   <nav class="mobile-nav" id="mobileNav" aria-label="ניווט תחתון">
     <button class="mobile-nav-btn" type="button" data-action="home">
-      <span class="mn-icon" aria-hidden="true">🏠</span>
+      <span class="mn-icon" aria-hidden="true"><svg class="mn-svg" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/></svg></span>
       <span class="mn-label" data-i18n="navHome">ראשי</span>
     </button>
     <button class="mobile-nav-btn" type="button" data-action="search">
-      <span class="mn-icon" aria-hidden="true">🔍</span>
+      <span class="mn-icon" aria-hidden="true"><svg class="mn-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></span>
       <span class="mn-label" data-i18n="navSearch">חיפוש</span>
     </button>
+    <button class="mobile-nav-btn" type="button" data-action="compare">
+      <span class="mn-icon mn-icon-badge-wrap" aria-hidden="true">
+        <svg class="mn-svg" viewBox="0 0 24 24"><rect x="4" y="5" width="6" height="14" rx="1.5"/><rect x="14" y="5" width="6" height="14" rx="1.5"/></svg>
+        <span id="compareNavBadge" class="compare-nav-badge" hidden>0</span>
+      </span>
+      <span class="mn-label" data-i18n="navCompare">השוואה</span>
+    </button>
     <button class="mobile-nav-btn" type="button" data-action="favorites">
-      <span class="mn-icon" aria-hidden="true">❤️</span>
+      <span class="mn-icon" aria-hidden="true"><svg class="mn-svg mn-svg-fill" viewBox="0 0 24 24"><path d="M12 20.5s-6.8-4.4-9-8.5C1.2 8.8 3.4 5.5 6.8 5.5c1.9 0 3.2 1 3.2 1s1.3-1 3.2-1c3.4 0 5.6 3.3 3.8 6.5-2.2 4.1-9 8.5-9 8.5z"/></svg></span>
       <span class="mn-label" data-i18n="navFavs">מועדפים</span>
     </button>
     <button class="mobile-nav-btn" type="button" data-action="quiz">
-      <span class="mn-icon" aria-hidden="true">🎯</span>
+      <span class="mn-icon" aria-hidden="true"><svg class="mn-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></span>
       <span class="mn-label" data-i18n="navQuiz">חידון</span>
     </button>
   </nav>
@@ -382,10 +416,10 @@
     </div>
   </div>
 
-  <script src="i18n.js?v=20260520-quiz-living1"></script>
-  <script src="breed-food.js?v=20260520-slow-bowl1"></script>
-  <script src="breeds.js?v=20260520-quiz-living1"></script>
+  <script src="i18n.js?v=20260520-enhance1"></script>
+  <script src="breed-food.js?v=20260520-enhance1"></script>
+  <script src="breeds.js?v=20260520-enhance1"></script>
   <script src="wiki-images.js"></script>
-  <script src="script.js?v=20260520-mobile-grid1"></script>
+  <script src="script.js?v=20260520-enhance1"></script>
 </body>
 </html>

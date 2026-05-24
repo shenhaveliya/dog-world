@@ -568,9 +568,20 @@ function recommendedFoodFor(b) {
   };
 }
 
+/** Flags used by filters and cards (bloat risk, weight-prone, hypoallergenic). */
+function foodTraitFlags(b) {
+  if (!b || !b.key) return { bloatRisk: false, weightProne: false, hypoallergenic: false };
+  return {
+    bloatRisk: BLOAT_RISK.has(b.key),
+    weightProne: WEIGHT_PRONE.has(b.key),
+    hypoallergenic: HYPOALLERGENIC.has(b.key),
+  };
+}
+
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { recommendedFoodFor };
+  module.exports = { recommendedFoodFor, foodTraitFlags };
 }
 if (typeof globalThis !== "undefined") {
   globalThis.recommendedFoodFor = recommendedFoodFor;
+  globalThis.foodTraitFlags = foodTraitFlags;
 }
