@@ -1762,7 +1762,7 @@ select.sort-select { display: none; }
   transform: rotate(-135deg) translate(-1px, -1px);
 }
 .detail-food-wrap {
-  margin-top: 10px;
+  margin-top: 0;
 }
 .food-open-btn--detail {
   max-width: 100%;
@@ -2234,7 +2234,19 @@ footer .small-link {
 
 .detail-modal h2 { font-size: 32px; margin: 0 0 12px; }
 /* In the detail modal we want 3 stat columns instead of 2 (more horizontal room). */
-.detail-modal .info { grid-template-columns: repeat(3, 1fr); margin-top: 12px; }
+.detail-modal .info {
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 12px;
+  margin-bottom: 0;
+  align-content: start;
+}
+.detail-food-section {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  clear: both;
+}
 .detail-modal .stat { font-size: 14px; padding: 12px 14px; }
 .detail-modal .stat-value { font-size: 14px; }
 
@@ -4528,7 +4540,7 @@ button:active:not(:disabled),
 }
 
 .detail-food-callout {
-  margin: 0 0 10px;
+  margin: 0;
   padding: 10px 12px;
   border-radius: var(--r-md);
   border: 1px solid color-mix(in srgb, var(--tool-1) 35%, var(--input-border));

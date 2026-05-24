@@ -390,8 +390,8 @@ function detailStatTilesHTML(breed) {
     statTile("🎓", "infoTraining", bTraining(breed), false, "training"),
     statTile("🐱", "infoCats", breed.goodWithCats ? dict.yes : dict.catsBad, false, "cats"),
     statTile("👶", "infoKids", breed.goodWithKids ? dict.yes : dict.kidsBad, false, "kids"),
-    statTile("🧠", "infoCharacter", bCharacter(breed), false, "character"),
-    statTile("🏠", "infoSuitable", bSuitable(breed), false, "suitable"),
+    statTile("🧠", "infoCharacter", bCharacter(breed), true, "character"),
+    statTile("🏠", "infoSuitable", bSuitable(breed), true, "suitable"),
   ].join("");
 }
 
@@ -2734,8 +2734,10 @@ function openDetailModal(card, trigger) {
     <div class="detail-modal-inner">
       <p class="description">${escapeHTML(bDesc(breed))}</p>
       <div class="info">${detailStatTilesHTML(breed)}</div>
-      <p class="detail-food-callout">${escapeHTML(t("detailFoodCallout"))}</p>
-      <div class="detail-food-wrap">${foodOpenBtnHTML(breed, "detail")}</div>
+      <section class="detail-food-section" aria-label="${escapeHTML(t("infoFood").replace(/[:：]\s*$/, ""))}">
+        <p class="detail-food-callout">${escapeHTML(t("detailFoodCallout"))}</p>
+        <div class="detail-food-wrap">${foodOpenBtnHTML(breed, "detail")}</div>
+      </section>
       <p class="price-disclaimer">${escapeHTML(t("priceDisclaimer"))}</p>
       <p class="adoption-note">${escapeHTML(t("adoptionNote"))}</p>
 
