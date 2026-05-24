@@ -342,11 +342,25 @@ function statTile(icon, labelKey, value, full, kind) {
   `;
 }
 
+/** Info tooltip trigger shown next to the food label in the detail modal. */
+function foodInfoTipHTML() {
+  return `
+    <span class="food-info-tip">
+      <span class="food-info-btn" role="button" tabindex="0"
+            aria-label="${escapeHTML(t("detailFoodCalloutAria"))}"
+            aria-expanded="false">
+        <span class="food-info-icon" aria-hidden="true">ⓘ</span>
+      </span>
+      <span class="food-info-tooltip" role="tooltip">${escapeHTML(t("detailFoodCallout"))}</span>
+    </span>`;
+}
+
 /** Compact button that opens the food recommendation popup. */
 function foodOpenBtnHTML(breed, variant) {
   const name = bName(breed);
   const variantClass = variant === "detail" ? " food-open-btn--detail" : " food-open-btn--card";
-  return `
+  const label = escapeHTML(t("infoFood").replace(/[:：]\s*$/, ""));
+  const btnInner = `
     <button type="button" class="food-open-btn${variantClass}" data-stat="food"
             data-breed="${escapeHTML(breed.key)}"
             aria-label="${escapeHTML(t("foodOpenAria", name))}">
@@ -354,13 +368,21 @@ function foodOpenBtnHTML(breed, variant) {
         <span class="food-open-icon">🍽️</span>
       </span>
       <span class="food-open-copy">
-        <span class="food-open-label">${escapeHTML(t("infoFood").replace(/[:：]\s*$/, ""))}</span>
+        <span class="food-open-label">${label}</span>
       </span>
       <span class="food-open-action">
         <span class="food-open-action-text">${escapeHTML(t("foodOpenBtn"))}</span>
         <span class="food-open-chevron" aria-hidden="true"></span>
       </span>
     </button>`;
+  if (variant === "detail") {
+    return `
+      <div class="food-open-detail">
+        ${btnInner}
+        ${foodInfoTipHTML()}
+      </div>`;
+  }
+  return btnInner;
 }
 
 /** Tiles shown on every card (5 quick-glance facts + price). */
@@ -2507,6 +2529,7 @@ function closeModal(modal) {
 }
 
 function openFoodModal(breedKey, trigger) {
+  closeFoodInfoTips();
   const breed = breedByKey(breedKey);
   if (!breed || !foodModal) return;
   const name = bName(breed);
@@ -2518,7 +2541,44 @@ function openFoodModal(breedKey, trigger) {
   trackEvent("Open food modal", { breed: breedKey });
 }
 
+function openFoodInfoTip(tipEl) {
+  const btn = tipEl.querySelector(".food-info-btn");
+  tipEl.classList.add("is-open");
+  if (btn) btn.setAttribute("aria-expanded", "true");
+}
+
+function closeFoodInfoTips() {
+  document.querySelectorAll(".food-info-tip.is-open").forEach((tipEl) => {
+    tipEl.classList.remove("is-open");
+    const btn = tipEl.querySelector(".food-info-btn");
+    if (btn) btn.setAttribute("aria-expanded", "false");
+  });
+}
+
+document.addEventListener("keydown", (e) => {
+  const infoBtn = e.target.closest?.(".food-info-btn");
+  if (infoBtn && (e.key === "Enter" || e.key === " ")) {
+    e.preventDefault();
+    infoBtn.click();
+    return;
+  }
+  if (e.key === "Escape") closeFoodInfoTips();
+});
+
 document.addEventListener("click", (e) => {
+  const infoBtn = e.target.closest(".food-info-btn");
+  if (infoBtn) {
+    e.preventDefault();
+    e.stopPropagation();
+    const tipEl = infoBtn.closest(".food-info-tip");
+    if (!tipEl) return;
+    const willOpen = !tipEl.classList.contains("is-open");
+    closeFoodInfoTips();
+    if (willOpen) openFoodInfoTip(tipEl);
+    return;
+  }
+  if (!e.target.closest(".food-info-tip")) closeFoodInfoTips();
+
   const btn = e.target.closest(".food-open-btn");
   if (!btn) return;
   e.stopPropagation();
@@ -2735,7 +2795,6 @@ function openDetailModal(card, trigger) {
       <p class="description">${escapeHTML(bDesc(breed))}</p>
       <div class="info">${detailStatTilesHTML(breed)}</div>
       <section class="detail-food-section" aria-label="${escapeHTML(t("infoFood").replace(/[:：]\s*$/, ""))}">
-        <p class="detail-food-callout">${escapeHTML(t("detailFoodCallout"))}</p>
         <div class="detail-food-wrap">${foodOpenBtnHTML(breed, "detail")}</div>
       </section>
       <p class="price-disclaimer">${escapeHTML(t("priceDisclaimer"))}</p>
