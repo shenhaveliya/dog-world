@@ -87,7 +87,7 @@
   }
   </script>
 
-  <link rel="stylesheet" href="styles.css?v=20260520-ux-pack" />
+  <link rel="stylesheet" href="styles.css?v=20260520-ux-polish" />
 </head>
 
 <body>
@@ -112,8 +112,8 @@
       <div class="header-actions">
         <button id="langToggle" class="lang-toggle" type="button" aria-label="Switch to English" title="Switch to English"><span class="lang-icon" aria-hidden="true">🌐</span><span class="lang-label">EN</span></button>
         <button id="themeToggle" class="icon-btn" type="button" aria-label="החלף ערכת נושא" title="החלף ערכת נושא">🌙</button>
-        <button id="calmModeToggle" class="icon-btn calm-mode-toggle" type="button" aria-pressed="false" data-i18n-aria-label="calmModeAria" aria-label="מצב רגוע">🍃</button>
-        <button id="quizBtn" class="quiz-btn quiz-btn-primary magnetic" type="button" data-i18n="quizBtn">🎯 מצא לי כלב</button>
+        <button id="calmModeToggle" class="toolbar-icon-toggle calm-mode-toggle" type="button" aria-pressed="false" data-i18n-aria-label="calmModeAria" data-i18n-title="calmModeLabel" title="מצב רגוע — פחות אנימציות" aria-label="מצב רגוע">🍃</button>
+        <button id="quizBtn" class="quiz-btn magnetic" type="button" data-i18n="quizBtn">🎯 מצא לי כלב</button>
       </div>
 
       <!-- Bento-style hero: a 12-column asymmetric grid. The intro text spans
@@ -168,9 +168,12 @@
 
     <aside id="resumeBanner" class="resume-banner" hidden>
       <div class="resume-banner-inner">
-        <p class="resume-banner-text" id="resumeBannerText"></p>
+        <div class="resume-banner-copy">
+          <p class="resume-banner-text" id="resumeBannerText"></p>
+          <p class="resume-banner-hint" id="resumeBannerHint"></p>
+        </div>
         <div class="resume-banner-actions">
-          <button id="resumeBannerGo" type="button" class="pill-btn"></button>
+          <button id="resumeBannerGo" type="button" class="pill-btn resume-banner-go"></button>
           <button id="resumeBannerDismiss" type="button" class="resume-dismiss" data-i18n-aria-label="resumeDismissAria" aria-label="סגור">✕</button>
         </div>
       </div>
@@ -206,7 +209,7 @@
           </div>
           <!-- Density toggle (Comfortable / Compact) – only meaningful in grid view. -->
           <button id="densityToggle" type="button" class="density-toggle" aria-pressed="false" data-i18n-title="densityToggle" title="צפיפות">▤</button>
-          <button id="scanModeBtn" type="button" class="scan-mode-toggle" aria-pressed="false" data-i18n-title="scanModeLabel" title="מצב סריקה">👁</button>
+          <button id="scanModeBtn" type="button" class="toolbar-icon-toggle scan-mode-toggle" aria-pressed="false" data-i18n-aria-label="scanModeLabel" data-i18n-title="scanModeLabel" title="מצב סריקה — פחות פרטים על כרטיס" aria-label="מצב סריקה">👁</button>
           <button id="favOnlyBtn" type="button" class="fav-only-btn" aria-pressed="false" data-i18n="favOnly">❤️ רק מועדפים</button>
           <button id="advancedToggle" type="button" class="advanced-toggle" aria-expanded="false" aria-controls="advancedFilters" data-i18n="advancedClosed">מסננים מתקדמים ▼</button>
           <label for="sortSelect" class="sr-only" data-i18n="sortLabel">מיון</label>
@@ -423,10 +426,10 @@
     </div>
   </div>
 
-  <script src="i18n.js?v=20260520-ux-pack"></script>
+  <script src="i18n.js?v=20260520-ux-polish"></script>
   <script src="breed-food.js?v=20260520-enhance1"></script>
   <script src="breeds.js?v=20260520-enhance1"></script>
   <script src="wiki-images.js"></script>
-  <script src="script.js?v=20260520-ux-pack"></script>
+  <script src="script.js?v=20260520-ux-polish"></script>
 </body>
 </html>
