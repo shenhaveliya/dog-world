@@ -178,6 +178,9 @@ function updateBreedShareMeta(breed, imageUrl) {
   setMetaContent("twDescription", desc);
   setMetaContent("twImage", img);
   setMetaContent("twImageAlt", name);
+  document.querySelectorAll('meta[property="og:image"]').forEach((el) => {
+    if (el.id !== "ogImage" && el.id !== "ogImageSecure") el.setAttribute("content", img);
+  });
 }
 
 function resetShareMeta() {
@@ -194,36 +197,57 @@ function resetShareMeta() {
   setMetaContent("twImageAlt", dict.ogImageAlt || dict.docTitle);
 }
 
-async function fetchImageShareFile(url, filename) {
+async function buildShareImageFile(url, breedKey) {
+  const heroImg = document.getElementById("detailHeroImg");
+  if (heroImg && heroImg.complete && heroImg.naturalWidth > 0) {
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = heroImg.naturalWidth;
+      canvas.height = heroImg.naturalHeight;
+      canvas.getContext("2d").drawImage(heroImg, 0, 0);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
+      if (blob) return new File([blob], `${breedKey}.jpg`, { type: "image/jpeg" });
+    } catch (e) { /* tainted canvas — fall back to fetch */ }
+  }
   const resp = await fetch(url);
   if (!resp.ok) throw new Error("image fetch failed");
   const blob = await resp.blob();
-  return new File([blob], filename, { type: blob.type || "image/jpeg" });
+  const type = blob.type && blob.type.startsWith("image/") ? blob.type : "image/jpeg";
+  return new File([blob], `${breedKey}.jpg`, { type });
+}
+
+/** Desktop share UIs (esp. Windows) show a link card with og:image; file attach hides it. */
+function shouldAttachShareImageFile() {
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 }
 
 async function shareBreedNative(breed, name, shareUrl) {
   const imageUrl = getDetailShareImageUrl(breed);
   updateBreedShareMeta(breed, imageUrl);
-  const payload = { title: name, text: bDesc(breed), url: shareUrl };
-  if (typeof navigator.share === "function") {
-    try {
-      if (imageUrl && imageUrl !== DEFAULT_OG_IMAGE && navigator.canShare) {
-        const file = await fetchImageShareFile(imageUrl, `${breed.key}.jpg`);
-        if (navigator.canShare({ ...payload, files: [file] })) {
-          await navigator.share({ ...payload, files: [file] });
-          trackEvent("Native share breed", { breed: breed.key, withImage: true });
-          return "shared";
-        }
-      }
-    } catch (e) { /* fall through to link-only share */ }
-    await navigator.share(payload);
-    trackEvent("Native share breed", { breed: breed.key });
-    return "shared";
+  const shareHref = location.href;
+  const payload = { title: name, text: bDesc(breed), url: shareHref };
+
+  if (typeof navigator.share !== "function") {
+    await copyToClipboard(shareHref);
+    announce(t("linkCopied"));
+    trackEvent("Copy breed link", { breed: breed.key });
+    return "copied";
   }
-  await copyToClipboard(shareUrl);
-  announce(t("linkCopied"));
-  trackEvent("Copy breed link", { breed: breed.key });
-  return "copied";
+
+  if (shouldAttachShareImageFile() && imageUrl && imageUrl !== DEFAULT_OG_IMAGE && navigator.canShare) {
+    try {
+      const file = await buildShareImageFile(imageUrl, breed.key);
+      if (navigator.canShare({ ...payload, files: [file] })) {
+        await navigator.share({ ...payload, files: [file] });
+        trackEvent("Native share breed", { breed: breed.key, withImage: true });
+        return "shared";
+      }
+    } catch (e) { /* fall through to link share */ }
+  }
+
+  await navigator.share(payload);
+  trackEvent("Native share breed", { breed: breed.key });
+  return "shared";
 }
 
 function updateQueryParam(name, value) {
@@ -3086,7 +3110,7 @@ function openDetailModal(card, trigger) {
     ? `
     <div class="detail-hero-wrap">
       <div class="detail-hero${isWikiOnly ? " detail-hero-wiki" : ""}">
-        <img id="detailHeroImg" src="${escapeHTML(cachedImg)}" alt="${escapeHTML(name)}"/>
+        <img id="detailHeroImg" src="${escapeHTML(cachedImg)}" alt="${escapeHTML(name)}" crossorigin="anonymous"/>
         <div class="detail-hero-scrim" aria-hidden="true"></div>
       </div>
       ${breedHeadHTML}
