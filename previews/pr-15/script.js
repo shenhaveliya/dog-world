@@ -3110,14 +3110,15 @@ function openDetailModal(card, trigger) {
   const heroHTML = withImage
     ? `
     <div class="detail-hero-wrap">
+      ${breedHeadHTML}
       <div class="detail-hero${isWikiOnly ? " detail-hero-wiki" : ""}">
         <img id="detailHeroImg" src="${escapeHTML(cachedImg)}" alt="${escapeHTML(name)}" crossorigin="anonymous"/>
         <div class="detail-hero-scrim" aria-hidden="true"></div>
       </div>
-      ${breedHeadHTML}
     </div>`
     : `
     <div class="detail-hero-wrap">
+      ${breedHeadHTML}
       <div class="detail-hero detail-hero-no-image">
         <div class="no-image-hero-inner" aria-hidden="true">
           <span class="no-image-initial">${escapeHTML(breedInitial(breed))}</span>
@@ -3125,7 +3126,6 @@ function openDetailModal(card, trigger) {
         </div>
         <div class="detail-hero-scrim detail-hero-scrim--static" aria-hidden="true"></div>
       </div>
-      ${breedHeadHTML}
     </div>`;
   const refreshBtnHTML = (withImage && !isWikiOnly)
     ? `<button id="detailRefresh" class="detail-action-btn" type="button">${escapeHTML(t("detailRefresh"))}</button>`
