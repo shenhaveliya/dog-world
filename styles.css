@@ -21,7 +21,7 @@
     radial-gradient(circle at bottom left, rgba(251, 191, 36, 0.07), transparent 30%),
     linear-gradient(135deg, #e8dfd3, #ebe4da, #dfd4c6);
   --text: #1e293b;
-  --text-muted: #64748b;
+  --text-muted: #5a6578;
   --card-bg: #f0e8de;
   --card-border: rgba(255, 255, 255, 0.35);
   --card-shadow: rgba(15, 23, 42, 0.08);
@@ -513,6 +513,11 @@ header::before {
 }
 .quiz-btn:hover {
   box-shadow: 0 14px 26px var(--tool-shadow);
+}
+.quiz-btn-primary {
+  padding: 12px 20px;
+  font-size: 15px;
+  box-shadow: 0 10px 24px var(--tool-shadow), 0 0 0 2px color-mix(in srgb, var(--tool-1) 35%, transparent);
 }
 
 .badge {
@@ -4741,6 +4746,221 @@ button:active:not(:disabled),
 }
 
 /* =====================================================================
+   UX ENHANCEMENTS PACK
+===================================================================== */
+body.calm-mode .aurora-blob,
+body.calm-mode .display-h1,
+body.calm-mode .magnetic,
+body.calm-mode .card.enter {
+  animation: none !important;
+  transform: none !important;
+}
+body.calm-mode .card:hover {
+  transform: none !important;
+}
+.calm-mode-toggle[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--tool-1) 18%, var(--button-bg));
+  color: var(--tool-dark);
+}
+
+.resume-banner {
+  margin: 0 0 14px;
+  border: 1px solid color-mix(in srgb, var(--tool-1) 30%, var(--input-border));
+  border-radius: var(--r-lg);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--tool-1) 10%, var(--info-bg)), var(--info-bg));
+}
+.resume-banner-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+}
+.resume-banner-text {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.resume-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.resume-banner-actions .pill-btn {
+  padding: 8px 14px;
+  font-size: 13px;
+}
+.resume-dismiss {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--input-border);
+  background: var(--filter-bg);
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.scan-mode-toggle[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--accent-1) 16%, var(--button-bg));
+  color: var(--accent-dark);
+}
+.cards.is-scan .card .description,
+.cards.is-scan .card .info .stat:nth-child(n+4),
+.cards.is-scan .card .food-open-btn {
+  display: none !important;
+}
+.cards.is-scan .card .info {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.quiz-match-badge {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  background: color-mix(in srgb, var(--tool-1) 18%, transparent);
+  color: var(--tool-dark);
+  border: 1px solid color-mix(in srgb, var(--tool-1) 35%, transparent);
+}
+.quiz-match-badge--top {
+  background: color-mix(in srgb, var(--gold) 22%, transparent);
+  color: var(--accent-dark);
+  border-color: color-mix(in srgb, var(--gold) 45%, transparent);
+}
+
+.detail-summary {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--tool-1) 8%, var(--info-bg));
+  border: 1px solid color-mix(in srgb, var(--tool-1) 18%, var(--input-border));
+}
+.detail-summary-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+.detail-summary-list li {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.detail-summary-list li::before {
+  content: "•";
+  color: var(--tool-1);
+  margin-inline-end: 6px;
+}
+
+.detail-breed-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 22px 12px;
+}
+.detail-breed-nav-btn {
+  flex: 1;
+  min-height: 40px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--r-pill);
+  background: var(--filter-bg);
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.detail-breed-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.detail-sticky-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px 22px calc(12px + env(safe-area-inset-bottom, 0px));
+  margin-top: 8px;
+  border-top: 1px solid var(--input-border);
+  background: color-mix(in srgb, var(--modal-bg) 92%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.detail-sticky-btn {
+  min-height: 44px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--r-pill);
+  background: var(--filter-bg);
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+.detail-sticky-btn:hover,
+.detail-sticky-btn:focus-visible {
+  border-color: color-mix(in srgb, var(--accent-1) 40%, var(--input-border));
+  outline: none;
+}
+
+.quick-peek-photo {
+  width: 100%;
+  height: 96px;
+  object-fit: cover;
+  border-radius: var(--r-md);
+  margin-bottom: 8px;
+  background: var(--image-placeholder);
+}
+.quick-peek-character {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.compare-table-wrap {
+  display: none;
+  overflow-x: auto;
+  margin-top: 16px;
+}
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.compare-table th,
+.compare-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--input-border);
+  text-align: start;
+  vertical-align: top;
+}
+.compare-table thead th {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--info-bg);
+}
+.compare-table tbody th {
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.compare-table .compare-td-best {
+  background: color-mix(in srgb, var(--tool-1) 12%, transparent);
+  font-weight: 700;
+}
+
+/* =====================================================================
    RESPONSIVE
 ===================================================================== */
 @media (max-width: 700px) {
@@ -4974,6 +5194,12 @@ button:active:not(:disabled),
   .compare-modal .compare-grid {
     grid-template-columns: 1fr;
     gap: 14px;
+  }
+  .compare-modal .compare-table-wrap {
+    display: block;
+  }
+  .compare-modal .compare-grid {
+    display: none;
   }
   .compare-modal .compare-col {
     text-align: start;

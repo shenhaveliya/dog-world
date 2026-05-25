@@ -60,6 +60,10 @@ const WIKI_CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
 const WIKI_MAX_CONCURRENT = 3; // be polite to Wikipedia
 const FAV_KEY = "dogweb-favorites";
 const RECENT_KEY = "dogweb-recent-breeds";
+const LAST_BREED_KEY = "dogweb-last-breed";
+const QUIZ_MATCH_KEY = "dogweb-quiz-match-keys";
+const CALM_KEY = "dogweb-calm";
+const RESUME_DISMISS_KEY = "dogweb-resume-dismiss-until";
 const THEME_KEY = "dogweb-theme";
 const LANG_KEY = "dogweb-lang";
 const MAX_COMPARE = 4;
@@ -493,8 +497,16 @@ const discoveryDismissBtn = document.getElementById("discoveryDismiss");
 const discoveryQuizBtn = document.getElementById("discoveryQuizBtn");
 const discoveryCompareBtn = document.getElementById("discoveryCompareBtn");
 const footerMetaEl = document.getElementById("footerMeta");
+const calmModeToggle = document.getElementById("calmModeToggle");
+const scanModeBtn = document.getElementById("scanModeBtn");
+const resumeBanner = document.getElementById("resumeBanner");
+const resumeBannerText = document.getElementById("resumeBannerText");
+const resumeBannerGo = document.getElementById("resumeBannerGo");
+const resumeBannerDismiss = document.getElementById("resumeBannerDismiss");
 
-let _lastImageErrorToast = 0;
+let scanMode = false;
+let quizMatchKeys = [];
+let _detailNavKeys = [];
 let _quickPeekTouchMode = false;
 
 let prefersReducedMotion = false;
@@ -871,7 +883,7 @@ function renderCard(breed) {
              data-good-with-kids="${breed.goodWithKids}"
              data-food-bloat="${ft.bloatRisk || false}"
              data-food-weight="${ft.weightProne || false}"
-             data-food-hypo="${ft.hypoallergenic || false}">${imageBlock}
+             data-food-hypo="${ft.hypoallergenic || false}">${imageBlock}${quizMatchBadgeHTML(breed.key)}
       <h2>${escapeHTML(name)}</h2>
       <span class="size">${escapeHTML(t("sizeBadge", bSize(breed)))}</span>
       <p class="description">${escapeHTML(bDesc(breed))}</p>
@@ -1519,7 +1531,7 @@ function renderSearchSuggestions() {
       <span class="search-suggestion-thumb"><img alt="" data-breed-key="${escapeHTML(breed.key)}" loading="lazy"></span>
       <span class="search-suggestion-text">
         <strong>${escapeHTML(bName(breed))}</strong>
-        <small>${escapeHTML(bSize(breed))} · ${escapeHTML(bEnergy(breed))}</small>
+        <small>${escapeHTML(bSize(breed))} · ${escapeHTML(bEnergy(breed))} · ${escapeHTML(bCharacter(breed))}</small>
       </span>
     </button>
   `).join("");
@@ -2161,6 +2173,8 @@ function applyFilters() {
 
   updateLoadMoreUI(Math.max(0, filterPassed - visiblePageCount));
 
+  if (typeof initLoadMoreObserver === "function") initLoadMoreObserver();
+
   // Staggered entry: each newly-visible card animates in 30 ms after the
   // previous, capped at 12 to avoid an absurdly long cascade for large grids.
   if (!prefersReducedMotion && visibleCards.length) {
@@ -2767,6 +2781,168 @@ function similarBreedsHTML(breed) {
   </section>`;
 }
 
+function quizMatchBadgeHTML(breedKey) {
+  const idx = quizMatchKeys.indexOf(breedKey);
+  if (idx === -1) return "";
+  const cls = idx === 0 ? "quiz-match-badge quiz-match-badge--top" : "quiz-match-badge";
+  const label = idx === 0 ? t("quizMatchBadge") : t("quizMatchBadgeSimilar");
+  return `<span class="${cls}">${escapeHTML(label)}</span>`;
+}
+
+function loadQuizMatchKeys() {
+  try {
+    const raw = sessionStorage.getItem(QUIZ_MATCH_KEY);
+    quizMatchKeys = raw ? JSON.parse(raw).filter((k) => breedByKey(k)).slice(0, 3) : [];
+  } catch (e) {
+    quizMatchKeys = [];
+  }
+}
+
+function saveQuizMatchKeys(keys) {
+  quizMatchKeys = keys.slice(0, 3);
+  try { sessionStorage.setItem(QUIZ_MATCH_KEY, JSON.stringify(quizMatchKeys)); } catch (e) { /* ignore */ }
+}
+
+function syncQuizMatchBadges() {
+  cards.forEach((card) => {
+    card.querySelector(".quiz-match-badge")?.remove();
+    const html = quizMatchBadgeHTML(card.dataset.breed);
+    if (!html) return;
+    const h2 = card.querySelector("h2");
+    if (h2) h2.insertAdjacentHTML("beforebegin", html);
+  });
+}
+
+function detailSummaryHTML(breed) {
+  const items = [];
+  items.push(breed.goodWithKids ? t("summaryGoodKids") : t("summaryKidsCheck"));
+  items.push(`${t("summaryEnergy")}: ${bEnergy(breed)}`);
+  if (breed.livingPref === 1) items.push(t("summaryApartment"));
+  else if (breed.experience === 1) items.push(t("summaryBeginner"));
+  else items.push(bCharacter(breed));
+  const lis = items.slice(0, 3).map((item) => `<li>${escapeHTML(item)}</li>`).join("");
+  return `<ul class="detail-summary-list" aria-label="${escapeHTML(t("detailSummaryAria"))}">${lis}</ul>`;
+}
+
+function getVisibleFilteredCards() {
+  return cards.filter((c) => c.style.display !== "none");
+}
+
+function navigateDetailBreed(delta) {
+  if (_detailNavKeys.length <= 1) return;
+  const m = location.hash.match(/^#breed\/(.+)$/);
+  const key = m ? decodeURIComponent(m[1]) : "";
+  let idx = _detailNavKeys.indexOf(key);
+  if (idx === -1) idx = 0;
+  idx = (idx + delta + _detailNavKeys.length) % _detailNavKeys.length;
+  const nextCard = cardForBreed(_detailNavKeys[idx]);
+  if (nextCard) openDetailModal(nextCard);
+}
+
+function buildCompareTableHTML(breeds, rowSpecs, bestIdxPerRow) {
+  const headers = breeds.map((b) => `<th scope="col">${escapeHTML(bName(b))}</th>`).join("");
+  const body = rowSpecs.map((spec, rowIdx) => {
+    const cells = breeds.map((breed, colIdx) => {
+      const cls = bestIdxPerRow[rowIdx].best.has(colIdx) ? "compare-td-best" : "";
+      return `<td class="${cls}">${escapeHTML(String(spec.val(breed)))}</td>`;
+    }).join("");
+    return `<tr><th scope="row">${escapeHTML(spec.label)}</th>${cells}</tr>`;
+  }).join("");
+  return `<div class="compare-table-wrap"><table class="compare-table"><caption class="sr-only">${escapeHTML(t("compareTableCaption"))}</caption><thead><tr><th></th>${headers}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
+function formatQuizShareText(top3) {
+  return top3.map((entry, i) => {
+    const maxDist = maxQuizDistance();
+    const pct = Math.max(0, Math.round(100 - (entry.dist / maxDist) * 100));
+    const reasons = quizReasonsFor(entry.breed);
+    const why = reasons[0] ? ` — ${reasons[0]}` : "";
+    return `${["🥇", "🥈", "🥉"][i] || "•"} ${bName(entry.breed)} (${pct}%)${why}`;
+  }).join("\n");
+}
+
+function initCalmMode() {
+  let calm = false;
+  try { calm = localStorage.getItem(CALM_KEY) === "1"; } catch (e) { /* ignore */ }
+  document.body.classList.toggle("calm-mode", calm);
+  if (calmModeToggle) calmModeToggle.setAttribute("aria-pressed", calm ? "true" : "false");
+  if (calmModeToggle) {
+    calmModeToggle.addEventListener("click", () => {
+      const next = !document.body.classList.contains("calm-mode");
+      document.body.classList.toggle("calm-mode", next);
+      calmModeToggle.setAttribute("aria-pressed", next ? "true" : "false");
+      try { localStorage.setItem(CALM_KEY, next ? "1" : "0"); } catch (e) { /* ignore */ }
+    });
+  }
+}
+
+function initScanMode() {
+  if (!scanModeBtn || !cardsContainer) return;
+  scanModeBtn.addEventListener("click", () => {
+    scanMode = !scanMode;
+    scanModeBtn.setAttribute("aria-pressed", scanMode ? "true" : "false");
+    scanModeBtn.title = t(scanMode ? "scanModeOn" : "scanModeOff");
+    cardsContainer.classList.toggle("is-scan", scanMode);
+  });
+}
+
+function initResumeBanner() {
+  if (!resumeBanner || !resumeBannerText || !resumeBannerGo) return;
+  try {
+    if (Date.now() < parseInt(localStorage.getItem(RESUME_DISMISS_KEY) || "0", 10)) return;
+  } catch (e) { /* ignore */ }
+
+  let mode = null;
+  let payload = null;
+  if (compareList.length >= 2) {
+    mode = "compare";
+    payload = compareList.length;
+  } else {
+    try {
+      const lastKey = localStorage.getItem(LAST_BREED_KEY);
+      const breed = lastKey && breedByKey(lastKey);
+      if (breed && !location.hash.includes(encodeURIComponent(lastKey))) {
+        mode = "breed";
+        payload = breed;
+      }
+    } catch (e) { /* ignore */ }
+  }
+  if (!mode) return;
+
+  if (mode === "compare") {
+    resumeBannerText.textContent = t("resumeBannerCompare", payload);
+    resumeBannerGo.textContent = t("resumeBannerContinue");
+    resumeBannerGo.onclick = () => openCompareModal();
+  } else {
+    resumeBannerText.textContent = t("resumeBannerBreed", bName(payload));
+    resumeBannerGo.textContent = t("resumeBannerContinue");
+    resumeBannerGo.onclick = () => {
+      const card = cardForBreed(payload.key);
+      if (card) openDetailModal(card, resumeBannerGo);
+    };
+  }
+  resumeBanner.hidden = false;
+
+  if (resumeBannerDismiss) {
+    resumeBannerDismiss.onclick = () => {
+      resumeBanner.hidden = true;
+      try { localStorage.setItem(RESUME_DISMISS_KEY, String(Date.now() + 86400000)); } catch (e) { /* ignore */ }
+    };
+  }
+}
+
+let _loadMoreObserver = null;
+function initLoadMoreObserver() {
+  if (!loadMoreEl || !("IntersectionObserver" in window)) return;
+  if (_loadMoreObserver) _loadMoreObserver.disconnect();
+  _loadMoreObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting && !loadMoreEl.hidden) loadMoreCards();
+    });
+  }, { rootMargin: "120px" });
+  _loadMoreObserver.observe(loadMoreEl);
+}
+
 function openDetailModal(card, trigger) {
   const breedKey = card.dataset.breed;
   const breed = breedByKey(breedKey);
@@ -2816,7 +2992,12 @@ function openDetailModal(card, trigger) {
     : "";
 
   detailModalContent.innerHTML = `${heroHTML}
+    <div class="detail-breed-nav">
+      <button type="button" id="detailPrevBtn" class="detail-breed-nav-btn" aria-label="${escapeHTML(t("detailPrevAria"))}">← ${escapeHTML(t("detailPrevAria"))}</button>
+      <button type="button" id="detailNextBtn" class="detail-breed-nav-btn" aria-label="${escapeHTML(t("detailNextAria"))}">${escapeHTML(t("detailNextAria"))} →</button>
+    </div>
     <div class="detail-modal-inner">
+      <div class="detail-summary">${detailSummaryHTML(breed)}</div>
       <p class="description">${escapeHTML(bDesc(breed))}</p>
       <div class="info">${detailStatTilesHTML(breed)}</div>
       <section class="detail-food-section" aria-label="${escapeHTML(t("infoFood").replace(/[:：]\s*$/, ""))}">
@@ -2842,7 +3023,32 @@ function openDetailModal(card, trigger) {
         </a>
       </div>
     </div>
+    <div class="detail-sticky-bar" role="toolbar" aria-label="${escapeHTML(t("detailActionsAria"))}">
+      <button type="button" id="detailStickyFav" class="detail-sticky-btn">${isFavorite(breedKey) ? escapeHTML(t("detailFavOn")) : escapeHTML(t("detailStickyFav"))}</button>
+      <button type="button" id="detailStickyCompare" class="detail-sticky-btn">${escapeHTML(t("detailStickyCompare"))}</button>
+      <button type="button" id="detailStickyShare" class="detail-sticky-btn">${escapeHTML(t("detailStickyShare"))}</button>
+    </div>
   `;
+
+  try { localStorage.setItem(LAST_BREED_KEY, breedKey); } catch (e) { /* ignore */ }
+  _detailNavKeys = getVisibleFilteredCards().map((c) => c.dataset.breed);
+  const navIdx = _detailNavKeys.indexOf(breedKey);
+  const prevBtn = document.getElementById("detailPrevBtn");
+  const nextBtn = document.getElementById("detailNextBtn");
+  if (prevBtn) {
+    prevBtn.disabled = _detailNavKeys.length <= 1;
+    prevBtn.addEventListener("click", () => navigateDetailBreed(-1));
+  }
+  if (nextBtn) {
+    nextBtn.disabled = _detailNavKeys.length <= 1;
+    nextBtn.addEventListener("click", () => navigateDetailBreed(1));
+  }
+  if (navIdx > -1 && _detailNavKeys.length > 1) {
+    const prevKey = _detailNavKeys[(navIdx - 1 + _detailNavKeys.length) % _detailNavKeys.length];
+    const nextKey = _detailNavKeys[(navIdx + 1) % _detailNavKeys.length];
+    if (prevBtn) prevBtn.textContent = `← ${bName(breedByKey(prevKey))}`;
+    if (nextBtn) nextBtn.textContent = `${bName(breedByKey(nextKey))} →`;
+  }
 
   const desiredHash = `#breed/${encodeURIComponent(breedKey)}`;
   if (location.hash !== desiredHash) {
@@ -2875,7 +3081,40 @@ function openDetailModal(card, trigger) {
     card.querySelector(".fav-btn").click();
     document.getElementById("detailFav").textContent =
       isFavorite(breedKey) ? t("detailFavOn") : t("detailFavAdd");
+    const stickyFav = document.getElementById("detailStickyFav");
+    if (stickyFav) stickyFav.textContent = isFavorite(breedKey) ? t("detailFavOn") : t("detailStickyFav");
   });
+  const stickyFav = document.getElementById("detailStickyFav");
+  if (stickyFav) {
+    stickyFav.addEventListener("click", () => document.getElementById("detailFav")?.click());
+  }
+  const stickyCompare = document.getElementById("detailStickyCompare");
+  if (stickyCompare) {
+    stickyCompare.addEventListener("click", () => {
+      if (!compareList.includes(breedKey)) {
+        if (compareList.length >= MAX_COMPARE) {
+          showToast(t("compareMaxAlert", MAX_COMPARE), { icon: "📋", variant: "warning" });
+          return;
+        }
+        compareList.push(breedKey);
+        const cmpBtn = card.querySelector(".compare-btn");
+        if (cmpBtn) setCompareBtnState(cmpBtn, true);
+        updateCompareUI();
+      }
+      if (compareList.length >= 2) {
+        closeModal(detailModal);
+        openCompareModal();
+      } else {
+        showToast(t("compareHintOne"), { icon: "📋", variant: "info" });
+      }
+    });
+  }
+  const stickyShare = document.getElementById("detailStickyShare");
+  if (stickyShare) {
+    stickyShare.addEventListener("click", () => {
+      document.getElementById("detailShare")?.click();
+    });
+  }
   document.getElementById("detailShare").addEventListener("click", () => {
     const btn = document.getElementById("detailShare");
     const url = breedPageUrl(breed);
@@ -3212,6 +3451,7 @@ function openCompareModal() {
       <button type="button" class="pill-btn" id="compareCopyLink">${escapeHTML(t("detailShare"))}</button>
     </div>
     <div class="compare-grid">${compareColumns}</div>
+    ${buildCompareTableHTML(breeds, rowSpecs, bestIdxPerRow)}
   `;
 
   compareModalContent.querySelectorAll("img.compare-img").forEach((img) => {
@@ -3479,9 +3719,11 @@ function renderQuizResult() {
   quizBody.querySelector(".quiz-prev").addEventListener("click", () => closeModal(quizModal));
 
   syncQuizResultsUrl(top3.map((e) => e.breed.key));
+  saveQuizMatchKeys(top3.map((e) => e.breed.key));
+  syncQuizMatchBadges();
 
   const shareUrl = quizResultsUrl(top3.map((e) => e.breed.key));
-  const shareText = top3.map((e, i) => `${i + 1}. ${bName(e.breed)}`).join("\n");
+  const shareText = formatQuizShareText(top3);
   const shareCopyBtn = quizBody.querySelector(".quiz-share-copy");
   if (shareCopyBtn) {
     shareCopyBtn.addEventListener("click", () => {
@@ -3577,6 +3819,8 @@ function renderSharedQuizResults(keys) {
   });
   quizBody.querySelector(".quiz-restart").addEventListener("click", () => startQuiz());
   quizBody.querySelector(".quiz-prev").addEventListener("click", () => closeModal(quizModal));
+  saveQuizMatchKeys(keys);
+  syncQuizMatchBadges();
 }
 
 function restoreQuizResultsFromUrl() {
@@ -3641,7 +3885,9 @@ function showQuickPeek(card, opts = {}) {
   quickPeekEl.style.setProperty("--qp-color", accent || "#f97316");
   quickPeekEl.classList.toggle("quick-peek-touch", _quickPeekTouchMode);
   quickPeekEl.innerHTML = `
+    <img class="quick-peek-photo" data-breed-key="${escapeHTML(breedKey)}" alt="" loading="lazy" />
     <p class="quick-peek-title">${escapeHTML(bName(breed))}</p>
+    <p class="quick-peek-character">${escapeHTML(bCharacter(breed))}</p>
     <p class="quick-peek-desc">${escapeHTML(bDesc(breed))}</p>
     <div class="quick-peek-meta">
       <span>⚡ ${escapeHTML(bEnergy(breed))}</span>
@@ -3649,6 +3895,8 @@ function showQuickPeek(card, opts = {}) {
       <span>📏 ${escapeHTML(bSize(breed))}</span>
     </div>
   `;
+  const qpImg = quickPeekEl.querySelector(".quick-peek-photo");
+  if (qpImg) hydrateBreedImageInto(qpImg, breed, () => qpImg.remove());
   quickPeekEl.hidden = false;
   positionQuickPeek(card);
   requestAnimationFrame(() => quickPeekEl.classList.add("visible"));
@@ -4247,6 +4495,12 @@ updateCompareUI();
 applyFilters();
 syncFromHash();
 initDiscoveryBanner();
+initCalmMode();
+initScanMode();
+loadQuizMatchKeys();
+syncQuizMatchBadges();
+initResumeBanner();
+initLoadMoreObserver();
 renderFooterMeta();
 
 // Restore density + view mode from previous session.
