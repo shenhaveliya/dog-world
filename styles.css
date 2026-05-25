@@ -2961,7 +2961,7 @@ footer .small-link {
 .detail-breed-head {
   position: relative;
   z-index: 3;
-  padding: 20px 48px 0;
+  padding: 22px 48px 0;
   color: var(--text);
   pointer-events: auto;
   text-align: center;
@@ -2982,48 +2982,62 @@ footer .small-link {
 [data-theme="dark"] .detail-breed-head[data-size-rank="3"] { --size-accent: #c4b5fd; }
 [data-theme="dark"] .detail-breed-head[data-size-rank="4"] { --size-accent: #f87171; }
 .detail-breed-head-inner {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  flex-wrap: wrap;
   max-width: 100%;
 }
 .detail-breed-head h2 {
   margin: 0;
-  flex: 0 1 auto;
-  font-size: clamp(1.45rem, 4.2vw, 2rem);
+  font-size: clamp(1.75rem, 5.2vw, 2.4rem);
   font-weight: 800;
-  letter-spacing: -0.025em;
-  line-height: 1.15;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
   color: var(--text);
   text-align: center;
 }
 .detail-breed-head .detail-breed-size,
 .detail-breed-head .size {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   margin: 0;
-  flex: 0 0 auto;
-  padding: 4px 10px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  border: 1px solid color-mix(in srgb, var(--size-accent, var(--accent-1)) 38%, var(--input-border));
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--size-accent, var(--accent-1)) 32%, var(--input-border));
   box-shadow:
-    0 3px 10px color-mix(in srgb, var(--size-accent, var(--accent-1)) 14%, transparent),
-    inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent);
-  background: color-mix(in srgb, var(--size-accent, var(--accent-1)) 16%, var(--modal-bg));
-  color: color-mix(in srgb, var(--size-accent, var(--accent-1)) 82%, black);
+    0 4px 16px color-mix(in srgb, var(--size-accent, var(--accent-1)) 12%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent);
+  background: color-mix(in srgb, var(--size-accent, var(--accent-1)) 10%, var(--modal-bg));
+  color: color-mix(in srgb, var(--text) 72%, var(--size-accent, var(--accent-1)));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.detail-breed-head .detail-breed-size::before,
+.detail-breed-head .size::before {
+  content: "";
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--size-accent, var(--accent-1));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--size-accent, var(--accent-1)) 55%, transparent);
 }
 [data-theme="dark"] .detail-breed-head .detail-breed-size,
 [data-theme="dark"] .detail-breed-head .size {
-  color: color-mix(in srgb, var(--size-accent, var(--accent-1)) 78%, white);
+  color: color-mix(in srgb, var(--text) 82%, var(--size-accent, var(--accent-1)));
   box-shadow:
-    0 4px 14px color-mix(in srgb, var(--size-accent, var(--accent-1)) 22%, transparent),
-    inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
+    0 4px 18px color-mix(in srgb, var(--size-accent, var(--accent-1)) 18%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent);
 }
 .detail-breed-head-divider {
   height: 1px;
-  margin-top: 18px;
+  margin-top: 20px;
   background: linear-gradient(
     90deg,
     transparent 0%,
@@ -5296,15 +5310,21 @@ body.calm-mode .card:hover {
     gap: 8px;
   }
   .detail-breed-head h2 {
-    font-size: 1.45rem;
+    font-size: 1.65rem;
   }
   .detail-breed-head .detail-breed-size,
   .detail-breed-head .size {
-    padding: 3px 9px;
-    font-size: 10px;
+    padding: 4px 12px;
+    font-size: 11px;
+    gap: 6px;
+  }
+  .detail-breed-head .detail-breed-size::before,
+  .detail-breed-head .size::before {
+    width: 6px;
+    height: 6px;
   }
   .detail-breed-head-divider {
-    margin-top: 14px;
+    margin-top: 16px;
   }
   .quiz-podium { grid-template-columns: 1fr; }
   .podium-card.gold { transform: none; }
