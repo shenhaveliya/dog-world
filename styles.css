@@ -5295,7 +5295,7 @@ body.calm-mode .card:hover {
   }
   .modal.open .modal-content { transform: translateY(0); opacity: 1; }
   .detail-modal { border-radius: var(--r-xl) var(--r-xl) 0 0; }
-  .detail-modal .detail-hero { border-radius: var(--r-xl) var(--r-xl) 0 0; }
+  .detail-modal .detail-hero { border-radius: 0; }
   .food-open-detail--tip-open .food-info-tooltip--mobile {
     position: static !important;
     display: block;
