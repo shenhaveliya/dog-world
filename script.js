@@ -60,11 +60,16 @@ const WIKI_CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
 const WIKI_MAX_CONCURRENT = 3; // be polite to Wikipedia
 const FAV_KEY = "dogweb-favorites";
 const RECENT_KEY = "dogweb-recent-breeds";
+const LAST_BREED_KEY = "dogweb-last-breed";
+const QUIZ_MATCH_KEY = "dogweb-quiz-match-keys";
+const CALM_KEY = "dogweb-calm";
+const RESUME_DISMISS_KEY = "dogweb-resume-dismiss-until";
 const THEME_KEY = "dogweb-theme";
 const LANG_KEY = "dogweb-lang";
 const MAX_COMPARE = 4;
 const PHOTOS_PER_BREED = 4;
 const SITE_URL = "https://shenhaveliya.github.io/dog-world/";
+const DEFAULT_OG_IMAGE = `${SITE_URL}og-image.jpg?v=20260520-v15`;
 
 /* =====================================================================
    SMALL UTILITIES
@@ -131,10 +136,119 @@ function pageUrlWithHash(hash) {
 function breedPageUrl(breed, lang = currentLang) {
   if (!breed) return pageUrlWithHash("");
   const suffix = lang === "en" ? ".en" : ".he";
-  const base = location.origin && location.origin !== "null"
-    ? `${location.origin}${location.pathname.replace(/\/[^/]*$/, "/")}`
-    : SITE_URL;
+  if (!location.origin || location.origin === "null") {
+    return `${SITE_URL}/breeds/${encodeURIComponent(breed.key)}${suffix}.html`;
+  }
+  const base = `${location.origin}${location.pathname.replace(/\/[^/]*$/, "/")}`;
   return `${base.replace(/\/$/, "")}/breeds/${encodeURIComponent(breed.key)}${suffix}.html`;
+}
+
+function breedSpaUrl(breedKey) {
+  return pageUrlWithHash(`#breed/${encodeURIComponent(breedKey)}`);
+}
+
+function setMetaContent(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.setAttribute("content", value);
+}
+
+function getDetailShareImageUrl(breed) {
+  const heroImg = document.getElementById("detailHeroImg");
+  if (heroImg) {
+    const url = heroImg.currentSrc || heroImg.src;
+    if (url && /^https?:/.test(url) && url !== DEFAULT_DOG_IMAGE) return url;
+  }
+  const known = bestKnownImageFor(breed);
+  if (known && known !== DEFAULT_DOG_IMAGE) return known;
+  return DEFAULT_OG_IMAGE;
+}
+
+function updateBreedShareMeta(breed, imageUrl) {
+  if (!breed) return;
+  const name = bName(breed);
+  const desc = bDesc(breed);
+  const url = breedSpaUrl(breed.key);
+  const img = imageUrl && imageUrl !== DEFAULT_DOG_IMAGE ? imageUrl : DEFAULT_OG_IMAGE;
+  setMetaContent("ogTitle", `${name} – ${t("docTitle")}`);
+  setMetaContent("ogDescription", desc);
+  setMetaContent("ogUrl", url);
+  setMetaContent("ogImage", img);
+  setMetaContent("ogImageSecure", img);
+  setMetaContent("ogImageAlt", name);
+  setMetaContent("twTitle", `${name} – ${t("docTitle")}`);
+  setMetaContent("twDescription", desc);
+  setMetaContent("twImage", img);
+  setMetaContent("twImageAlt", name);
+  document.querySelectorAll('meta[property="og:image"]').forEach((el) => {
+    if (el.id !== "ogImage" && el.id !== "ogImageSecure") el.setAttribute("content", img);
+  });
+}
+
+function resetShareMeta() {
+  const dict = I18N[currentLang] || I18N.he;
+  setMetaContent("ogTitle", dict.docTitle);
+  setMetaContent("ogDescription", dict.docDescription);
+  setMetaContent("ogUrl", SITE_URL);
+  setMetaContent("ogImage", DEFAULT_OG_IMAGE);
+  setMetaContent("ogImageSecure", DEFAULT_OG_IMAGE);
+  setMetaContent("ogImageAlt", dict.ogImageAlt || dict.docTitle);
+  setMetaContent("twTitle", dict.docTitle);
+  setMetaContent("twDescription", dict.docDescription);
+  setMetaContent("twImage", DEFAULT_OG_IMAGE);
+  setMetaContent("twImageAlt", dict.ogImageAlt || dict.docTitle);
+}
+
+async function buildShareImageFile(url, breedKey) {
+  const heroImg = document.getElementById("detailHeroImg");
+  if (heroImg && heroImg.complete && heroImg.naturalWidth > 0) {
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = heroImg.naturalWidth;
+      canvas.height = heroImg.naturalHeight;
+      canvas.getContext("2d").drawImage(heroImg, 0, 0);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
+      if (blob) return new File([blob], `${breedKey}.jpg`, { type: "image/jpeg" });
+    } catch (e) { /* tainted canvas — fall back to fetch */ }
+  }
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error("image fetch failed");
+  const blob = await resp.blob();
+  const type = blob.type && blob.type.startsWith("image/") ? blob.type : "image/jpeg";
+  return new File([blob], `${breedKey}.jpg`, { type });
+}
+
+/** Desktop share UIs (esp. Windows) show a link card with og:image; file attach hides it. */
+function shouldAttachShareImageFile() {
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
+
+async function shareBreedNative(breed, name) {
+  const imageUrl = getDetailShareImageUrl(breed);
+  const pageLink = breedPageUrl(breed);
+  updateBreedShareMeta(breed, imageUrl);
+  const payload = { title: name, text: bDesc(breed), url: pageLink };
+
+  if (typeof navigator.share !== "function") {
+    await copyToClipboard(pageLink);
+    announce(t("linkCopied"));
+    trackEvent("Copy breed link", { breed: breed.key });
+    return "copied";
+  }
+
+  if (shouldAttachShareImageFile() && imageUrl && imageUrl !== DEFAULT_OG_IMAGE && navigator.canShare) {
+    try {
+      const file = await buildShareImageFile(imageUrl, breed.key);
+      if (navigator.canShare({ ...payload, files: [file] })) {
+        await navigator.share({ ...payload, files: [file] });
+        trackEvent("Native share breed", { breed: breed.key, withImage: true });
+        return "shared";
+      }
+    } catch (e) { /* fall through to link share */ }
+  }
+
+  await navigator.share(payload);
+  trackEvent("Native share breed", { breed: breed.key });
+  return "shared";
 }
 
 function updateQueryParam(name, value) {
@@ -493,8 +607,17 @@ const discoveryDismissBtn = document.getElementById("discoveryDismiss");
 const discoveryQuizBtn = document.getElementById("discoveryQuizBtn");
 const discoveryCompareBtn = document.getElementById("discoveryCompareBtn");
 const footerMetaEl = document.getElementById("footerMeta");
+const calmModeToggle = document.getElementById("calmModeToggle");
+const scanModeBtn = document.getElementById("scanModeBtn");
+const resumeBanner = document.getElementById("resumeBanner");
+const resumeBannerText = document.getElementById("resumeBannerText");
+const resumeBannerGo = document.getElementById("resumeBannerGo");
+const resumeBannerHint = document.getElementById("resumeBannerHint");
+const resumeBannerDismiss = document.getElementById("resumeBannerDismiss");
 
-let _lastImageErrorToast = 0;
+let scanMode = false;
+let quizMatchKeys = [];
+let _detailNavKeys = [];
 let _quickPeekTouchMode = false;
 
 let prefersReducedMotion = false;
@@ -510,8 +633,12 @@ try {
 function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
   themeToggle.textContent = theme === "dark" ? "☀️" : "🌙";
-  themeToggle.setAttribute("title", theme === "dark" ? t("themeTitleLight") : t("themeTitleDark"));
   themeToggle.setAttribute("aria-label", theme === "dark" ? t("themeAriaToLight") : t("themeAriaToDark"));
+  if (themeToggle.classList.contains("ui-tip")) {
+    themeToggle.setAttribute("data-tip", theme === "dark" ? t("themeTipDark") : t("themeTipLight"));
+  } else {
+    themeToggle.setAttribute("title", theme === "dark" ? t("themeTitleLight") : t("themeTitleDark"));
+  }
 }
 
 const initialTheme =
@@ -871,7 +998,7 @@ function renderCard(breed) {
              data-good-with-kids="${breed.goodWithKids}"
              data-food-bloat="${ft.bloatRisk || false}"
              data-food-weight="${ft.weightProne || false}"
-             data-food-hypo="${ft.hypoallergenic || false}">${imageBlock}
+             data-food-hypo="${ft.hypoallergenic || false}">${imageBlock}${quizMatchBadgeHTML(breed.key)}
       <h2>${escapeHTML(name)}</h2>
       <span class="size">${escapeHTML(t("sizeBadge", bSize(breed)))}</span>
       <p class="description">${escapeHTML(bDesc(breed))}</p>
@@ -1519,7 +1646,7 @@ function renderSearchSuggestions() {
       <span class="search-suggestion-thumb"><img alt="" data-breed-key="${escapeHTML(breed.key)}" loading="lazy"></span>
       <span class="search-suggestion-text">
         <strong>${escapeHTML(bName(breed))}</strong>
-        <small>${escapeHTML(bSize(breed))} · ${escapeHTML(bEnergy(breed))}</small>
+        <small>${escapeHTML(bSize(breed))} · ${escapeHTML(bEnergy(breed))} · ${escapeHTML(bCharacter(breed))}</small>
       </span>
     </button>
   `).join("");
@@ -2161,6 +2288,8 @@ function applyFilters() {
 
   updateLoadMoreUI(Math.max(0, filterPassed - visiblePageCount));
 
+  if (typeof initLoadMoreObserver === "function") initLoadMoreObserver();
+
   // Staggered entry: each newly-visible card animates in 30 ms after the
   // previous, capped at 12 to avoid an absurdly long cascade for large grids.
   if (!prefersReducedMotion && visibleCards.length) {
@@ -2517,6 +2646,7 @@ function closeModal(modal) {
   ) {
     history.replaceState(null, "", location.pathname + location.search);
   }
+  if (modal.id === "detailModal") resetShareMeta();
 }
 
 function openFoodModal(breedKey, trigger) {
@@ -2767,6 +2897,195 @@ function similarBreedsHTML(breed) {
   </section>`;
 }
 
+function quizMatchBadgeHTML(breedKey) {
+  const idx = quizMatchKeys.indexOf(breedKey);
+  if (idx === -1) return "";
+  const cls = idx === 0 ? "quiz-match-badge quiz-match-badge--top" : "quiz-match-badge";
+  const label = idx === 0 ? t("quizMatchBadge") : t("quizMatchBadgeSimilar");
+  return `<span class="${cls}">${escapeHTML(label)}</span>`;
+}
+
+function loadQuizMatchKeys() {
+  try {
+    const raw = sessionStorage.getItem(QUIZ_MATCH_KEY);
+    quizMatchKeys = raw ? JSON.parse(raw).filter((k) => breedByKey(k)).slice(0, 3) : [];
+  } catch (e) {
+    quizMatchKeys = [];
+  }
+}
+
+function saveQuizMatchKeys(keys) {
+  quizMatchKeys = keys.slice(0, 3);
+  try { sessionStorage.setItem(QUIZ_MATCH_KEY, JSON.stringify(quizMatchKeys)); } catch (e) { /* ignore */ }
+}
+
+function syncQuizMatchBadges() {
+  cards.forEach((card) => {
+    card.querySelector(".quiz-match-badge")?.remove();
+    const html = quizMatchBadgeHTML(card.dataset.breed);
+    if (!html) return;
+    const h2 = card.querySelector("h2");
+    if (h2) h2.insertAdjacentHTML("beforebegin", html);
+  });
+}
+
+function detailSummaryHTML(breed) {
+  const items = [];
+  items.push(breed.goodWithKids ? t("summaryGoodKids") : t("summaryKidsCheck"));
+  items.push(`${t("summaryEnergy")}: ${bEnergy(breed)}`);
+  if (breed.livingPref === 1) items.push(t("summaryApartment"));
+  else if (breed.experience === 1) items.push(t("summaryBeginner"));
+  else items.push(bCharacter(breed));
+  const lis = items.slice(0, 3).map((item) => `<li>${escapeHTML(item)}</li>`).join("");
+  return `<ul class="detail-summary-list" aria-label="${escapeHTML(t("detailSummaryAria"))}">${lis}</ul>`;
+}
+
+function getVisibleFilteredCards() {
+  return cards.filter((c) => c.style.display !== "none");
+}
+
+function navigateDetailBreed(delta) {
+  if (_detailNavKeys.length <= 1) return;
+  const m = location.hash.match(/^#breed\/(.+)$/);
+  const key = m ? decodeURIComponent(m[1]) : "";
+  let idx = _detailNavKeys.indexOf(key);
+  if (idx === -1) idx = 0;
+  idx = (idx + delta + _detailNavKeys.length) % _detailNavKeys.length;
+  const nextCard = cardForBreed(_detailNavKeys[idx]);
+  if (nextCard) openDetailModal(nextCard);
+}
+
+function buildCompareTableHTML(breeds, rowSpecs, bestIdxPerRow) {
+  const headers = breeds.map((b) => `<th scope="col">${escapeHTML(bName(b))}</th>`).join("");
+  const body = rowSpecs.map((spec, rowIdx) => {
+    const cells = breeds.map((breed, colIdx) => {
+      const cls = bestIdxPerRow[rowIdx].best.has(colIdx) ? "compare-td-best" : "";
+      return `<td class="${cls}">${escapeHTML(String(spec.val(breed)))}</td>`;
+    }).join("");
+    return `<tr><th scope="row">${escapeHTML(spec.label)}</th>${cells}</tr>`;
+  }).join("");
+  return `<div class="compare-table-wrap"><table class="compare-table"><caption class="sr-only">${escapeHTML(t("compareTableCaption"))}</caption><thead><tr><th></th>${headers}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
+function formatQuizShareText(top3) {
+  return top3.map((entry, i) => {
+    const maxDist = maxQuizDistance();
+    const pct = Math.max(0, Math.round(100 - (entry.dist / maxDist) * 100));
+    const reasons = quizReasonsFor(entry.breed);
+    const why = reasons[0] ? ` — ${reasons[0]}` : "";
+    return `${["🥇", "🥈", "🥉"][i] || "•"} ${bName(entry.breed)} (${pct}%)${why}`;
+  }).join("\n");
+}
+
+function syncUiTips() {
+  const dict = I18N[currentLang];
+  if (!dict) return;
+  document.querySelectorAll("[data-i18n-tip]").forEach((el) => {
+    const key = el.dataset.i18nTip;
+    const v = dict[key];
+    if (typeof v === "string") el.setAttribute("data-tip", v);
+  });
+}
+
+function syncToolbarToggleLabels() {
+  if (scanModeBtn) {
+    const scanTip = t(scanMode ? "scanModeOn" : "scanModeOff");
+    scanModeBtn.setAttribute("data-tip", scanTip);
+    scanModeBtn.setAttribute("aria-label", t("scanModeLabel"));
+  }
+  if (calmModeToggle) {
+    const calm = document.body.classList.contains("calm-mode");
+    calmModeToggle.setAttribute("data-tip", t(calm ? "calmModeOn" : "calmModeOff"));
+  }
+}
+
+function initCalmMode() {
+  let calm = false;
+  try { calm = localStorage.getItem(CALM_KEY) === "1"; } catch (e) { /* ignore */ }
+  document.body.classList.toggle("calm-mode", calm);
+  if (calmModeToggle) calmModeToggle.setAttribute("aria-pressed", calm ? "true" : "false");
+  if (calmModeToggle) {
+    calmModeToggle.addEventListener("click", () => {
+      const next = !document.body.classList.contains("calm-mode");
+      document.body.classList.toggle("calm-mode", next);
+      calmModeToggle.setAttribute("aria-pressed", next ? "true" : "false");
+      try { localStorage.setItem(CALM_KEY, next ? "1" : "0"); } catch (e) { /* ignore */ }
+      syncToolbarToggleLabels();
+    });
+  }
+  syncToolbarToggleLabels();
+}
+
+function initScanMode() {
+  if (!scanModeBtn || !cardsContainer) return;
+  scanModeBtn.addEventListener("click", () => {
+    scanMode = !scanMode;
+    scanModeBtn.setAttribute("aria-pressed", scanMode ? "true" : "false");
+    cardsContainer.classList.toggle("is-scan", scanMode);
+    syncToolbarToggleLabels();
+  });
+  syncToolbarToggleLabels();
+}
+
+function initResumeBanner() {
+  if (!resumeBanner || !resumeBannerText || !resumeBannerGo) return;
+  try {
+    if (Date.now() < parseInt(localStorage.getItem(RESUME_DISMISS_KEY) || "0", 10)) return;
+  } catch (e) { /* ignore */ }
+
+  let mode = null;
+  let payload = null;
+  if (compareList.length >= 2) {
+    mode = "compare";
+    payload = compareList.length;
+  } else {
+    try {
+      const lastKey = localStorage.getItem(LAST_BREED_KEY);
+      const breed = lastKey && breedByKey(lastKey);
+      if (breed && !location.hash.includes(encodeURIComponent(lastKey))) {
+        mode = "breed";
+        payload = breed;
+      }
+    } catch (e) { /* ignore */ }
+  }
+  if (!mode) return;
+
+  if (mode === "compare") {
+    resumeBannerText.textContent = t("resumeBannerCompare", payload);
+    if (resumeBannerHint) resumeBannerHint.textContent = t("resumeBannerHintCompare");
+    resumeBannerGo.textContent = t("resumeBannerGoCompare");
+    resumeBannerGo.onclick = () => openCompareModal();
+  } else {
+    resumeBannerText.textContent = t("resumeBannerBreed", bName(payload));
+    if (resumeBannerHint) resumeBannerHint.textContent = t("resumeBannerHintBreed");
+    resumeBannerGo.textContent = t("resumeBannerGoBreed", bName(payload));
+    resumeBannerGo.onclick = () => {
+      const card = cardForBreed(payload.key);
+      if (card) openDetailModal(card, resumeBannerGo);
+    };
+  }
+  resumeBanner.hidden = false;
+
+  if (resumeBannerDismiss) {
+    resumeBannerDismiss.onclick = () => {
+      resumeBanner.hidden = true;
+      try { localStorage.setItem(RESUME_DISMISS_KEY, String(Date.now() + 86400000)); } catch (e) { /* ignore */ }
+    };
+  }
+}
+
+let _loadMoreObserver = null;
+function initLoadMoreObserver() {
+  if (!loadMoreEl || !("IntersectionObserver" in window)) return;
+  if (_loadMoreObserver) _loadMoreObserver.disconnect();
+  _loadMoreObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting && !loadMoreEl.hidden) loadMoreCards();
+    });
+  }, { rootMargin: "120px" });
+  _loadMoreObserver.observe(loadMoreEl);
+}
+
 function openDetailModal(card, trigger) {
   const breedKey = card.dataset.breed;
   const breed = breedByKey(breedKey);
@@ -2783,22 +3102,26 @@ function openDetailModal(card, trigger) {
   const isWikiOnly = withImage && !breed.apiName;
 
   const breedHeadHTML = `
-    <div class="detail-breed-head">
-      <h2 id="detailTitle">${escapeHTML(name)}</h2>
-      <span class="size">${escapeHTML(t("sizeBadge", bSize(breed)))}</span>
+    <div class="detail-breed-head" data-size-rank="${breed.sizeRank}">
+      <div class="detail-breed-head-inner">
+        <h2 id="detailTitle">${escapeHTML(name)}</h2>
+        <span class="size detail-breed-size">${escapeHTML(t("sizeBadge", bSize(breed)))}</span>
+      </div>
+      <div class="detail-breed-head-divider" aria-hidden="true"></div>
     </div>`;
 
   const heroHTML = withImage
     ? `
     <div class="detail-hero-wrap">
+      ${breedHeadHTML}
       <div class="detail-hero${isWikiOnly ? " detail-hero-wiki" : ""}">
-        <img id="detailHeroImg" src="${escapeHTML(cachedImg)}" alt="${escapeHTML(name)}"/>
+        <img id="detailHeroImg" src="${escapeHTML(cachedImg)}" alt="${escapeHTML(name)}" crossorigin="anonymous"/>
         <div class="detail-hero-scrim" aria-hidden="true"></div>
       </div>
-      ${breedHeadHTML}
     </div>`
     : `
     <div class="detail-hero-wrap">
+      ${breedHeadHTML}
       <div class="detail-hero detail-hero-no-image">
         <div class="no-image-hero-inner" aria-hidden="true">
           <span class="no-image-initial">${escapeHTML(breedInitial(breed))}</span>
@@ -2806,7 +3129,6 @@ function openDetailModal(card, trigger) {
         </div>
         <div class="detail-hero-scrim detail-hero-scrim--static" aria-hidden="true"></div>
       </div>
-      ${breedHeadHTML}
     </div>`;
   const refreshBtnHTML = (withImage && !isWikiOnly)
     ? `<button id="detailRefresh" class="detail-action-btn" type="button">${escapeHTML(t("detailRefresh"))}</button>`
@@ -2815,8 +3137,30 @@ function openDetailModal(card, trigger) {
     ? `<div class="detail-thumbnails detail-thumbnails-standalone" id="detailThumbs"></div>`
     : "";
 
+  const navKeys = getVisibleFilteredCards().map((c) => c.dataset.breed);
+  const showBreedNav = navKeys.length > 1;
+  const navIdx = navKeys.indexOf(breedKey);
+  const prevKey = showBreedNav ? navKeys[(navIdx - 1 + navKeys.length) % navKeys.length] : null;
+  const nextKey = showBreedNav ? navKeys[(navIdx + 1) % navKeys.length] : null;
+  const breedNavHTML = showBreedNav ? `
+    <div class="detail-breed-nav">
+      <p class="detail-breed-nav-hint">${escapeHTML(t("detailNavHint"))}</p>
+      <div class="detail-breed-nav-btns">
+        <button type="button" id="detailPrevBtn" class="detail-breed-nav-btn" aria-label="${escapeHTML(t("detailPrevAria"))}: ${escapeHTML(bName(breedByKey(prevKey)))}">
+          <span class="detail-breed-nav-dir">${escapeHTML(t("detailPrevAria"))}</span>
+          <span class="detail-breed-nav-name">${escapeHTML(bName(breedByKey(prevKey)))}</span>
+        </button>
+        <button type="button" id="detailNextBtn" class="detail-breed-nav-btn" aria-label="${escapeHTML(t("detailNextAria"))}: ${escapeHTML(bName(breedByKey(nextKey)))}">
+          <span class="detail-breed-nav-dir">${escapeHTML(t("detailNextAria"))}</span>
+          <span class="detail-breed-nav-name">${escapeHTML(bName(breedByKey(nextKey)))}</span>
+        </button>
+      </div>
+    </div>` : "";
+
   detailModalContent.innerHTML = `${heroHTML}
+    ${breedNavHTML}
     <div class="detail-modal-inner">
+      <div class="detail-summary">${detailSummaryHTML(breed)}</div>
       <p class="description">${escapeHTML(bDesc(breed))}</p>
       <div class="info">${detailStatTilesHTML(breed)}</div>
       <section class="detail-food-section" aria-label="${escapeHTML(t("infoFood").replace(/[:：]\s*$/, ""))}">
@@ -2831,18 +3175,24 @@ function openDetailModal(card, trigger) {
 
       <div class="detail-actions-panel" role="group" aria-label="${escapeHTML(t("detailActionsAria"))}">
         ${refreshBtnHTML}
-        <button id="detailFav" class="detail-action-btn" type="button">${isFavorite(breedKey) ? escapeHTML(t("detailFavOn")) : escapeHTML(t("detailFavAdd"))}</button>
-        <div class="detail-actions-split">
-          <button id="detailShare" class="detail-action-btn" type="button">${escapeHTML(t("detailShare"))}</button>
-          <button id="detailNativeShare" class="detail-action-btn" type="button">${escapeHTML(t("detailShareNative"))}</button>
-        </div>
-        <a id="detailWhatsApp" class="detail-action-btn detail-action-btn--link" href="#" target="_blank" rel="noopener noreferrer">${escapeHTML(t("detailShareWhatsApp"))}</a>
         <a id="detailWiki" class="detail-action-btn detail-action-btn--wiki" href="${escapeHTML(wiki)}" target="_blank" rel="noopener noreferrer">
           <span class="wiki-mark" aria-hidden="true">W</span> ${escapeHTML(t("detailWiki"))}
         </a>
       </div>
     </div>
+    <div class="detail-sticky-bar" role="toolbar" aria-label="${escapeHTML(t("detailActionsAria"))}">
+      <button type="button" id="detailStickyFav" class="detail-sticky-btn">${isFavorite(breedKey) ? escapeHTML(t("detailFavOn")) : escapeHTML(t("detailStickyFav"))}</button>
+      <button type="button" id="detailStickyCompare" class="detail-sticky-btn">${escapeHTML(t("detailStickyCompare"))}</button>
+      <button type="button" id="detailStickyShare" class="detail-sticky-btn">${escapeHTML(t("detailStickyShare"))}</button>
+    </div>
   `;
+
+  try { localStorage.setItem(LAST_BREED_KEY, breedKey); } catch (e) { /* ignore */ }
+  _detailNavKeys = navKeys;
+  const prevBtn = document.getElementById("detailPrevBtn");
+  const nextBtn = document.getElementById("detailNextBtn");
+  if (prevBtn) prevBtn.addEventListener("click", () => navigateDetailBreed(-1));
+  if (nextBtn) nextBtn.addEventListener("click", () => navigateDetailBreed(1));
 
   const desiredHash = `#breed/${encodeURIComponent(breedKey)}`;
   if (location.hash !== desiredHash) {
@@ -2850,6 +3200,12 @@ function openDetailModal(card, trigger) {
   }
 
   openModal(detailModal, trigger);
+  const breedHeadEl = detailModalContent.querySelector(".detail-breed-head");
+  if (breedHeadEl) {
+    const accent = card.style.getPropertyValue("--size-accent");
+    if (accent) breedHeadEl.style.setProperty("--size-accent", accent);
+  }
+  updateBreedShareMeta(breed, cachedImg || getDetailShareImageUrl(breed));
   if (withImage && !isWikiOnly) loadDetailPhotos(breed);
 
   // Keep the blurred backdrop in sync with whatever photo is currently in
@@ -2861,7 +3217,10 @@ function openDetailModal(card, trigger) {
     if (heroImg && heroEl) {
       const syncHeroBg = () => {
         const url = heroImg.currentSrc || heroImg.src;
-        if (url) heroEl.style.setProperty("--hero-bg", `url("${url.replace(/"/g, '\\"')}")`);
+        if (url) {
+          heroEl.style.setProperty("--hero-bg", `url("${url.replace(/"/g, '\\"')}")`);
+          updateBreedShareMeta(breed, url);
+        }
       };
       heroImg.addEventListener("load", syncHeroBg);
       // Fire once now in case the cached image is already decoded.
@@ -2871,47 +3230,54 @@ function openDetailModal(card, trigger) {
 
   const refreshEl = document.getElementById("detailRefresh");
   if (refreshEl) refreshEl.addEventListener("click", () => loadDetailPhotos(breed, true));
-  document.getElementById("detailFav").addEventListener("click", () => {
-    card.querySelector(".fav-btn").click();
-    document.getElementById("detailFav").textContent =
-      isFavorite(breedKey) ? t("detailFavOn") : t("detailFavAdd");
-  });
-  document.getElementById("detailShare").addEventListener("click", () => {
-    const btn = document.getElementById("detailShare");
-    const url = breedPageUrl(breed);
-    copyToClipboard(url).then(
-      () => {
-        announce(t("linkCopied"));
-        trackEvent("Copy breed link", { breed: breedKey });
-        // Visible feedback for sighted users: swap label + green for ~1.5s.
-        const original = btn.textContent;
-        btn.textContent = t("detailShareDone");
-        btn.classList.add("copied");
-        setTimeout(() => {
-          btn.textContent = original;
-          btn.classList.remove("copied");
-        }, 1500);
-      },
-      () => prompt(t("detailShare"), url)
-    );
-  });
-  const detailUrl = breedPageUrl(breed);
-  const nativeShareBtn = document.getElementById("detailNativeShare");
-  if (nativeShareBtn) {
-    nativeShareBtn.hidden = typeof navigator.share !== "function";
-    nativeShareBtn.addEventListener("click", () => {
-      navigator.share({
-        title: name,
-        text: bDesc(breed),
-        url: detailUrl,
-      }).then(() => trackEvent("Native share breed", { breed: breedKey })).catch(() => { /* cancelled */ });
+
+  const detailUrl = breedSpaUrl(breedKey);
+  const updateStickyFavLabel = () => {
+    const stickyFav = document.getElementById("detailStickyFav");
+    if (stickyFav) stickyFav.textContent = isFavorite(breedKey) ? t("detailFavOn") : t("detailStickyFav");
+  };
+  const stickyFav = document.getElementById("detailStickyFav");
+  if (stickyFav) {
+    stickyFav.addEventListener("click", () => {
+      card.querySelector(".fav-btn")?.click();
+      updateStickyFavLabel();
     });
   }
-  const whatsApp = document.getElementById("detailWhatsApp");
-  if (whatsApp) {
-    const text = `${name} - ${detailUrl}`;
-    whatsApp.href = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    whatsApp.addEventListener("click", () => trackEvent("WhatsApp share breed", { breed: breedKey }));
+  const stickyCompare = document.getElementById("detailStickyCompare");
+  if (stickyCompare) {
+    stickyCompare.addEventListener("click", () => {
+      if (!compareList.includes(breedKey)) {
+        if (compareList.length >= MAX_COMPARE) {
+          showToast(t("compareMaxAlert", MAX_COMPARE), { icon: "📋", variant: "warning" });
+          return;
+        }
+        compareList.push(breedKey);
+        const cmpBtn = card.querySelector(".compare-btn");
+        if (cmpBtn) setCompareBtnState(cmpBtn, true);
+        updateCompareUI();
+      }
+      if (compareList.length >= 2) {
+        closeModal(detailModal);
+        openCompareModal();
+      } else {
+        showToast(t("compareHintOne"), { icon: "📋", variant: "info" });
+      }
+    });
+  }
+  const stickyShare = document.getElementById("detailStickyShare");
+  if (stickyShare) {
+    stickyShare.addEventListener("click", () => {
+      shareBreedNative(breed, name).then((result) => {
+        if (result !== "copied") return;
+        const original = stickyShare.textContent;
+        stickyShare.textContent = t("detailShareDone");
+        stickyShare.classList.add("copied");
+        setTimeout(() => {
+          stickyShare.textContent = original;
+          stickyShare.classList.remove("copied");
+        }, 1500);
+      }).catch(() => { /* cancelled */ });
+    });
   }
   detailModalContent.querySelectorAll(".similar-breed").forEach((btn) => {
     const img = btn.querySelector("img");
@@ -3212,6 +3578,7 @@ function openCompareModal() {
       <button type="button" class="pill-btn" id="compareCopyLink">${escapeHTML(t("detailShare"))}</button>
     </div>
     <div class="compare-grid">${compareColumns}</div>
+    ${buildCompareTableHTML(breeds, rowSpecs, bestIdxPerRow)}
   `;
 
   compareModalContent.querySelectorAll("img.compare-img").forEach((img) => {
@@ -3479,9 +3846,11 @@ function renderQuizResult() {
   quizBody.querySelector(".quiz-prev").addEventListener("click", () => closeModal(quizModal));
 
   syncQuizResultsUrl(top3.map((e) => e.breed.key));
+  saveQuizMatchKeys(top3.map((e) => e.breed.key));
+  syncQuizMatchBadges();
 
   const shareUrl = quizResultsUrl(top3.map((e) => e.breed.key));
-  const shareText = top3.map((e, i) => `${i + 1}. ${bName(e.breed)}`).join("\n");
+  const shareText = formatQuizShareText(top3);
   const shareCopyBtn = quizBody.querySelector(".quiz-share-copy");
   if (shareCopyBtn) {
     shareCopyBtn.addEventListener("click", () => {
@@ -3577,6 +3946,8 @@ function renderSharedQuizResults(keys) {
   });
   quizBody.querySelector(".quiz-restart").addEventListener("click", () => startQuiz());
   quizBody.querySelector(".quiz-prev").addEventListener("click", () => closeModal(quizModal));
+  saveQuizMatchKeys(keys);
+  syncQuizMatchBadges();
 }
 
 function restoreQuizResultsFromUrl() {
@@ -3641,7 +4012,9 @@ function showQuickPeek(card, opts = {}) {
   quickPeekEl.style.setProperty("--qp-color", accent || "#f97316");
   quickPeekEl.classList.toggle("quick-peek-touch", _quickPeekTouchMode);
   quickPeekEl.innerHTML = `
+    <img class="quick-peek-photo" data-breed-key="${escapeHTML(breedKey)}" alt="" loading="lazy" />
     <p class="quick-peek-title">${escapeHTML(bName(breed))}</p>
+    <p class="quick-peek-character">${escapeHTML(bCharacter(breed))}</p>
     <p class="quick-peek-desc">${escapeHTML(bDesc(breed))}</p>
     <div class="quick-peek-meta">
       <span>⚡ ${escapeHTML(bEnergy(breed))}</span>
@@ -3649,6 +4022,8 @@ function showQuickPeek(card, opts = {}) {
       <span>📏 ${escapeHTML(bSize(breed))}</span>
     </div>
   `;
+  const qpImg = quickPeekEl.querySelector(".quick-peek-photo");
+  if (qpImg) hydrateBreedImageInto(qpImg, breed, () => qpImg.remove());
   quickPeekEl.hidden = false;
   positionQuickPeek(card);
   requestAnimationFrame(() => quickPeekEl.classList.add("visible"));
@@ -4140,6 +4515,8 @@ function applyLanguage(lang) {
     const key = el.dataset.i18nTitle;
     if (typeof dict[key] === "string") el.setAttribute("title", dict[key]);
   });
+  syncUiTips();
+  syncToolbarToggleLabels();
 
   if (langToggle) {
     // Keep the 🌐 icon span intact; only swap the text label.
@@ -4170,6 +4547,7 @@ function applyLanguage(lang) {
   // applyLanguage updates those via data-i18n, but the custom dropdown
   // mirrors them so it needs a refresh too.
   if (typeof renderSortMenu === "function") renderSortMenu();
+  syncToolbarToggleLabels();
 
   if (foodModal && foodModal.classList.contains("open") && foodModalBody) {
     const breedKey = foodModal.dataset.breedKey;
@@ -4247,6 +4625,13 @@ updateCompareUI();
 applyFilters();
 syncFromHash();
 initDiscoveryBanner();
+initCalmMode();
+initScanMode();
+syncUiTips();
+loadQuizMatchKeys();
+syncQuizMatchBadges();
+initResumeBanner();
+initLoadMoreObserver();
 renderFooterMeta();
 
 // Restore density + view mode from previous session.
