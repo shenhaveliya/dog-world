@@ -136,8 +136,7 @@ function pageUrlWithHash(hash) {
 function breedPageUrl(breed, lang = currentLang) {
   if (!breed) return pageUrlWithHash("");
   const suffix = lang === "en" ? ".en" : ".he";
-  // Share/SEO pages always live at the site root (stable og:image for link previews).
-  if (location.pathname.includes("/previews/") || !location.origin || location.origin === "null") {
+  if (!location.origin || location.origin === "null") {
     return `${SITE_URL}/breeds/${encodeURIComponent(breed.key)}${suffix}.html`;
   }
   const base = `${location.origin}${location.pathname.replace(/\/[^/]*$/, "/")}`;
