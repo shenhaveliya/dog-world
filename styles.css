@@ -291,7 +291,7 @@ header {
     0 6px 20px rgba(15, 23, 42, 0.05);
   margin-bottom: 36px;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   isolation: isolate;
   /* JS sets --px / --py to a normalized cursor offset (-1..1) for parallax. */
   --px: 0;
@@ -302,10 +302,10 @@ header {
 .aurora {
   position: absolute;
   inset: 0;
-  pointer-events: none;
-  z-index: -1;
   overflow: hidden;
   border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
   filter: blur(60px) saturate(1.2);
 }
 .aurora-blob {
