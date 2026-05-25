@@ -378,10 +378,12 @@ function foodOpenBtnHTML(breed, variant) {
   if (variant === "detail") {
     return `
       <div class="food-open-detail">
-        ${btnInner}
-        <div class="food-open-detail-label">
-          <span class="food-open-label">${label}</span>
-          ${foodInfoTipHTML()}
+        <div class="food-open-detail-head">
+          ${btnInner}
+          <div class="food-open-detail-label">
+            <span class="food-open-label">${label}</span>
+            ${foodInfoTipHTML()}
+          </div>
         </div>
       </div>`;
   }
@@ -2561,6 +2563,7 @@ function mountMobileFoodTooltip(tipEl, tooltip) {
     tipEl.dataset.tipId = "food-tip-" + Math.random().toString(36).slice(2, 9);
   }
   tooltip.dataset.owner = tipEl.dataset.tipId;
+  detail.classList.add("food-open-detail--tip-open");
   detail.appendChild(tooltip);
   tooltip.classList.add("food-info-tooltip--mobile");
 }
@@ -2573,6 +2576,7 @@ function restoreFoodTooltip(tipEl) {
   tipEl.appendChild(tooltip);
   tooltip.classList.remove("food-info-tooltip--mobile");
   delete tooltip.dataset.owner;
+  tipEl.closest(".food-open-detail")?.classList.remove("food-open-detail--tip-open");
 }
 
 function closeFoodInfoTips() {
