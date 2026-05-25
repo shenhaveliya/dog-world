@@ -87,7 +87,7 @@
   }
   </script>
 
-  <link rel="stylesheet" href="styles.css?v=20260520-soft-light2" />
+  <link rel="stylesheet" href="styles.css?v=20260520-quick-filters" />
 </head>
 
 <body>
@@ -245,6 +245,16 @@
            Empty when no filters are active so it doesn't take up space. -->
       <div class="filter-chips" id="filterChips" role="region" aria-live="polite"></div>
 
+      <div class="mobile-quick-filters" id="mobileQuickFilters" aria-label="סינון מהיר" data-i18n-aria-label="quickFiltersLabel">
+        <span class="mobile-quick-filters-label" data-i18n="quickFiltersLabel">סינון מהיר</span>
+        <div class="mobile-quick-filters-row">
+          <button class="attribute-btn mobile-quick-filter-btn" type="button" data-attr="apartmentFriendly" aria-pressed="false" data-i18n="attrApartmentFriendly">🏢 מתאימים לדירה</button>
+          <button class="attribute-btn mobile-quick-filter-btn" type="button" data-attr="familyFriendly" aria-pressed="false" data-i18n="attrFamilyFriendly">👨‍👩‍👧 מתאימים למשפחות</button>
+          <button class="attribute-btn mobile-quick-filter-btn" type="button" data-attr="beginner" aria-pressed="false" data-i18n="attrBeginner">🆕 לכלב ראשון</button>
+          <button class="attribute-btn mobile-quick-filter-btn" type="button" data-attr="activePeople" aria-pressed="false" data-i18n="attrActivePeople">🏃 לאנשים פעילים</button>
+        </div>
+      </div>
+
       <!-- "Your favorites" heading: only visible when the favorites-only filter is on. -->
       <h2 class="favorites-heading" id="favoritesHeading" hidden></h2>
       <div class="favorite-share-row" id="favoriteShareRow" hidden>
@@ -296,7 +306,10 @@
         </svg>
         <h3 class="empty-title" id="emptyTitle">—</h3>
         <p id="emptyText" data-i18n="emptyMsg">לא נמצאו תוצאות מתאימות. אולי כדאי לרכך את הסינון?</p>
-        <button id="clearFiltersBtn" type="button" data-i18n="clearAllFilters">🧹 נקה את כל המסננים</button>
+        <div class="empty-actions">
+          <button id="clearFiltersBtn" type="button" data-i18n="clearAllFilters">🧹 נקה את כל המסננים</button>
+          <button id="emptyQuizBtn" type="button" class="empty-quiz-btn" data-i18n="emptyQuizBtn">🎯 מצא לי כלב בחידון</button>
+        </div>
       </div>
     </main>
 
@@ -415,6 +428,6 @@
   <script src="breed-food.js?v=20260520-enhance1"></script>
   <script src="breeds.js?v=20260520-enhance1"></script>
   <script src="wiki-images.js"></script>
-  <script src="script.js?v=20260520-detail-actions"></script>
+  <script src="script.js?v=20260520-quick-filters"></script>
 </body>
 </html>

@@ -107,7 +107,9 @@ const I18N = {
     catsBad: "⚠️ פחות מומלץ",
     kidsBad: "⚠️ עם זהירות",
 
-    emptyMsg: "לא נמצאו תוצאות מתאימות. אולי כדאי לרכך את הסינון?",
+    emptyMsg: "לא נמצאו תוצאות מתאימות. נסו לרכך את הסינון או לענות על החידון.",
+    emptyQuizBtn: "🎯 מצא לי כלב בחידון",
+    quickFiltersLabel: "סינון מהיר",
     favEmptyMsg: "עדיין אין לך מועדפים. לחצו על 🤍 בכרטיס כדי להוסיף.",
     clearAllFilters: "🧹 נקה את כל המסננים",
     loadMore: "טען עוד גזעים",
@@ -420,7 +422,9 @@ const I18N = {
     catsBad: "⚠️ Less recommended",
     kidsBad: "⚠️ With caution",
 
-    emptyMsg: "No matching results. Maybe loosen the filters?",
+    emptyMsg: "No matching results. Try loosening filters or take the quiz.",
+    emptyQuizBtn: "🎯 Find my dog with the quiz",
+    quickFiltersLabel: "Quick filters",
     favEmptyMsg: "You haven't favorited any breeds yet. Click the 🤍 on a card to start.",
     clearAllFilters: "🧹 Clear all filters",
     loadMore: "Load more breeds",

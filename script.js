@@ -468,6 +468,7 @@ const featuredOpenBtn = document.getElementById("featuredOpenBtn");
 const filtersEl = document.querySelector(".filters");
 const emptyTitleEl = document.getElementById("emptyTitle");
 const emptyTextEl = document.getElementById("emptyText");
+const emptyQuizBtn = document.getElementById("emptyQuizBtn");
 const filterChipsEl = document.getElementById("filterChips");
 const favoritesHeadingEl = document.getElementById("favoritesHeading");
 const mobileNavEl = document.getElementById("mobileNav");
@@ -2198,6 +2199,7 @@ function applyFilters() {
     emptyMessage.classList.toggle("empty-mode-search", !isFavCase);
     if (emptyTitleEl) emptyTitleEl.textContent = t(isFavCase ? "emptyTitleNoFavs" : "emptyTitleNoResults");
     if (emptyTextEl) emptyTextEl.textContent = t(isFavCase ? "favEmptyMsg" : "emptyMsg");
+    if (emptyQuizBtn) emptyQuizBtn.hidden = isFavCase;
     emptyMessage.style.display = "block";
   } else {
     emptyMessage.style.display = "none";
@@ -2344,6 +2346,12 @@ clearFiltersBtn.addEventListener("click", () => {
   syncAttributeButtons();
   resetPageAndApply();
 });
+
+if (emptyQuizBtn) {
+  emptyQuizBtn.addEventListener("click", () => {
+    if (quizBtn) quizBtn.click();
+  });
+}
 
 let _filterSheetScrollY = 0;
 
