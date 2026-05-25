@@ -2912,10 +2912,13 @@ footer .small-link {
   position: relative;
   display: flex;
   flex-direction: column;
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  overflow: hidden;
+  background: var(--modal-bg);
 }
 .detail-hero {
   position: relative;
-  height: 320px;
+  height: 300px;
   background: var(--image-placeholder);
   border-radius: 0;
   overflow: hidden;
@@ -2958,26 +2961,95 @@ footer .small-link {
 .detail-breed-head {
   position: relative;
   z-index: 3;
-  padding: 22px 24px 14px;
+  padding: 22px 24px 0;
+  padding-inline-end: 56px;
   color: var(--text);
   pointer-events: auto;
-  background: var(--modal-bg);
-  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--size-accent, var(--accent-1)) 11%, var(--modal-bg)) 0%,
+      var(--modal-bg) 42%,
+      color-mix(in srgb, var(--tool-1) 7%, var(--modal-bg)) 100%
+    );
+}
+.detail-breed-head[data-size-rank="1"] { --size-accent: #14b8a6; }
+.detail-breed-head[data-size-rank="2"] { --size-accent: #f97316; }
+.detail-breed-head[data-size-rank="3"] { --size-accent: #8b5cf6; }
+.detail-breed-head[data-size-rank="4"] { --size-accent: #dc2626; }
+[data-theme="dark"] .detail-breed-head[data-size-rank="1"] { --size-accent: #5eead4; }
+[data-theme="dark"] .detail-breed-head[data-size-rank="2"] { --size-accent: #fb923c; }
+[data-theme="dark"] .detail-breed-head[data-size-rank="3"] { --size-accent: #c4b5fd; }
+[data-theme="dark"] .detail-breed-head[data-size-rank="4"] { --size-accent: #f87171; }
+.detail-breed-head-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-inline-start: 12px;
 }
 .detail-breed-head h2 {
-  margin: 0 0 8px;
-  font-size: clamp(26px, 4vw, 34px);
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: clamp(1.45rem, 4.2vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
   line-height: 1.15;
-  text-shadow: none;
   color: var(--text);
 }
+.detail-breed-head .detail-breed-size,
 .detail-breed-head .size {
-  background: color-mix(in srgb, var(--size-accent, var(--accent-1)) 18%, transparent);
-  color: color-mix(in srgb, var(--size-accent, var(--accent-1)) 80%, black);
   margin: 0;
+  flex: 0 0 auto;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  border: 1px solid color-mix(in srgb, var(--size-accent, var(--accent-1)) 38%, var(--input-border));
+  box-shadow:
+    0 4px 14px color-mix(in srgb, var(--size-accent, var(--accent-1)) 16%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent);
+  background: color-mix(in srgb, var(--size-accent, var(--accent-1)) 16%, var(--modal-bg));
+  color: color-mix(in srgb, var(--size-accent, var(--accent-1)) 82%, black);
 }
+[data-theme="dark"] .detail-breed-head .detail-breed-size,
 [data-theme="dark"] .detail-breed-head .size {
-  color: color-mix(in srgb, var(--size-accent, var(--accent-1)) 70%, white);
+  color: color-mix(in srgb, var(--size-accent, var(--accent-1)) 78%, white);
+  box-shadow:
+    0 4px 14px color-mix(in srgb, var(--size-accent, var(--accent-1)) 22%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
+}
+.detail-breed-head-divider {
+  height: 1px;
+  margin-top: 18px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--size-accent, var(--accent-1)) 42%, var(--input-border)) 18%,
+    color-mix(in srgb, var(--tool-1) 35%, var(--input-border)) 50%,
+    color-mix(in srgb, var(--size-accent, var(--accent-1)) 42%, var(--input-border)) 82%,
+    transparent 100%
+  );
+}
+.detail-breed-head::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 18px;
+  bottom: 18px;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(
+    180deg,
+    var(--size-accent, var(--accent-1)),
+    color-mix(in srgb, var(--tool-1) 70%, var(--size-accent, var(--accent-2)))
+  );
+  opacity: 0.9;
+}
+[dir="rtl"] .detail-breed-head::before {
+  border-radius: 4px 0 0 4px;
 }
 /* Make the close button readable against the photo of the hero.
    z-index must be higher than the hero's gradient overlay (z-index: 2),
@@ -5233,13 +5305,26 @@ body.calm-mode .card:hover {
   .detail-modal-inner { padding: 22px; }
   .detail-main-photo { height: 240px; }
   .detail-thumbnails { height: 90px; }
-  .detail-hero { height: 220px; }
+  .detail-hero { height: 210px; }
   .detail-hero-scrim { display: none; }
   .detail-breed-head {
-    padding: 18px 22px 12px;
+    padding: 18px 20px 0;
+    padding-inline-end: 52px;
+  }
+  .detail-breed-head-inner {
+    padding-inline-start: 10px;
+    gap: 10px;
   }
   .detail-breed-head h2 {
-    font-size: 26px;
+    font-size: 1.45rem;
+  }
+  .detail-breed-head .detail-breed-size,
+  .detail-breed-head .size {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  .detail-breed-head-divider {
+    margin-top: 14px;
   }
   .quiz-podium { grid-template-columns: 1fr; }
   .podium-card.gold { transform: none; }

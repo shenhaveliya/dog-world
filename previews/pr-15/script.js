@@ -3102,9 +3102,12 @@ function openDetailModal(card, trigger) {
   const isWikiOnly = withImage && !breed.apiName;
 
   const breedHeadHTML = `
-    <div class="detail-breed-head">
-      <h2 id="detailTitle">${escapeHTML(name)}</h2>
-      <span class="size">${escapeHTML(t("sizeBadge", bSize(breed)))}</span>
+    <div class="detail-breed-head" data-size-rank="${breed.sizeRank}">
+      <div class="detail-breed-head-inner">
+        <h2 id="detailTitle">${escapeHTML(name)}</h2>
+        <span class="size detail-breed-size">${escapeHTML(t("sizeBadge", bSize(breed)))}</span>
+      </div>
+      <div class="detail-breed-head-divider" aria-hidden="true"></div>
     </div>`;
 
   const heroHTML = withImage
@@ -3197,6 +3200,11 @@ function openDetailModal(card, trigger) {
   }
 
   openModal(detailModal, trigger);
+  const breedHeadEl = detailModalContent.querySelector(".detail-breed-head");
+  if (breedHeadEl) {
+    const accent = card.style.getPropertyValue("--size-accent");
+    if (accent) breedHeadEl.style.setProperty("--size-accent", accent);
+  }
   updateBreedShareMeta(breed, cachedImg || getDetailShareImageUrl(breed));
   if (withImage && !isWikiOnly) loadDetailPhotos(breed);
 
