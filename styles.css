@@ -1491,13 +1491,8 @@ select.sort-select { display: none; }
   border: 1px solid color-mix(in srgb, var(--accent-1) 30%, var(--border-color));
   color: var(--text-muted);
 }
-/* In the no-image hero the overlay sits at the bottom with a soft scrim
-   so the title is legible without competing with a photo. */
-.detail-hero-overlay-static {
-  position: absolute;
-  inset-inline: 0;
-  bottom: 0;
-  padding: 16px 24px;
+/* In the no-image hero a soft scrim at the bottom keeps the title legible on desktop. */
+.detail-hero-scrim--static {
   background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--card-bg) 80%, transparent));
 }
 
@@ -2841,6 +2836,7 @@ footer .small-link {
 ===================================================================== */
 .detail-modal { padding: 0; overflow-x: hidden; }
 .detail-modal-inner { padding: 32px; }
+.detail-hero-wrap { position: relative; }
 .detail-hero {
   position: relative;
   height: 320px;
@@ -2877,24 +2873,29 @@ footer .small-link {
   object-position: center;
   display: block;
 }
-.detail-hero-overlay {
+.detail-hero-scrim {
   position: absolute;
   inset: 0;
   z-index: 2;
+  pointer-events: none;
   background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 55%);
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
+}
+.detail-breed-head {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 3;
   padding: 24px;
   color: white;
+  pointer-events: none;
 }
-.detail-hero-overlay h2 {
+.detail-breed-head h2 {
   margin: 0 0 6px;
   font-size: 36px;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   color: white;
 }
-.detail-hero-overlay .size {
+.detail-breed-head .size {
   background: rgba(255, 255, 255, 0.95);
   color: var(--accent-dark);
   margin: 0;
@@ -4618,7 +4619,6 @@ button:active:not(:disabled),
   background: linear-gradient(180deg, transparent 40%, rgba(15, 23, 42, 0.55));
   pointer-events: none;
 }
-.detail-hero-wiki .detail-hero-overlay { z-index: 2; }
 .dog-image-wrapper.wiki-image::before {
   content: "";
   position: absolute;
@@ -4779,7 +4779,25 @@ button:active:not(:disabled),
   .detail-main-photo { height: 240px; }
   .detail-thumbnails { height: 90px; }
   .detail-hero { height: 220px; }
-  .detail-hero-overlay h2 { font-size: 26px; }
+  .detail-hero-scrim { display: none; }
+  .detail-breed-head {
+    position: static;
+    padding: 16px 22px 6px;
+    color: var(--text);
+    pointer-events: auto;
+  }
+  .detail-breed-head h2 {
+    font-size: 26px;
+    text-shadow: none;
+    color: var(--text);
+  }
+  .detail-breed-head .size {
+    background: color-mix(in srgb, var(--size-accent, var(--accent-1)) 18%, transparent);
+    color: color-mix(in srgb, var(--size-accent, var(--accent-1)) 80%, black);
+  }
+  [data-theme="dark"] .detail-breed-head .size {
+    color: color-mix(in srgb, var(--size-accent, var(--accent-1)) 70%, white);
+  }
   .quiz-podium { grid-template-columns: 1fr; }
   .podium-card.gold { transform: none; }
   /* Featured banner stacks below the photo on narrow screens. */

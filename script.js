@@ -2782,25 +2782,31 @@ function openDetailModal(card, trigger) {
   // because the Wikipedia REST API gives us exactly one canonical thumbnail.
   const isWikiOnly = withImage && !breed.apiName;
 
+  const breedHeadHTML = `
+    <div class="detail-breed-head">
+      <h2 id="detailTitle">${escapeHTML(name)}</h2>
+      <span class="size">${escapeHTML(t("sizeBadge", bSize(breed)))}</span>
+    </div>`;
+
   const heroHTML = withImage
     ? `
-    <div class="detail-hero${isWikiOnly ? " detail-hero-wiki" : ""}">
-      <img id="detailHeroImg" src="${escapeHTML(cachedImg)}" alt="${escapeHTML(name)}"/>
-      <div class="detail-hero-overlay">
-        <h2 id="detailTitle">${escapeHTML(name)}</h2>
-        <span class="size">${escapeHTML(t("sizeBadge", bSize(breed)))}</span>
+    <div class="detail-hero-wrap">
+      <div class="detail-hero${isWikiOnly ? " detail-hero-wiki" : ""}">
+        <img id="detailHeroImg" src="${escapeHTML(cachedImg)}" alt="${escapeHTML(name)}"/>
+        <div class="detail-hero-scrim" aria-hidden="true"></div>
       </div>
+      ${breedHeadHTML}
     </div>`
     : `
-    <div class="detail-hero detail-hero-no-image">
-      <div class="no-image-hero-inner" aria-hidden="true">
-        <span class="no-image-initial">${escapeHTML(breedInitial(breed))}</span>
-        <span class="no-image-label">${escapeHTML(t("noPhotoLabel"))}</span>
+    <div class="detail-hero-wrap">
+      <div class="detail-hero detail-hero-no-image">
+        <div class="no-image-hero-inner" aria-hidden="true">
+          <span class="no-image-initial">${escapeHTML(breedInitial(breed))}</span>
+          <span class="no-image-label">${escapeHTML(t("noPhotoLabel"))}</span>
+        </div>
+        <div class="detail-hero-scrim detail-hero-scrim--static" aria-hidden="true"></div>
       </div>
-      <div class="detail-hero-overlay detail-hero-overlay-static">
-        <h2 id="detailTitle">${escapeHTML(name)}</h2>
-        <span class="size">${escapeHTML(t("sizeBadge", bSize(breed)))}</span>
-      </div>
+      ${breedHeadHTML}
     </div>`;
   const refreshBtnHTML = (withImage && !isWikiOnly)
     ? `<button id="detailRefresh" class="pill-btn" type="button">${escapeHTML(t("detailRefresh"))}</button>`
