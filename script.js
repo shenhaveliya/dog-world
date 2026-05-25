@@ -488,25 +488,15 @@ const favoriteShareBtn = document.getElementById("favoriteShareBtn");
 const favoriteCopyBtn = document.getElementById("favoriteCopyBtn");
 const compareHintEl = document.getElementById("compareHint");
 const compareNavBadge = document.getElementById("compareNavBadge");
-const collectionsRow = document.getElementById("collectionsRow");
 const discoveryBanner = document.getElementById("discoveryBanner");
 const discoveryDismissBtn = document.getElementById("discoveryDismiss");
 const discoveryQuizBtn = document.getElementById("discoveryQuizBtn");
 const discoveryCompareBtn = document.getElementById("discoveryCompareBtn");
 const footerMetaEl = document.getElementById("footerMeta");
 
-let activeCollectionId = null;
 let _lastImageErrorToast = 0;
 let _quickPeekTouchMode = false;
 
-/** Curated filter presets surfaced as horizontal chips on the home page. */
-const CURATED_COLLECTIONS = [
-  { id: "apartment", labelKey: "collectionApartment", attrs: ["apartmentFriendly"] },
-  { id: "family", labelKey: "collectionFamily", attrs: ["familyFriendly"] },
-  { id: "hypo", labelKey: "collectionHypo", attrs: ["hypoallergenic"] },
-  { id: "firstDog", labelKey: "collectionFirstDog", attrs: ["beginner"] },
-  { id: "active", labelKey: "collectionActive", attrs: ["activePeople"] },
-];
 let prefersReducedMotion = false;
 try {
   prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1627,13 +1617,11 @@ advancedToggle.addEventListener("click", () => {
 
 document.querySelectorAll(".attribute-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
-    activeCollectionId = null;
     const attr = btn.dataset.attr;
     if (activeAttrs.has(attr)) activeAttrs.delete(attr);
     else activeAttrs.add(attr);
     btn.classList.toggle("active", activeAttrs.has(attr));
     btn.setAttribute("aria-pressed", activeAttrs.has(attr));
-    renderCollections();
     resetPageAndApply();
   });
 });
@@ -2353,9 +2341,7 @@ clearFiltersBtn.addEventListener("click", () => {
   favOnlyBtn.classList.remove("active");
   favOnlyBtn.setAttribute("aria-pressed", "false");
   activeAttrs.clear();
-  activeCollectionId = null;
   syncAttributeButtons();
-  renderCollections();
   resetPageAndApply();
 });
 
@@ -3597,39 +3583,6 @@ function restoreQuizResultsFromUrl() {
 }
 
 /* =====================================================================
-   CURATED COLLECTIONS
-===================================================================== */
-
-function renderCollections() {
-  if (!collectionsRow) return;
-  collectionsRow.innerHTML = CURATED_COLLECTIONS.map((col) =>
-    `<button type="button" class="collection-chip${activeCollectionId === col.id ? " active" : ""}" role="listitem" data-collection="${escapeHTML(col.id)}">${escapeHTML(t(col.labelKey))}</button>`
-  ).join("");
-  collectionsRow.querySelectorAll(".collection-chip").forEach((btn) => {
-    btn.addEventListener("click", () => applyCollection(btn.dataset.collection));
-  });
-}
-
-function applyCollection(id) {
-  const col = CURATED_COLLECTIONS.find((c) => c.id === id);
-  if (!col) return;
-  if (activeCollectionId === id) {
-    activeCollectionId = null;
-    activeAttrs.clear();
-  } else {
-    activeCollectionId = id;
-    activeAttrs.clear();
-    col.attrs.forEach((a) => activeAttrs.add(a));
-  }
-  selectedSizes.clear();
-  syncSizeButtons();
-  syncAttributeButtons();
-  renderCollections();
-  resetPageAndApply();
-  if (cardsContainer) cardsContainer.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-/* =====================================================================
    DISCOVERY BANNER (first visit)
 ===================================================================== */
 
@@ -4202,7 +4155,6 @@ function applyLanguage(lang) {
   renderHeroStats();
   renderFeaturedBreed();
   renderRecentBreeds();
-  renderCollections();
   renderFooterMeta();
   renderSearchSuggestions();
   updateFavoriteShareUI();
@@ -4287,7 +4239,6 @@ updateCompareUI();
 applyFilters();
 syncFromHash();
 initDiscoveryBanner();
-renderCollections();
 renderFooterMeta();
 
 // Restore density + view mode from previous session.
