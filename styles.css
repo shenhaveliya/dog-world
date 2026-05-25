@@ -1726,6 +1726,11 @@ select.sort-select { display: none; }
 }
 .food-open-detail {
   position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.food-open-detail-head {
+  position: relative;
 }
 .food-open-detail .food-open-btn {
   width: 100%;
@@ -1738,33 +1743,27 @@ select.sort-select { display: none; }
   z-index: 2;
   top: 50%;
   translate: 0 -50%;
-  inset-inline-start: calc(38px + 12px);
+  inset-inline-start: calc(38px + 12px + 14px);
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  max-width: calc(100% - 38px - 12px - 108px);
+  gap: 16px;
+  max-width: calc(100% - 38px - 12px - 14px - 108px);
   pointer-events: none;
 }
 .food-open-detail-label .food-open-label {
   flex-shrink: 1;
   min-width: 0;
+  padding-inline-end: 2px;
 }
 .food-open-detail-label .food-info-tip {
   pointer-events: auto;
   flex-shrink: 0;
-  margin-inline-start: 2px;
 }
 .food-open-detail .food-info-tooltip {
   top: calc(100% + 8px);
   bottom: auto;
   inset-inline-start: 0;
   translate: none;
-}
-.food-open-detail .food-info-tooltip::after {
-  top: auto;
-  bottom: 100%;
-  border-top-color: transparent;
-  border-bottom-color: var(--modal-bg, var(--card-bg));
 }
 .food-info-tip {
   position: relative;
@@ -1830,16 +1829,6 @@ select.sort-select { display: none; }
   visibility: hidden;
   pointer-events: none;
   transition: opacity 0.15s ease, visibility 0.15s ease;
-}
-.food-info-tooltip::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  inset-inline-start: 50%;
-  translate: -50% 0;
-  border: 6px solid transparent;
-  border-top-color: var(--modal-bg, var(--card-bg));
-  filter: drop-shadow(0 1px 0 color-mix(in srgb, var(--tool-1) 35%, var(--input-border)));
 }
 @media (hover: hover) {
   .food-info-tip:hover .food-info-tooltip,
@@ -4895,6 +4884,28 @@ button:active:not(:disabled),
   .modal.open .modal-content { transform: translateY(0); opacity: 1; }
   .detail-modal { border-radius: var(--r-xl) var(--r-xl) 0 0; }
   .detail-modal .detail-hero { border-radius: var(--r-xl) var(--r-xl) 0 0; }
+  .food-open-detail--tip-open .food-info-tooltip--mobile {
+    position: static !important;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 12px 0 0;
+    translate: none !important;
+    inset: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto;
+    box-sizing: border-box;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .food-open-detail--tip-open + .price-disclaimer,
+  .detail-food-section:has(.food-open-detail--tip-open) + .price-disclaimer {
+    margin-top: 10px;
+  }
   .modal-content.compare-modal {
     width: min(100%, 520px);
     padding: 22px 18px calc(22px + env(safe-area-inset-bottom, 0px));
