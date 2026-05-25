@@ -1,0 +1,5042 @@
+/* =====================================================================
+   DESIGN TOKENS
+===================================================================== */
+:root {
+  /* Border-radius scale: pick from these only — keeps the product feeling
+     intentional instead of every element using its own ad-hoc radius. */
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+}
+
+/* =====================================================================
+   THEMES
+===================================================================== */
+:root {
+  --bg-fallback: #f3ece3;
+  --bg-grad:
+    radial-gradient(circle at top right, rgba(251, 146, 60, 0.11), transparent 25%),
+    radial-gradient(circle at bottom left, rgba(251, 191, 36, 0.09), transparent 30%),
+    linear-gradient(135deg, #f3ece3, #f7f1ea, #efe6da);
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --card-bg: #faf6f1;
+  --card-border: rgba(255, 255, 255, 0.45);
+  --card-shadow: rgba(15, 23, 42, 0.08);
+  --card-hover-shadow: rgba(249, 115, 22, 0.18);
+  --header-bg: rgba(247, 241, 234, 0.92);
+  --header-border: rgba(226, 214, 200, 0.55);
+  --header-shadow: rgba(249, 115, 22, 0.1);
+  --filter-bg: #f7f1ea;
+  --filter-shadow: rgba(0, 0, 0, 0.06);
+  --input-bg: #ede7df;
+  --input-border: #d8cfc4;
+  --button-bg: #e4ddd4;
+  --button-color: #334155;
+  /* Primary accent (orange) — for content actions: details, favorite, refresh, sort. */
+  --accent-1: #f97316;
+  --accent-2: #fb923c;
+  --accent-light: #f6dcc3;
+  --accent-dark: #c2410c;
+  /* Secondary "tool" accent (teal) — for system tools: compare, quiz, progress.
+     Having a second hue lets primary actions stand out instead of every button
+     screaming the same orange. */
+  --tool-1: #14b8a6;
+  --tool-2: #0d9488;
+  --tool-light: #ccefe9;
+  --tool-dark: #0f766e;
+  --tool-shadow: rgba(20, 184, 166, 0.3);
+  --info-bg: #ede7df;
+  --image-placeholder: linear-gradient(135deg, #e8c9a8, #efe0c8);
+  --skeleton-1: rgba(232, 201, 168, 0.4);
+  --skeleton-2: rgba(239, 224, 200, 0.75);
+  --modal-overlay: rgba(15, 23, 42, 0.55);
+  --modal-bg: #f7f1ea;
+  --heart: #ef4444;
+  --gold: #fbbf24;
+  --silver: #cbd5e1;
+  --bronze: #d97706;
+}
+
+[data-theme="dark"] {
+  --bg-fallback: #0f172a;
+  --bg-grad:
+    radial-gradient(circle at top right, rgba(251, 146, 60, 0.12), transparent 25%),
+    radial-gradient(circle at bottom left, rgba(251, 191, 36, 0.08), transparent 30%),
+    linear-gradient(135deg, #0f172a, #111827, #0c1424);
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --card-bg: #1e293b;
+  --card-border: rgba(255, 255, 255, 0.05);
+  --card-shadow: rgba(0, 0, 0, 0.4);
+  --card-hover-shadow: rgba(249, 115, 22, 0.25);
+  --header-bg: rgba(30, 41, 59, 0.85);
+  --header-border: rgba(255, 255, 255, 0.05);
+  --header-shadow: rgba(0, 0, 0, 0.4);
+  --filter-bg: #1e293b;
+  --filter-shadow: rgba(0, 0, 0, 0.3);
+  --input-bg: #0f172a;
+  --input-border: #334155;
+  --button-bg: #334155;
+  --button-color: #cbd5e1;
+  /* Slightly desaturated orange in dark mode so the gradient buttons don't
+     look like a safety vest against the slate background. */
+  --accent-1: #ea7a2a;
+  --accent-2: #f4923a;
+  --accent-light: rgba(249, 115, 22, 0.2);
+  --accent-dark: #fdba74;
+  /* Lighter teal in dark mode for adequate contrast on slate. */
+  --tool-1: #5eead4;
+  --tool-2: #2dd4bf;
+  --tool-light: rgba(20, 184, 166, 0.18);
+  --tool-dark: #5eead4;
+  --tool-shadow: rgba(45, 212, 191, 0.25);
+  --info-bg: rgba(15, 23, 42, 0.5);
+  --image-placeholder: linear-gradient(135deg, #1e293b, #0f172a);
+  --skeleton-1: rgba(51, 65, 85, 0.55);
+  --skeleton-2: rgba(15, 23, 42, 0.95);
+  --modal-overlay: rgba(0, 0, 0, 0.7);
+  --modal-bg: #1e293b;
+}
+
+/* =====================================================================
+   RESET & BASE
+===================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  /* Solid fallback so overscroll / compositor gaps never flash pure white. */
+  background-color: var(--bg-fallback);
+}
+
+/* Pin the page gradient to the viewport so it doesn't repaint on every
+   scroll frame (which caused brief white flashes, especially on mobile). */
+html::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--bg-grad);
+  pointer-events: none;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+               "Helvetica Neue", Arial, "Noto Sans Hebrew", sans-serif;
+  background: transparent;
+  color: var(--text);
+  min-height: 100vh;
+  /* `clip` instead of `hidden` so descendants can still `position: sticky`
+     (Mobile Safari + Chromium drop sticky positioning when an ancestor
+     uses overflow: hidden because it makes the body a scroll container). */
+  overflow-x: clip;
+  transition: color 0.3s ease;
+  position: relative;
+}
+
+/* =====================================================================
+   MODERN SCROLLBARS
+   Slim, rounded, accent-tinted scrollbars that replace the default
+   chunky platform ones across the whole page. Webkit (Chrome/Edge/
+   Safari) gets the fully styled pseudo-elements; Firefox gets the
+   matching `scrollbar-color` API.
+===================================================================== */
+
+/* Firefox */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(71, 85, 105, 0.85) transparent;
+}
+[data-theme="dark"] html,
+[data-theme="dark"] {
+  scrollbar-color: rgba(148, 163, 184, 0.85) transparent;
+}
+
+/* Webkit: page-level + any scrollable element */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb {
+  /* Solid neutral slate — high contrast against any background but
+     stays out of the orange/blue palette so it doesn't compete. */
+  background: rgba(71, 85, 105, 0.9);      /* slate-600 @ 90% */
+  border-radius: 999px;
+  border: 2px solid transparent;           /* creates the inner gutter */
+  background-clip: padding-box;
+  transition: background 0.2s ease;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(51, 65, 85, 1);         /* slate-700 */
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:active {
+  background: rgba(30, 41, 59, 1);         /* slate-800 */
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-corner { background: transparent; }
+*::-webkit-scrollbar-button { display: none; height: 0; width: 0; }
+
+/* Slim variant for inner scrollers (modals, dropdowns, popovers) so
+   they don't fight the page scrollbar visually. */
+.modal-overlay::-webkit-scrollbar,
+.detail-modal::-webkit-scrollbar,
+.sort-menu::-webkit-scrollbar,
+.modal-content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+/* Dark mode: invert toward light slate so the thumb pops on dark
+   backgrounds without looking like a black bar. */
+[data-theme="dark"] *::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.85);   /* slate-400 @ 85% */
+  background-clip: padding-box;
+}
+[data-theme="dark"] *::-webkit-scrollbar-thumb:hover {
+  background: rgba(203, 213, 225, 1);      /* slate-300 */
+  background-clip: padding-box;
+}
+[data-theme="dark"] *::-webkit-scrollbar-thumb:active {
+  background: rgba(226, 232, 240, 1);      /* slate-200 */
+  background-clip: padding-box;
+}
+
+/* Dotted texture overlay over the whole page (extremely subtle).
+   Gives surfaces a sense of fine grain without affecting legibility. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: radial-gradient(currentColor 1px, transparent 1px);
+  background-size: 22px 22px;
+  color: var(--text);
+  opacity: 0.035;
+}
+[data-theme="dark"] body::before { opacity: 0.05; }
+body > * { position: relative; z-index: 1; }
+
+button, input, select { font-family: inherit; color: inherit; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Soft accessible focus glow. Uses a halo ring instead of a hard outline
+   so it looks designed against rounded buttons/cards. */
+:focus { outline: none; }
+:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px var(--accent-1),
+    0 0 0 7px rgba(249, 115, 22, 0.22);
+  border-radius: 6px;
+}
+.card:focus-visible { box-shadow: 0 0 0 3px var(--size-accent), 0 0 0 7px rgba(249, 115, 22, 0.18); }
+
+/* Skip-to-content link */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent-1);
+  color: white;
+  padding: 10px 18px;
+  border-radius: 0 0 var(--r-md) var(--r-md);
+  z-index: 1000;
+  text-decoration: none;
+  font-weight: bold;
+  transition: top 0.2s ease;
+}
+.skip-link:focus { top: 0; }
+
+/* =====================================================================
+   CONTAINER & HEADER
+===================================================================== */
+.container {
+  width: min(1100px, 92%);
+  margin: 0 auto;
+  padding: 40px 0;
+}
+
+header {
+  background: var(--header-bg);
+  border: 1px solid var(--header-border);
+  backdrop-filter: blur(14px);
+  border-radius: var(--r-xl);
+  padding: clamp(28px, 4vw, 48px);
+  /* Layered "designer" shadow — a soft ambient + a tight contact shadow. */
+  box-shadow:
+    0 28px 60px -20px var(--header-shadow),
+    0 6px 20px rgba(15, 23, 42, 0.05);
+  margin-bottom: 36px;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  /* JS sets --px / --py to a normalized cursor offset (-1..1) for parallax. */
+  --px: 0;
+  --py: 0;
+}
+
+/* ===== Aurora / mesh-gradient backdrop inside the header ===== */
+.aurora {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+  border-radius: inherit;
+  filter: blur(60px) saturate(1.2);
+}
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.55;
+  will-change: transform;
+}
+.aurora-1 {
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(circle, #fb923c, transparent 65%);
+  top: -10%; left: -10%;
+  animation: auroraDrift1 18s ease-in-out infinite;
+}
+.aurora-2 {
+  width: 55%;
+  height: 55%;
+  background: radial-gradient(circle, #14b8a6, transparent 65%);
+  bottom: -15%; right: -10%;
+  animation: auroraDrift2 22s ease-in-out infinite;
+}
+.aurora-3 {
+  width: 50%;
+  height: 50%;
+  background: radial-gradient(circle, #a855f7, transparent 65%);
+  top: 25%; left: 35%;
+  opacity: 0.32;
+  animation: auroraDrift3 26s ease-in-out infinite;
+}
+[data-theme="dark"] .aurora-blob { opacity: 0.4; }
+[data-theme="dark"] .aurora-3 { opacity: 0.22; }
+
+@keyframes auroraDrift1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(8%, 6%) scale(1.15); }
+}
+@keyframes auroraDrift2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-6%, -8%) scale(1.1); }
+}
+@keyframes auroraDrift3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-5%, 7%) scale(1.2); }
+}
+
+/* ===== Bento layout for the hero ===== */
+.hero-bento {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(220px, 1fr);
+  grid-template-areas:
+    "intro stats"
+    "feat  feat";
+  gap: 40px;            /* generous gutter between intro & stats */
+  align-items: stretch;
+  /* The action buttons (Quiz, Theme, Lang) are absolutely positioned in the
+     top corner. Push the entire bento down so it never collides with them.
+     Buttons sit at top:24px, ~44px tall → bottom edge ~68px from header top.
+     Header padding-top is ~28-48px, so we still need 30-40px of clearance. */
+  margin-block-start: clamp(36px, 5vw, 56px);
+}
+.hero-bento > * { min-width: 0; } /* prevent grid items from blowing out their column */
+.hero-intro {
+  grid-area: intro;
+  min-width: 0;
+  padding-inline-end: 8px; /* extra breathing room toward the stats card */
+}
+.hero-stats { grid-area: stats; }
+.featured-banner:not([hidden]) {
+  grid-area: feat;
+  display: flex;
+  margin-top: 8px;       /* a bit more separation from the row above */
+}
+@media (max-width: 820px) {
+  .hero-bento {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "intro"
+      "stats"
+      "feat";
+    gap: 24px;
+  }
+  .hero-intro { padding-inline-end: 0; }
+}
+
+/* ===== Display H1: gradient-text, fluid, tight tracking ===== */
+.display-h1 {
+  font-size: clamp(34px, 6vw, 64px);
+  /* line-height is intentionally a bit looser than 1.0 so descenders
+     (g, p, y, q) aren't clipped by the gradient-text mask. */
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+  font-weight: 800;
+  margin: 12px 0 14px;
+  padding-bottom: 0.08em; /* extra slack for descenders on any font */
+  background: linear-gradient(135deg, #f97316 0%, #fb923c 35%, #14b8a6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  /* Subtle shimmer in case background is transparent (Safari fallback). */
+  background-size: 200% 200%;
+  animation: h1Shimmer 12s ease-in-out infinite;
+}
+[data-theme="dark"] .display-h1 {
+  background: linear-gradient(135deg, #fbbf24 0%, #fb923c 40%, #5eead4 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  background-size: 200% 200%;
+}
+@keyframes h1Shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+/* Decorative paw drifts with the cursor – cheap CSS-driven parallax. */
+header::before {
+  content: "🐶";
+  position: absolute;
+  inset-inline-start: 30px;
+  top: 20px;
+  font-size: 90px;
+  opacity: 0.08;
+  transform: translate3d(calc(var(--px) * 18px), calc(var(--py) * 14px), 0) rotate(-10deg);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Featured banner gets a subtler counter-parallax so the depth feels layered. */
+.featured-banner {
+  transform: translate3d(calc(var(--px, 0) * -6px), calc(var(--py, 0) * -4px), 0);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
+}
+
+.header-actions {
+  position: absolute;
+  top: 24px;
+  inset-inline-end: 24px;
+  display: flex;
+  gap: 8px;
+  z-index: 2;
+  align-items: center;
+}
+
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--button-bg);
+  color: var(--button-color);
+  cursor: pointer;
+  font-size: 20px;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.icon-btn:hover {
+  transform: scale(1.08);
+  background: var(--accent-light);
+}
+
+.lang-toggle {
+  height: 44px;
+  min-width: 44px;
+  padding: 0 14px;
+  gap: 6px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--button-bg);
+  color: var(--button-color);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 0.4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Force a Latin/Hebrew-friendly stack so the label always reads cleanly,
+     even if document direction or font-family changes mid-flight. */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+               "Helvetica Neue", Arial, "Noto Sans Hebrew", sans-serif;
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+.lang-toggle .lang-icon { font-size: 16px; line-height: 1; }
+.lang-toggle:hover {
+  transform: scale(1.05);
+  background: var(--accent-light);
+  color: var(--accent-dark);
+}
+
+/* Quiz: a "system tool" → teal accent (separates it from primary content actions). */
+.quiz-btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: linear-gradient(135deg, var(--tool-1), var(--tool-2));
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 8px 18px var(--tool-shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.quiz-btn:hover {
+  box-shadow: 0 14px 26px var(--tool-shadow);
+}
+
+.badge {
+  display: inline-block;
+  background: var(--accent-light);
+  color: var(--accent-dark);
+  padding: 8px 16px;
+  border-radius: var(--r-pill);
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+h1 { font-size: 44px; margin: 0 0 16px; letter-spacing: -0.01em; }
+
+header p {
+  max-width: 700px;
+  font-size: 18px;
+  line-height: 1.8;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* =====================================================================
+   FILTERS
+===================================================================== */
+.filters {
+  background: var(--filter-bg);
+  border-radius: var(--r-xl);
+  padding: 18px 20px;
+  box-shadow: 0 10px 25px var(--filter-shadow);
+  margin-bottom: 22px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: center;
+  position: relative;
+  z-index: 50;
+}
+
+.search-wrapper { position: relative; width: 100%; }
+
+/* Pinned magnifying glass on the leading edge so the input is recognizable
+   as search even when empty. The clear button sits on the trailing edge. */
+.search-icon {
+  position: absolute;
+  inset-inline-start: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  line-height: 1;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.search-wrapper input {
+  width: 100%;
+  padding: 14px 18px;
+  padding-inline-start: 44px;  /* leave room for the search icon */
+  padding-inline-end: 44px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--r-md);
+  font-size: 16px;
+  outline: none;
+  background: var(--input-bg);
+  color: var(--text);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.search-wrapper input:focus {
+  border-color: var(--accent-2);
+  background: var(--filter-bg);
+}
+
+.clear-search {
+  position: absolute;
+  inset-inline-end: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--button-bg);
+  color: var(--button-color);
+  cursor: pointer;
+  font-size: 14px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  /* Sit above the input and any decorative siblings so clicks always
+     land on the X, regardless of source order or stacking quirks. */
+  z-index: 4;
+  pointer-events: auto;
+}
+.clear-search:hover {
+  background: var(--accent-light);
+  color: var(--accent-dark);
+}
+.clear-search:focus-visible {
+  outline: 2px solid var(--accent-1);
+  outline-offset: 2px;
+}
+
+.buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.search-suggestions {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 8px);
+  inset-inline: 0;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--r-lg);
+  background-color: var(--modal-bg);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22);
+}
+.search-suggestions[hidden] { display: none; }
+.search-suggestion {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  border-radius: var(--r-md);
+  padding: 8px;
+  color: var(--text);
+  background: transparent;
+  cursor: pointer;
+  text-align: start;
+}
+.search-suggestion:hover,
+.search-suggestion:focus-visible {
+  background: var(--button-bg);
+  outline: none;
+}
+.search-suggestion-thumb,
+.search-suggestion-thumb img,
+.search-suggestion-initial {
+  width: 54px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--image-placeholder);
+}
+.search-suggestion-thumb img {
+  object-fit: contain;
+  padding: 4px;
+  display: block;
+}
+.search-suggestion-initial {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 900;
+}
+.search-suggestion-text {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.search-suggestion-text strong,
+.search-suggestion-text small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.search-suggestion-text small {
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.pill-btn {
+  border: none;
+  border-radius: var(--r-pill);
+  padding: 10px 18px;
+  cursor: pointer;
+  background: var(--button-bg);
+  color: var(--button-color);
+  font-weight: bold;
+  font-size: 15px;
+  transition: 0.2s;
+}
+.pill-btn:hover,
+.pill-btn.active {
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+  color: white;
+  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.3);
+}
+.pill-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Active pills already have an orange gradient background, so the global
+   :focus-visible orange outline disappears against it. Use a contrasting
+   white outline + thin offset ring so keyboard users still see focus. */
+.pill-btn.active:focus-visible,
+.fav-only-btn.active:focus-visible,
+.attribute-btn.active:focus-visible {
+  outline: 3px solid white;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--accent-1), 0 8px 20px rgba(249, 115, 22, 0.3);
+}
+
+/* Anchor styled as a pill (used by the Wikipedia link in detail modal) */
+a.pill-btn-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.toolbar {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
+.results-counter {
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.toolbar-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* The native select is still in the DOM (for a11y / form fallback) but is
+   visually hidden — see the .sr-only class. The custom dropdown below
+   provides the actual UI. */
+select.sort-select { display: none; }
+
+/* =====================================================================
+   CUSTOM SORT DROPDOWN
+   Modern popover menu that replaces the native <select>. The trigger
+   is a pill button with an icon + label + chevron; the menu is a
+   floating card with rounded options, hover/active states, and a soft
+   slide-in animation.
+===================================================================== */
+.sort-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.sort-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  height: 44px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--r-pill);
+  background: var(--input-bg);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1;
+  min-width: 180px;
+  box-sizing: border-box;
+  transition: border-color 0.18s ease, background 0.18s ease,
+              transform 0.15s ease, box-shadow 0.2s ease;
+}
+.sort-trigger:hover {
+  border-color: color-mix(in srgb, var(--accent-1) 55%, var(--input-border));
+  background: var(--filter-bg);
+  box-shadow: 0 6px 18px var(--filter-shadow);
+}
+.sort-trigger:focus-visible {
+  outline: 2px solid var(--accent-1);
+  outline-offset: 2px;
+}
+.sort-dropdown.open .sort-trigger {
+  border-color: var(--accent-1);
+  background: var(--filter-bg);
+  box-shadow: 0 8px 22px var(--tool-shadow);
+}
+
+.sort-trigger-icon {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+  color: white;
+  font-size: 14px;
+  line-height: 1;
+  flex: 0 0 auto;
+  box-shadow: 0 4px 10px var(--tool-shadow);
+}
+
+.sort-trigger-label {
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: start;
+}
+
+.sort-trigger-caret {
+  flex: 0 0 auto;
+  opacity: 0.7;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.sort-dropdown.open .sort-trigger-caret {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+/* -- Popover menu ----------------------------------------------------- */
+.sort-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline-end: 0;
+  min-width: 260px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  /* Fully opaque — hoisted to <body> when open so cards never bleed through. */
+  background-color: var(--modal-bg);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  isolation: isolate;
+  border: 1px solid var(--input-border);
+  border-radius: var(--r-lg);
+  box-shadow: 0 22px 50px rgba(15, 23, 42, 0.32),
+              0 4px 12px rgba(15, 23, 42, 0.12);
+  z-index: 60;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-8px) scale(0.97);
+  transform-origin: top right;
+  transition: transform 0.2s cubic-bezier(0.2, 1, 0.2, 1),
+              visibility 0s linear 0.18s;
+}
+/* Dark mode: slightly brighter than the page so the menu lifts clearly. */
+[data-theme="dark"] .sort-menu {
+  background-color: #233044;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.55),
+              0 4px 14px rgba(0, 0, 0, 0.35);
+}
+[dir="ltr"] .sort-menu { transform-origin: top left; inset-inline-end: auto; inset-inline-start: 0; }
+
+/* `.is-open` is set directly on the menu (in addition to `.sort-dropdown.open`)
+   so the open state still applies once the menu has been hoisted to <body>
+   to escape a transformed ancestor (see openSortMenu in script.js). */
+.sort-menu.is-floating {
+  position: fixed !important;
+  inset: auto !important;
+  margin: 0;
+  min-width: 260px;
+}
+
+.sort-dropdown.open .sort-menu,
+.sort-menu.is-open {
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+  transition: transform 0.22s cubic-bezier(0.2, 1, 0.2, 1),
+              visibility 0s linear 0s;
+  /* When hoisted to <body> the menu sits in the page's root stacking
+     context, so it has to outrank breed cards and the mobile filter sheet. */
+  z-index: 200;
+}
+
+.sort-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  user-select: none;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+.sort-option:hover,
+.sort-option:focus-visible {
+  background: color-mix(in srgb, var(--accent-1) 12%, var(--modal-bg));
+  outline: none;
+}
+.sort-option:active { transform: scale(0.98); }
+
+.sort-option-icon {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--accent-1) 14%, transparent);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1;
+  flex: 0 0 auto;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.sort-option:hover .sort-option-icon,
+.sort-option:focus-visible .sort-option-icon {
+  background: color-mix(in srgb, var(--accent-1) 22%, transparent);
+  transform: scale(1.05);
+}
+
+.sort-option-label {
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sort-option-check {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: var(--accent-1);
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.4, 1.6, 0.4, 1);
+}
+
+/* Active option: tinted background + emphasized icon + check shown. */
+.sort-option.is-active {
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--accent-1) 14%, var(--modal-bg)),
+    color-mix(in srgb, var(--accent-2) 14%, var(--modal-bg)));
+  color: var(--text);
+  font-weight: 600;
+}
+.sort-option.is-active .sort-option-icon {
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+  color: white;
+  box-shadow: 0 4px 10px var(--tool-shadow);
+}
+.sort-option.is-active .sort-option-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sort-trigger,
+  .sort-menu,
+  .sort-option,
+  .sort-option-icon,
+  .sort-option-check,
+  .sort-trigger-caret { transition: none; }
+}
+
+/* Narrow viewports: trigger trims down and menu floats with a small inset. */
+@media (max-width: 600px) {
+  .sort-trigger { min-width: 0; padding: 8px 12px; }
+  .sort-menu { min-width: 220px; }
+}
+
+/* =====================================================================
+   INLINE MODE – used inside the mobile filter sheet.
+   The sheet has its own overflow-y scroll *and* a transform that
+   breaks position:fixed, so a floating popover misbehaves. Inline mode
+   drops the popover behaviour entirely: the menu becomes a full-width
+   accordion expansion that lives inside the sheet's scroll flow, so the
+   sheet keeps scrolling normally and the menu is always fully on-screen.
+===================================================================== */
+.sort-menu.is-inline {
+  position: static;
+  display: block;
+  inset: auto;
+  margin: 8px 0 0;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  max-height: none;
+  overflow: visible;
+  transform: none;
+  z-index: auto;
+  background-color: var(--modal-bg);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+}
+[data-theme="dark"] .sort-menu.is-inline {
+  background-color: #233044;
+}
+.sort-menu.is-inline.is-open {
+  visibility: visible;
+  pointer-events: auto;
+}
+/* When the menu is opened inline, let the dropdown take a full row so the
+   menu has room to expand under it. The toolbar uses flex-wrap, so this
+   only pushes wrapping; it doesn't fight desktop layout. The class is also
+   set explicitly by JS so it works on browsers without :has() support. */
+.sort-dropdown.has-inline-menu,
+.sort-dropdown:has(> .sort-menu.is-inline.is-open) {
+  width: 100%;
+  flex-basis: 100%;
+}
+
+.fav-only-btn,
+.advanced-toggle {
+  padding: 0 16px;
+  height: 44px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--r-pill);
+  background: var(--input-bg);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1;
+  box-sizing: border-box;
+}
+.fav-only-btn.active {
+  background: linear-gradient(135deg, #ef4444, #f87171);
+  color: white;
+  border-color: transparent;
+}
+
+/* Advanced filters panel */
+.advanced-filters {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 6px;
+  border-top: 1px dashed var(--input-border);
+  margin-top: 4px;
+}
+.advanced-filters.hidden { display: none; }
+
+.attribute-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--r-pill);
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.attribute-btn:hover { border-color: var(--accent-2); }
+.attribute-btn.active {
+  background: var(--accent-light);
+  color: var(--accent-dark);
+  border-color: var(--accent-2);
+}
+
+/* =====================================================================
+   CARDS
+===================================================================== */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 22px;
+}
+
+.section-header {
+  grid-column: 1 / -1;
+  font-size: 22px;
+  margin: 18px 0 -4px;
+  color: var(--text);
+  font-weight: bold;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent-light);
+}
+.section-header:first-child { margin-top: 0; }
+
+.card {
+  /* The size-category accent color, set per-card by data-size-rank below. */
+  --size-accent: var(--accent-1);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-xl);
+  padding: 24px;
+  padding-bottom: 0;       /* full-width tab button absorbs the bottom padding */
+  /* Layered shadow stack: soft ambient + tight contact + size-tinted glow. */
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    0 12px 28px -8px var(--card-shadow),
+    0 30px 60px -30px var(--card-shadow);
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
+              box-shadow 0.25s ease,
+              border-color 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  /* Keep cards out from under the sticky filter bar when the user
+     scrolls to a #breed/<key> deep link or when focus moves to a card. */
+  scroll-margin-top: 96px;
+}
+
+/* 4 px size-category color strip across the top of every card.
+   Replaces the previous ::before paw watermark, which was visible noise.
+   The actual color comes from --size-accent, set by data-size-rank below. */
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--size-accent), transparent 110%);
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Subtle paw-print pattern in the bottom corner — replaces the lone 🐾 emoji. */
+.card::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: -10px;
+  bottom: -10px;
+  width: 110px;
+  height: 110px;
+  background-image: radial-gradient(circle at 35% 35%, currentColor 4px, transparent 4.5px),
+                    radial-gradient(circle at 25% 60%, currentColor 3px, transparent 3.5px),
+                    radial-gradient(circle at 50% 60%, currentColor 3px, transparent 3.5px),
+                    radial-gradient(circle at 38% 80%, currentColor 5px, transparent 5.5px);
+  background-repeat: no-repeat;
+  color: var(--size-accent);
+  opacity: 0.06;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+/* Per-size accent: small=teal, medium=amber (default brand), large=violet. */
+.card[data-size-rank="1"] { --size-accent: #14b8a6; }
+.card[data-size-rank="2"] { --size-accent: #f97316; }
+.card[data-size-rank="3"] { --size-accent: #8b5cf6; }
+.card[data-size-rank="4"] { --size-accent: #dc2626; }
+[data-theme="dark"] .card[data-size-rank="1"] { --size-accent: #5eead4; }
+[data-theme="dark"] .card[data-size-rank="2"] { --size-accent: #fb923c; }
+[data-theme="dark"] .card[data-size-rank="3"] { --size-accent: #c4b5fd; }
+[data-theme="dark"] .card[data-size-rank="4"] { --size-accent: #f87171; }
+
+.card:hover {
+  /* Clean vertical lift only — no 3D rotation. The glow layer + accent
+     border still respond to the cursor, so the card feels alive without
+     leaning to the side. */
+  transform: translateY(-10px) scale(1.012);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    0 22px 40px -10px var(--card-hover-shadow),
+    0 50px 80px -30px color-mix(in srgb, var(--size-accent) 25%, transparent);
+  border-color: var(--size-accent);
+}
+
+/* Gradient outline ring around the image when hovered – picks up the
+   card's size-accent and the cursor-glow color for a subtle photo frame. */
+.card:hover .dog-image-wrapper {
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--size-accent) 60%, transparent),
+    inset 0 -40px 60px -30px color-mix(in srgb, var(--size-accent) 30%, transparent);
+}
+
+.card.compare-selected {
+  outline: 3px solid var(--tool-1);
+  outline-offset: -3px;
+}
+
+.dog-image-wrapper {
+  margin: -24px -24px 18px -24px;
+  height: 240px;
+  overflow: hidden;
+  border-top-left-radius: var(--r-xl);
+  border-top-right-radius: var(--r-xl);
+  background: var(--image-placeholder);
+  position: relative;
+  /* Cursor-tracked glow: JS updates --mx and --my on mousemove. */
+  --mx: 50%;
+  --my: 50%;
+}
+/* Soft radial glow that follows the cursor — only visible on hover. */
+.dog-image-wrapper::before,
+.card:hover .dog-image-wrapper > .glow-layer {
+  /* placeholder so the rule below is overridable */
+}
+.glow-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    220px circle at var(--mx) var(--my),
+    color-mix(in srgb, var(--size-accent, var(--accent-1)) 35%, transparent),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  z-index: 2;
+  mix-blend-mode: soft-light;
+}
+.card:hover .glow-layer { opacity: 1; }
+
+/* Skeleton shimmer while image loads */
+.dog-image-wrapper:not(.loaded)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-1) 0%,
+    var(--skeleton-2) 50%,
+    var(--skeleton-1) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite linear;
+  z-index: 0;
+}
+/* Higher-contrast shimmer in dark mode so it's actually visible against
+   the slate-blue placeholder. */
+[data-theme="dark"] .dog-image-wrapper:not(.loaded)::before {
+  background: linear-gradient(
+    90deg,
+    rgba(71, 85, 105, 0.25) 0%,
+    rgba(100, 116, 139, 0.55) 50%,
+    rgba(71, 85, 105, 0.25) 100%
+  );
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.dog-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+  padding: 8px;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.5s ease, opacity 0.4s ease;
+  opacity: 0;
+}
+.dog-image.loaded { opacity: 1; }
+
+.card:hover .dog-image { transform: scale(1.06); }
+
+.dog-image-wrapper::after {
+  content: "🐶";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 60px;
+  opacity: 0.45;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  user-select: none;
+  z-index: 1;
+}
+.dog-image-wrapper.loaded::after { opacity: 0; }
+.dog-image-wrapper.image-error::after {
+  content: "!";
+  font-weight: 900;
+}
+
+.image-loading {
+  opacity: 0.45;
+}
+.recent-breed img.image-loading,
+.similar-breed img.image-loading,
+.compare-img.image-loading,
+.featured-photo img.image-loading,
+.search-suggestion-thumb img.image-loading {
+  background:
+    linear-gradient(90deg, var(--skeleton-1), var(--skeleton-2), var(--skeleton-1)),
+    var(--image-placeholder);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+.image-error {
+  filter: saturate(0.65);
+}
+
+/* Image actions are grouped into a single floating glass capsule that
+   only appears when the user hovers (or focuses inside) the card.
+   Default state: invisible + slightly above its rest position so it
+   slides DOWN into view smoothly. Touch devices get them always-visible. */
+.image-actions {
+  position: absolute;
+  top: 10px;
+  inset-inline-end: 10px;
+  display: inline-flex;
+  gap: 2px;
+  padding: 4px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--r-pill);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
+  z-index: 5;
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.2, 1, 0.2, 1);
+}
+.card:hover .image-actions,
+.card:focus-within .image-actions {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.image-action-btn {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: white;
+  transition: background 0.15s ease, transform 0.15s ease, color 0.15s ease;
+}
+.image-action-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: scale(1.08);
+}
+.image-action-btn.fav-btn[aria-pressed="true"],
+.image-action-btn.fav-btn.active {
+  background: var(--heart);
+  color: white;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+}
+.image-action-btn.compare-btn[aria-pressed="true"],
+.image-action-btn.compare-btn.active {
+  background: var(--tool-1);
+  color: white;
+  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.25);
+}
+
+/* Touch devices have no hover state; keep the actions visible but the
+   capsule remains stylistically subtle. */
+@media (hover: none) {
+  .image-actions { opacity: 1; transform: none; pointer-events: auto; }
+}
+
+/* ---------------------------------------------------------------------
+   NO-IMAGE STATE
+   For breeds that don't have a photo source available online: we render
+   a clean placeholder area instead of an actual <img>, so the layout
+   keeps its rhythm and the fav/compare buttons remain reachable. The
+   placeholder uses the same accent-tinted gradient family as the rest
+   of the card system so it never looks like a "broken image".
+---------------------------------------------------------------------- */
+.dog-image-wrapper.no-image {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background:
+    radial-gradient(120% 100% at 50% 0%,
+      color-mix(in srgb, var(--size-accent, var(--accent-1)) 18%, transparent),
+      transparent 70%),
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--card-bg) 92%, var(--accent-1) 8%),
+      color-mix(in srgb, var(--card-bg) 80%, var(--accent-2) 20%));
+  color: var(--text-muted);
+}
+/* The shimmer skeleton is for loading photos — suppress it for no-image. */
+.dog-image-wrapper.no-image::before,
+.dog-image-wrapper.no-image::after { content: none; display: none; }
+
+.dog-image-wrapper.no-image .no-image-initial {
+  font-size: clamp(48px, 9vw, 84px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: color-mix(in srgb, var(--size-accent, var(--accent-1)) 75%, var(--text-primary));
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+  user-select: none;
+}
+.dog-image-wrapper.no-image .no-image-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--card-bg) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--size-accent, var(--accent-1)) 25%, var(--border-color));
+  color: var(--text-muted);
+}
+
+/* No image = no point in a refresh button. Keep fav/compare always visible
+   (no hover-reveal capsule needed since there's no photo to obscure). */
+.image-actions-no-image {
+  position: absolute;
+  top: 10px;
+  inset-inline-end: 10px;
+  display: inline-flex;
+  gap: 6px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.image-actions-no-image .image-action-btn {
+  background: color-mix(in srgb, var(--card-bg) 70%, transparent);
+  color: var(--text-primary);
+  border: 1px solid color-mix(in srgb, var(--size-accent, var(--accent-1)) 30%, var(--border-color));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  width: 32px;
+  height: 32px;
+}
+.image-actions-no-image .image-action-btn:hover {
+  background: color-mix(in srgb, var(--card-bg) 95%, var(--accent-1) 5%);
+  transform: scale(1.06);
+}
+
+/* Detail modal: no-image hero variant. */
+.detail-hero-no-image {
+  background:
+    radial-gradient(120% 100% at 50% 0%,
+      color-mix(in srgb, var(--accent-1) 22%, transparent),
+      transparent 70%),
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--card-bg) 92%, var(--accent-1) 8%),
+      color-mix(in srgb, var(--card-bg) 80%, var(--accent-2) 20%));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.detail-hero-no-image .no-image-hero-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  padding: 24px;
+}
+.detail-hero-no-image .no-image-initial {
+  font-size: clamp(80px, 18vw, 160px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: color-mix(in srgb, var(--accent-1) 70%, var(--text-primary));
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.detail-hero-no-image .no-image-label {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--card-bg) 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-1) 30%, var(--border-color));
+  color: var(--text-muted);
+}
+/* In the no-image hero a soft scrim at the bottom keeps the title legible on desktop. */
+.detail-hero-scrim--static {
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--card-bg) 80%, transparent));
+}
+
+/* Compare modal: no-image column variant. */
+.compare-img-no-image {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background:
+    radial-gradient(120% 100% at 50% 0%,
+      color-mix(in srgb, var(--accent-1) 18%, transparent),
+      transparent 70%),
+    color-mix(in srgb, var(--card-bg) 85%, var(--accent-2) 15%);
+  border-radius: var(--r-lg);
+  color: var(--text-muted);
+}
+.compare-img-no-image .no-image-initial {
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1;
+  color: color-mix(in srgb, var(--accent-1) 75%, var(--text-primary));
+}
+.compare-img-no-image .no-image-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+/* Compare bar: tiny initial avatar instead of a thumbnail. */
+.compare-avatar-no-image {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--accent-1) 18%, var(--card-bg));
+  color: color-mix(in srgb, var(--accent-1) 80%, var(--text-primary));
+  font-weight: 800;
+}
+.compare-avatar-no-image .no-image-initial {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Quiz podium: same idea, scaled to the podium tile. */
+.podium-img-no-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(100% 80% at 50% 0%,
+      color-mix(in srgb, var(--accent-1) 22%, transparent),
+      transparent 70%),
+    color-mix(in srgb, var(--card-bg) 88%, var(--accent-2) 12%);
+  border-radius: var(--r-lg);
+  color: color-mix(in srgb, var(--accent-1) 70%, var(--text-primary));
+}
+.podium-img-no-image .no-image-initial {
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.card h2 {
+  font-size: 24px;
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  letter-spacing: -0.01em;
+}
+/* Size-category color dot to the side of the breed name. Same accent as the
+   top stripe and badge — gives the card three reinforcing color cues. */
+.card h2::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--size-accent);
+  flex: 0 0 auto;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--size-accent) 22%, transparent);
+}
+
+.size {
+  display: inline-block;
+  /* Tinted in the card's --size-accent so the badge color matches the
+     top-stripe + corner-pattern. Uses color-mix so it works for any accent. */
+  background: color-mix(in srgb, var(--size-accent, var(--accent-1)) 18%, transparent);
+  color: color-mix(in srgb, var(--size-accent, var(--accent-1)) 80%, black);
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 14px;
+  align-self: flex-start;
+}
+[data-theme="dark"] .size {
+  color: color-mix(in srgb, var(--size-accent, var(--accent-1)) 70%, white);
+}
+
+.description {
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin: 0 0 16px;
+}
+
+/* Stat-tile info: a 2-column grid of icon + label + value tiles.
+   Reads in a glance instead of as a paragraph of "Label: value" lines. */
+.info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  background: transparent;
+  padding: 0;
+  margin-top: auto;
+}
+.stat {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--info-bg);
+  border-radius: var(--r-md);
+  font-size: 13px;
+  line-height: 1.4;
+  min-width: 0;
+}
+.stat-icon {
+  flex: 0 0 auto;
+  font-size: 16px;
+  line-height: 1;
+  margin-top: 1px;
+  /* Icons are color-coded by category (set per-tile via data-stat below). */
+  filter: saturate(1.1);
+}
+.stat[data-stat="energy"]    .stat-icon { color: #f97316; }
+.stat[data-stat="lifespan"]  .stat-icon { color: #14b8a6; }
+.stat[data-stat="shedding"]  .stat-icon { color: #22c55e; }
+.stat[data-stat="character"] .stat-icon { color: #8b5cf6; }
+.stat[data-stat="suitable"]  .stat-icon { color: #f59e0b; }
+.stat[data-stat="origin"]    .stat-icon { color: #3b82f6; }
+.stat[data-stat="weight"]    .stat-icon { color: #64748b; }
+.stat[data-stat="exercise"]  .stat-icon { color: #ef4444; }
+.stat[data-stat="training"]  .stat-icon { color: #d97706; }
+.stat[data-stat="cats"]      .stat-icon { color: #ec4899; }
+.stat[data-stat="kids"]      .stat-icon { color: #fbbf24; }
+.stat[data-stat="price"]     .stat-icon { color: #10b981; }
+.stat[data-stat="food"]      .stat-icon { color: #ea580c; }
+
+/* Food recommendation popup trigger (card + detail). */
+.food-open-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, #ea580c 24%, var(--border));
+  border-radius: var(--r-lg);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #ea580c 10%, var(--info-bg)) 0%,
+    var(--info-bg) 55%
+  );
+  cursor: pointer;
+  font: inherit;
+  text-align: inherit;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+.food-open-btn--card {
+  grid-column: 1 / -1;
+}
+.food-open-btn:hover,
+.food-open-btn:focus-visible {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, #ea580c 50%, var(--border));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #ea580c 16%, var(--info-bg)) 0%,
+    var(--info-bg) 60%
+  );
+  box-shadow: 0 6px 18px color-mix(in srgb, #ea580c 16%, transparent);
+  outline: none;
+}
+.food-open-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+.food-open-icon-wrap {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  background: linear-gradient(145deg, #fb923c, #ea580c);
+  box-shadow: 0 2px 10px color-mix(in srgb, #ea580c 38%, transparent);
+}
+.food-open-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+.food-open-copy {
+  flex: 1;
+  min-width: 0;
+  text-align: start;
+}
+.food-open-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+}
+.food-open-label-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.food-open-detail {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.food-open-detail-head {
+  position: relative;
+}
+.food-open-detail .food-open-btn {
+  width: 100%;
+}
+.food-open-copy--spacer {
+  min-height: 1.35em;
+}
+.food-open-detail-label {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  translate: 0 -50%;
+  inset-inline-start: calc(38px + 12px + 14px);
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  max-width: calc(100% - 38px - 12px - 14px - 108px);
+  pointer-events: none;
+}
+.food-open-detail-label .food-open-label {
+  flex-shrink: 1;
+  min-width: 0;
+  padding-inline-end: 2px;
+}
+.food-open-detail-label .food-info-tip {
+  pointer-events: auto;
+  flex-shrink: 0;
+}
+.food-open-detail .food-info-tooltip {
+  top: calc(100% + 8px);
+  bottom: auto;
+  inset-inline-start: 0;
+  translate: none;
+}
+.food-info-tip {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.food-info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: color-mix(in srgb, var(--text-muted) 14%, var(--info-bg));
+  color: var(--text-muted);
+  line-height: 0;
+  cursor: help;
+  user-select: none;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-muted) 18%, transparent);
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+.food-info-btn:hover,
+.food-info-btn:focus-visible {
+  color: #ea580c;
+  background: color-mix(in srgb, #ea580c 14%, var(--info-bg));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #ea580c 35%, transparent);
+  transform: scale(1.05);
+  outline: none;
+}
+.food-info-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+.food-info-icon svg {
+  display: block;
+}
+.food-info-tooltip {
+  position: absolute;
+  z-index: 5;
+  bottom: calc(100% + 8px);
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  width: max-content;
+  max-width: min(280px, 72vw);
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  border: 1px solid color-mix(in srgb, var(--tool-1) 35%, var(--input-border));
+  background: var(--modal-bg, var(--card-bg));
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: start;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+@media (hover: hover) {
+  .food-info-tip:hover .food-info-tooltip,
+  .food-info-tip:focus-within .food-info-tooltip {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+.food-info-tip.is-open .food-info-tooltip {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+.food-open-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, #ea580c 14%, var(--card-bg, var(--modal-bg)));
+  border: 1px solid color-mix(in srgb, #ea580c 28%, transparent);
+  font-size: 12px;
+  font-weight: 700;
+  color: #ea580c;
+  transition: background 0.15s ease, gap 0.15s ease;
+}
+[data-theme="dark"] .food-open-action {
+  color: #fb923c;
+  background: color-mix(in srgb, #ea580c 18%, var(--info-bg));
+}
+.food-open-btn:hover .food-open-action,
+.food-open-btn:focus-visible .food-open-action {
+  background: color-mix(in srgb, #ea580c 22%, var(--card-bg, var(--modal-bg)));
+  gap: 8px;
+}
+.food-open-chevron {
+  width: 7px;
+  height: 7px;
+  border-inline-end: 2px solid currentColor;
+  border-block-start: 2px solid currentColor;
+  transform: rotate(45deg);
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+[dir="rtl"] .food-open-chevron {
+  transform: rotate(-135deg);
+}
+.food-open-btn:hover .food-open-chevron,
+.food-open-btn:focus-visible .food-open-chevron {
+  transform: rotate(45deg) translate(1px, -1px);
+}
+[dir="rtl"] .food-open-btn:hover .food-open-chevron,
+[dir="rtl"] .food-open-btn:focus-visible .food-open-chevron {
+  transform: rotate(-135deg) translate(-1px, -1px);
+}
+.detail-food-wrap {
+  margin-top: 0;
+}
+.food-open-btn--detail {
+  max-width: 100%;
+}
+
+/* Food recommendation modal. */
+.food-modal {
+  max-width: 480px;
+}
+.food-modal h2 {
+  font-size: 22px;
+  margin: 0 0 18px;
+  line-height: 1.35;
+  padding-inline-end: 36px;
+}
+.food-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0 0 14px;
+}
+.food-modal-fallback {
+  margin: 0;
+  line-height: 1.65;
+  font-size: 15px;
+}
+.food-formula-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, #ea580c 10%, var(--info-bg));
+  border: 1px solid color-mix(in srgb, #ea580c 22%, var(--border));
+}
+.food-formula-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.food-formula-text {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--text);
+}
+.food-macros {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.food-macro {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--info-bg);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.food-macro-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.food-macro-value {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-dark);
+  direction: ltr;
+}
+.food-section {
+  margin: 0;
+}
+.food-section-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+.food-tips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.food-tips li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--info-bg);
+  border: 1px solid var(--border);
+}
+.food-tip-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: #ea580c;
+}
+.food-schedule {
+  padding: 14px 16px;
+  border-radius: var(--r-lg);
+  background: var(--info-bg);
+  border: 1px solid var(--border);
+}
+.food-schedule-text {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.food-portion-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+.food-modal .food-disclaimer {
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.stat[data-stat="price"]     .stat-value { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+/* Small italic note shown right under the detail-modal stat grid, so
+   readers don't take the price range as a hard quote. */
+.price-disclaimer,
+.food-disclaimer {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-muted);
+  margin: 12px 2px 4px;
+  line-height: 1.5;
+}
+.stat-text { display: flex; flex-direction: column; min-width: 0; }
+.stat-label {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.stat-value {
+  font-weight: bold;
+  color: var(--text);
+  font-size: 13px;
+  word-break: break-word;
+}
+/* Some stats benefit from spanning the full row (long character / suitable text). */
+.stat.full { grid-column: 1 / -1; }
+
+/* Full-width tab attached to the bottom edge of the card.
+   Negative margins break out of the card's padding so it sits flush. */
+.card-open-btn {
+  margin: 16px -24px 0;
+  padding: 14px 16px;
+  border: none;
+  border-bottom-left-radius: var(--r-xl);
+  border-bottom-right-radius: var(--r-xl);
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 14px;
+  text-align: center;
+  transition: padding 0.2s ease, letter-spacing 0.2s ease;
+  position: relative;
+  z-index: 2;
+}
+.card-open-btn:hover {
+  padding-block: 16px;
+  letter-spacing: 0.5px;
+}
+
+/* =====================================================================
+   EMPTY STATE
+===================================================================== */
+.empty {
+  display: none;
+  text-align: center;
+  background: var(--filter-bg);
+  border-radius: var(--r-xl);
+  padding: 30px;
+  margin-top: 20px;
+  color: var(--text-muted);
+  box-shadow: 0 10px 25px var(--filter-shadow);
+}
+.empty .empty-icon { font-size: 48px; display: block; margin-bottom: 8px; }
+.empty button {
+  margin-top: 14px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* =====================================================================
+   LOAD-MORE / PAGINATION
+   Sits below the cards grid. Doubles as a manual button and an
+   IntersectionObserver target for auto-loading the next page.
+===================================================================== */
+.load-more {
+  display: flex;
+  justify-content: center;
+  margin: 28px 0 12px;
+}
+.load-more[hidden] { display: none; }
+
+.load-more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 22px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--r-pill);
+  background: var(--filter-bg);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 8px 22px var(--filter-shadow);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.load-more-btn:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent-1) 55%, var(--input-border));
+  box-shadow: 0 12px 28px var(--tool-shadow);
+}
+.load-more-btn:active { transform: translateY(0); }
+.load-more-btn:focus-visible {
+  outline: 2px solid var(--accent-1);
+  outline-offset: 3px;
+}
+.load-more-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
+
+.load-more-icon {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+  color: white;
+  box-shadow: 0 4px 12px var(--tool-shadow);
+  transition: transform 0.2s ease;
+}
+.load-more-btn:hover .load-more-icon { transform: rotate(-20deg); }
+
+/* Spin the circular-arrow icon while a page is loading. */
+.load-more-btn.is-loading .load-more-icon { animation: load-more-spin 0.8s linear infinite; }
+@keyframes load-more-spin {
+  to { transform: rotate(360deg); }
+}
+
+.load-more-remaining {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 13px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .load-more-btn,
+  .load-more-icon { transition: none; }
+  .load-more-btn.is-loading .load-more-icon { animation: none; }
+}
+
+/* =====================================================================
+   FOOTER
+===================================================================== */
+footer {
+  text-align: center;
+  margin-top: 50px;
+  color: var(--text-muted);
+  font-size: 15px;
+  padding-bottom: 100px;
+}
+footer .small-link {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0;
+  margin-top: 6px;
+}
+
+/* =====================================================================
+   COMPARE BAR
+===================================================================== */
+.compare-bar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(160%);
+  background: var(--filter-bg);
+  border-radius: var(--r-pill);
+  padding: 12px 18px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.2);
+  /* Subtle teal ring matches the compare/quiz "tool" accent. */
+  border: 1px solid var(--tool-light);
+  z-index: 80;
+  transition: transform 0.3s ease;
+  max-width: 92%;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.compare-bar.visible { transform: translateX(-50%) translateY(0); }
+.compare-bar-text { font-weight: bold; color: var(--text); }
+/* Teal "open compare" CTA inside the bar. */
+.compare-bar .pill-btn.active {
+  background: linear-gradient(135deg, var(--tool-1), var(--tool-2));
+  box-shadow: 0 8px 20px var(--tool-shadow);
+}
+
+/* =====================================================================
+   SCROLL TO TOP
+===================================================================== */
+.scroll-top {
+  position: fixed;
+  bottom: 20px;
+  inset-inline-end: 20px;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+  color: white;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(249, 115, 22, 0.4);
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 70;
+}
+.scroll-top.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.scroll-top:hover { transform: translateY(-3px); }
+
+/* =====================================================================
+   MODALS
+===================================================================== */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: var(--modal-overlay);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+.modal.open { display: flex; animation: fadeIn 0.25s ease; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background: var(--modal-bg);
+  border-radius: var(--r-xl);
+  padding: 32px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  color: var(--text);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  inset-inline-end: 16px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--button-bg);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 18px;
+  transition: background 0.2s ease;
+  z-index: 2;
+}
+.modal-close:hover { background: var(--accent-light); color: var(--accent-dark); }
+
+/* =====================================================================
+   DETAIL MODAL – with multi-photo gallery
+===================================================================== */
+.detail-photos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.detail-main-photo {
+  height: 360px;
+  border-radius: var(--r-lg);
+  background: var(--image-placeholder);
+  overflow: hidden;
+}
+.detail-main-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 8px;
+}
+.detail-thumbnails {
+  display: flex;
+  gap: 10px;
+  height: 110px;
+}
+/* Used inside the new full-bleed detail modal where the strip stands alone
+   (no longer paired with a separate main photo — the hero is the main). */
+.detail-thumbnails-standalone { margin: 24px 0 16px; }
+.detail-thumb {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  border-radius: var(--r-md);
+  background: var(--image-placeholder);
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border 0.2s, transform 0.2s;
+  padding: 6px;
+}
+.detail-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.detail-thumb.active { border-color: var(--accent-2); }
+.detail-thumb:hover { border-color: var(--accent-2); transform: translateY(-2px); }
+
+.detail-modal h2 { font-size: 32px; margin: 0 0 12px; }
+/* In the detail modal we want 3 stat columns instead of 2 (more horizontal room). */
+.detail-modal .info {
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 12px;
+  margin-bottom: 0;
+  align-content: start;
+}
+.detail-food-section {
+  margin-top: 18px;
+  clear: both;
+}
+.detail-modal .stat { font-size: 14px; padding: 12px 14px; }
+.detail-modal .stat-value { font-size: 14px; }
+
+.detail-actions-panel {
+  display: flex;
+  flex-direction: column;
+  margin-top: 18px;
+  border-radius: var(--r-lg);
+  border: 1px solid color-mix(in srgb, var(--accent-1) 18%, var(--input-border));
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--accent-1) 7%, var(--info-bg)) 0%,
+    var(--info-bg) 48%,
+    color-mix(in srgb, var(--accent-2) 5%, var(--info-bg)) 100%
+  );
+  overflow: hidden;
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--accent-1) 8%, transparent);
+}
+.detail-actions-panel > .detail-action-btn,
+.detail-actions-panel > .detail-actions-split {
+  border-bottom: 1px solid color-mix(in srgb, var(--input-border) 75%, var(--accent-1) 10%);
+}
+.detail-actions-panel > :last-child {
+  border-bottom: none;
+}
+.detail-actions-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.detail-actions-split > .detail-action-btn + .detail-action-btn {
+  border-inline-start: 1px solid color-mix(in srgb, var(--input-border) 75%, var(--accent-1) 10%);
+}
+.detail-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1.25;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  transition: background 0.15s ease, color 0.15s ease;
+  box-sizing: border-box;
+}
+.detail-action-btn:hover,
+.detail-action-btn:focus-visible {
+  background: color-mix(in srgb, var(--accent-1) 11%, var(--info-bg));
+  outline: none;
+}
+.detail-action-btn:focus-visible {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent-1) 45%, transparent);
+}
+.detail-action-btn--wiki {
+  background: color-mix(in srgb, var(--input-bg) 55%, var(--card-bg));
+  color: var(--text);
+}
+.detail-action-btn--wiki:hover,
+.detail-action-btn--wiki:focus-visible {
+  background: color-mix(in srgb, var(--accent-1) 9%, var(--input-bg));
+  color: var(--text);
+}
+[data-theme="dark"] .detail-action-btn--wiki {
+  background: color-mix(in srgb, var(--input-bg) 60%, var(--card-bg));
+  color: var(--text);
+}
+[data-theme="dark"] .detail-action-btn--wiki:hover,
+[data-theme="dark"] .detail-action-btn--wiki:focus-visible {
+  background: color-mix(in srgb, var(--accent-1) 14%, var(--info-bg));
+}
+.detail-action-btn--link {
+  color: var(--text);
+}
+
+/* =====================================================================
+   COMPARE MODAL
+===================================================================== */
+.compare-modal {
+  max-width: 960px;
+}
+.compare-modal-body {
+  display: block;
+}
+.compare-modal-head {
+  padding-inline-end: 52px;
+}
+.compare-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+.compare-col {
+  background: var(--info-bg);
+  border-radius: var(--r-lg);
+  padding: 14px;
+  text-align: center;
+  /* Subtle teal top stripe ties compare-cols to the compare/quiz tool color. */
+  border-top: 3px solid var(--tool-1);
+}
+.compare-col img,
+.compare-col .compare-img-no-image {
+  width: 100%;
+  height: 160px;
+  object-fit: contain;
+  background: var(--image-placeholder);
+  border-radius: var(--r-md);
+  padding: 6px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+.compare-col .compare-img-no-image {
+  background:
+    radial-gradient(120% 100% at 50% 0%,
+      color-mix(in srgb, var(--accent-1) 18%, transparent),
+      transparent 70%),
+    color-mix(in srgb, var(--card-bg) 85%, var(--accent-2) 15%);
+}
+.compare-col h3 { font-size: 18px; margin: 0 0 10px; }
+.compare-sections {
+  display: grid;
+  gap: 10px;
+}
+.compare-section {
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--input-border) 72%, transparent);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--card-bg) 58%, transparent);
+}
+.compare-section h4 {
+  margin: 0 0 8px;
+  color: var(--tool-dark);
+  font-size: 12px;
+  font-weight: 900;
+}
+[data-theme="dark"] .compare-section h4 { color: var(--tool-2); }
+.compare-section dl {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  text-align: start;
+  font-size: 13px;
+  margin: 0;
+}
+.compare-section dt { color: var(--text-muted); font-size: 12px; }
+.compare-section dd { margin: 0 0 6px; font-weight: bold; }
+
+/* =====================================================================
+   QUIZ MODAL
+===================================================================== */
+/* Stepped dots: one circle per question, with three states:
+     • .filled  – question already answered (solid teal)
+     • .current – the question currently on screen (teal ring + larger)
+     • default  – upcoming question (faint outline) */
+.quiz-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+  padding: 4px 0;
+}
+.quiz-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--r-pill);
+  background: transparent;
+  border: 2px solid var(--input-border);
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.quiz-dot.filled {
+  background: var(--tool-1);
+  border-color: var(--tool-1);
+}
+.quiz-dot.current {
+  width: 14px;
+  height: 14px;
+  border-color: var(--tool-1);
+  background: var(--filter-bg);
+  box-shadow: 0 0 0 4px var(--tool-light);
+  transform: scale(1.05);
+}
+
+.quiz-question {
+  font-size: 22px;
+  margin: 0 0 18px;
+  font-weight: bold;
+}
+
+.quiz-options {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.quiz-option {
+  padding: 14px 18px;
+  border: 2px solid var(--input-border);
+  border-radius: var(--r-md);
+  background: var(--input-bg);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 16px;
+  text-align: start;
+  transition: 0.2s;
+}
+.quiz-option:hover { border-color: var(--tool-1); }
+.quiz-option.selected {
+  border-color: var(--tool-1);
+  background: var(--tool-light);
+  color: var(--tool-dark);
+}
+.quiz-option.skip { font-style: italic; opacity: 0.85; }
+
+.quiz-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.quiz-nav button {
+  padding: 10px 22px;
+  border: none;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 15px;
+}
+.quiz-prev { background: var(--button-bg); color: var(--button-color); }
+.quiz-next, .quiz-submit, .quiz-restart {
+  background: linear-gradient(135deg, var(--tool-1), var(--tool-2));
+  color: white;
+  box-shadow: 0 8px 18px var(--tool-shadow);
+}
+.quiz-next:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.quiz-result { text-align: center; }
+
+.quiz-podium {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin: 18px 0;
+}
+.podium-card {
+  background: var(--info-bg);
+  border-radius: var(--r-lg);
+  padding: 14px;
+  text-align: center;
+  position: relative;
+  border: 2px solid transparent;
+}
+.podium-card.gold { border-color: var(--gold); transform: translateY(-8px); }
+.podium-card.silver { border-color: var(--silver); }
+.podium-card.bronze { border-color: var(--bronze); }
+.podium-rank {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--filter-bg);
+  border: 2px solid currentColor;
+  border-radius: var(--r-pill);
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+.podium-card.gold .podium-rank { color: var(--gold); }
+.podium-card.silver .podium-rank { color: var(--silver); }
+.podium-card.bronze .podium-rank { color: var(--bronze); }
+.podium-card img,
+.podium-card .podium-img-no-image {
+  width: 100%;
+  height: 130px;
+  object-fit: contain;
+  background: var(--image-placeholder);
+  border-radius: var(--r-md);
+  padding: 6px;
+  margin: 12px 0 8px;
+  box-sizing: border-box;
+}
+.podium-card .podium-img-no-image {
+  background:
+    radial-gradient(100% 80% at 50% 0%,
+      color-mix(in srgb, var(--accent-1) 22%, transparent),
+      transparent 70%),
+    color-mix(in srgb, var(--card-bg) 88%, var(--accent-2) 12%);
+}
+.podium-card h3 { font-size: 17px; margin: 0 0 4px; }
+.podium-card p { font-size: 13px; color: var(--text-muted); margin: 0; }
+.podium-card button {
+  margin-top: 10px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--button-bg);
+  color: var(--button-color);
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.quiz-skipped-note {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-style: italic;
+  margin: 0 0 14px;
+}
+
+/* "% match" pill on each podium card */
+.podium-match {
+  display: inline-block;
+  margin: 6px 0 0;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  background: var(--tool-light);
+  color: var(--tool-dark);
+  font-size: 12px;
+  font-weight: bold;
+}
+.podium-card ul.podium-reasons {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  text-align: start;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.podium-card ul.podium-reasons li {
+  padding: 2px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+.podium-card ul.podium-reasons li::before {
+  content: "✓";
+  color: var(--tool-1);
+  font-weight: bold;
+  flex: 0 0 auto;
+}
+
+/* =====================================================================
+   HERO STAT STRIP + FEATURED BREED BANNER
+===================================================================== */
+/* Stats card – sits in the right column of the bento grid. Each stat is a
+   vertical tile with the count animating from 0 (.hero-stat-num.counting). */
+.hero-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  background: linear-gradient(140deg, rgba(255,255,255,0.5), rgba(255,255,255,0.2));
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  align-self: stretch;
+  margin-top: 0;
+}
+[data-theme="dark"] .hero-stats {
+  background: linear-gradient(140deg, rgba(15,23,42,0.55), rgba(15,23,42,0.3));
+}
+.hero-stats .hero-stat {
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  color: var(--text);
+  padding: 4px 0;
+  border-radius: 0;
+  font-size: 13px;
+  font-weight: 500;
+  border-bottom: 1px dashed var(--card-border);
+}
+.hero-stats .hero-stat:last-child { border-bottom: none; }
+.hero-stat-num {
+  font-size: clamp(24px, 3.4vw, 34px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-variant-numeric: tabular-nums;
+}
+.hero-stat-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+.featured-banner {
+  align-items: center;
+  gap: 16px;
+  margin-top: 0;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--accent-light), transparent 70%);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-lg);
+  position: relative;
+  z-index: 2;
+}
+.featured-banner[hidden] { display: none; }
+.featured-photo {
+  flex: 0 0 auto;
+  width: 90px;
+  height: 90px;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--image-placeholder);
+}
+.featured-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* No-image variant: same frame size, but show the breed initial instead
+   of a broken/empty img. Matches the no-image styling used on cards. */
+.featured-photo.no-image {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background:
+    radial-gradient(120% 100% at 50% 0%,
+      color-mix(in srgb, var(--accent-1) 22%, transparent),
+      transparent 70%),
+    color-mix(in srgb, var(--card-bg) 85%, var(--accent-2) 15%);
+}
+.featured-photo.no-image .no-image-initial {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1;
+  color: color-mix(in srgb, var(--accent-1) 75%, var(--text-primary));
+}
+.featured-photo.no-image .no-image-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.featured-text { flex: 1 1 auto; min-width: 0; }
+.featured-label {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--accent-dark);
+  background: white;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 6px;
+}
+[data-theme="dark"] .featured-label { background: rgba(0, 0, 0, 0.4); }
+.featured-name { font-size: 20px; margin: 0 0 4px; }
+.featured-desc {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.featured-cta {
+  flex: 0 0 auto;
+  padding: 10px 16px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 6px 14px rgba(249, 115, 22, 0.25);
+  transition: transform 0.2s ease;
+}
+.featured-cta:hover { box-shadow: 0 12px 22px rgba(249, 115, 22, 0.35); }
+
+/* =====================================================================
+   COMPARE BAR – mini avatars
+===================================================================== */
+.compare-avatars {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-end: 6px;
+  flex: 0 0 auto;
+}
+.compare-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-pill);
+  /* Use a theme-aware ring so the white border doesn't fight the new
+     teal-tinted compare-bar background in either light or dark mode. */
+  border: 2px solid var(--modal-bg);
+  background: var(--image-placeholder);
+  margin-inline-start: -12px;
+  overflow: hidden;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+  flex: 0 0 auto;
+}
+.compare-avatar:first-child { margin-inline-start: 0; }
+.compare-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* =====================================================================
+   COMPARE MODAL – diff highlighting
+===================================================================== */
+/* We tint the dd of cells that hold the lowest/highest value of a row,
+   so a glance shows you which dog is the "winner" on each axis. */
+.compare-col dd.diff-best {
+  background: rgba(34, 197, 94, 0.15);
+  color: #15803d;
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+  display: inline-block;
+}
+.compare-col dd.diff-worst {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+  display: inline-block;
+}
+[data-theme="dark"] .compare-col dd.diff-best { color: #4ade80; background: rgba(34, 197, 94, 0.2); }
+[data-theme="dark"] .compare-col dd.diff-worst { color: #f87171; background: rgba(239, 68, 68, 0.2); }
+
+/* =====================================================================
+   DETAIL MODAL – full-bleed hero photo
+   IMPORTANT: keep overflow-y scrolling enabled (inherited from .modal-content)
+   and only clip overflow-x — otherwise the modal body gets cut off below the
+   fold. The hero clips its own image via its own overflow:hidden.
+===================================================================== */
+.detail-modal { padding: 0; overflow-x: hidden; }
+.detail-modal-inner { padding: 32px; }
+.detail-hero-wrap { position: relative; }
+.detail-hero {
+  position: relative;
+  height: 320px;
+  background: var(--image-placeholder);
+  border-top-left-radius: var(--r-xl);
+  border-top-right-radius: var(--r-xl);
+  overflow: hidden;
+  /* Set by script.js once the hero image URL is known, so the
+     pseudo-element below can render a blurred copy of the photo behind
+     the contained image (filling letterbox bars without cropping). */
+  --hero-bg: none;
+}
+/* Blurred-backdrop fill: lets us show the entire photo (object-fit:
+   contain) while still painting the empty letterbox area with a tasteful
+   blurred version of the same image. */
+.detail-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--hero-bg);
+  background-size: cover;
+  background-position: center;
+  filter: blur(36px) brightness(0.6) saturate(1.15);
+  transform: scale(1.18);
+  z-index: 0;
+  pointer-events: none;
+}
+.detail-hero img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+}
+.detail-hero-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 55%);
+}
+.detail-breed-head {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 3;
+  padding: 24px;
+  color: white;
+  pointer-events: none;
+}
+.detail-breed-head h2 {
+  margin: 0 0 6px;
+  font-size: 36px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  color: white;
+}
+.detail-breed-head .size {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--accent-dark);
+  margin: 0;
+}
+/* Make the close button readable against the photo of the hero.
+   z-index must be higher than the hero's gradient overlay (z-index: 2),
+   otherwise the overlay would swallow clicks on the X. */
+.detail-modal .modal-close {
+  background: rgba(0, 0, 0, 0.55);
+  color: white;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 3;
+}
+.detail-modal .modal-close:hover {
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+}
+
+/* =====================================================================
+   SECTION DIVIDERS (when sorted by size)
+===================================================================== */
+.section-header {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: none !important;
+  padding: 14px 18px !important;
+  background: linear-gradient(90deg, var(--accent-light), transparent 80%);
+  border-radius: var(--r-md);
+}
+.section-header .section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  font-weight: bold;
+}
+.section-header .section-icon { font-size: 24px; }
+.section-header .section-count {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--filter-bg);
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+}
+
+/* =====================================================================
+   FOOTER (3-column)
+===================================================================== */
+footer { padding-bottom: 100px; text-align: start; }
+footer .footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 32px;
+  padding: 32px;
+  background: var(--filter-bg);
+  border-radius: var(--r-xl);
+  margin-bottom: 16px;
+  box-shadow: 0 10px 25px var(--filter-shadow);
+}
+footer h4 {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+footer .footer-col p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+}
+footer .footer-note {
+  margin-top: 12px;
+  color: var(--text-muted);
+}
+footer .footer-feedback-link {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 14px;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent-1) 32%, var(--input-border));
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--accent-1) 10%, transparent);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.15s ease;
+}
+footer .footer-feedback-link:hover {
+  border-color: var(--accent-1);
+  background: color-mix(in srgb, var(--accent-1) 16%, transparent);
+  transform: translateY(-1px);
+}
+footer ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 14px;
+}
+footer ul li { margin-bottom: 8px; }
+footer ul a {
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px dashed transparent;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+footer ul a:hover { color: var(--accent-1); border-bottom-color: var(--accent-1); }
+footer .footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+footer .footer-bottom p { margin: 0; }
+
+/* =====================================================================
+   EMPTY STATE – inline SVG illustrations
+===================================================================== */
+.empty .empty-illustration {
+  width: 96px;
+  height: 96px;
+  color: var(--accent-2);
+  margin: 0 auto 8px;
+  display: none;
+}
+.empty.empty-mode-search .empty-illustration-search { display: block; }
+.empty.empty-mode-favorites .empty-illustration-fav { display: block; color: var(--heart); }
+.empty .empty-title { margin: 8px 0 4px; font-size: 22px; color: var(--text); }
+
+/* =====================================================================
+   FILTER BAR MOTION
+===================================================================== */
+.filters {
+  transition: padding 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mobile-filter-open,
+.filter-sheet-head {
+  display: none;
+}
+
+.filter-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 79;
+  background: rgba(2, 6, 23, 0.55);
+  backdrop-filter: blur(6px);
+}
+
+.recent-breeds {
+  margin: 0 0 22px;
+  padding: 16px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12);
+}
+.recent-breeds-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.recent-breeds h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.recent-clear-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid color-mix(in srgb, var(--accent-1) 42%, var(--input-border));
+  border-radius: 999px;
+  color: #fff;
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--accent-1) 92%, #fff 8%),
+      color-mix(in srgb, var(--accent-2) 88%, var(--tool-1) 12%));
+  box-shadow:
+    0 10px 22px rgba(249, 115, 22, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+.recent-clear-btn::before {
+  content: "🧹";
+  font-size: 14px;
+  line-height: 1;
+}
+.recent-clear-btn:hover {
+  transform: translateY(-1px);
+  filter: saturate(1.08);
+  box-shadow:
+    0 14px 28px rgba(249, 115, 22, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26);
+}
+.recent-clear-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+.recent-clear-btn:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent-1) 40%, transparent);
+  outline-offset: 3px;
+}
+.recent-breeds-list {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.recent-breed,
+.similar-breed {
+  border: 1px solid var(--input-border);
+  border-radius: 16px;
+  background: var(--info-bg);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+.recent-breed {
+  flex: 0 0 138px;
+  padding: 8px;
+  text-align: start;
+}
+.recent-breed img,
+.recent-initial {
+  width: 100%;
+  height: 92px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  color: #fff;
+  font-size: 28px;
+}
+.recent-breed img {
+  object-fit: contain;
+  object-position: center;
+  background: var(--image-placeholder);
+}
+.recent-initial {
+  background: linear-gradient(135deg, var(--accent-1), var(--tool-1));
+}
+.recent-breed:hover,
+.similar-breed:hover {
+  border-color: var(--accent-1);
+  transform: translateY(-1px);
+}
+
+.adoption-note {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--tool-1) 14%, var(--info-bg));
+  color: var(--text);
+  font-weight: 700;
+}
+.similar-breeds {
+  margin-top: 18px;
+}
+.similar-breeds h3 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+.similar-breeds-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+.similar-breed {
+  padding: 10px;
+  text-align: center;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+}
+.similar-breed img,
+.similar-initial {
+  width: 100%;
+  height: 108px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  color: #fff;
+  font-size: 30px;
+}
+.similar-breed img {
+  object-fit: contain;
+  object-position: center;
+  background: var(--image-placeholder);
+}
+.similar-initial {
+  background: linear-gradient(135deg, var(--accent-2), var(--tool-2));
+}
+.similar-name {
+  display: block;
+  line-height: 1.25;
+}
+.similar-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 1px;
+}
+.similar-reason {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  border-radius: var(--r-pill);
+  border: 1px solid color-mix(in srgb, var(--tool-1) 22%, transparent);
+  padding: 3px 8px;
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--tool-1) 10%, transparent),
+      color-mix(in srgb, var(--accent-1) 7%, transparent));
+  color: color-mix(in srgb, var(--text-muted) 88%, var(--text));
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.similar-reason::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--tool-1);
+  opacity: 0.75;
+  flex: 0 0 auto;
+}
+
+/* Specific desktop/mobile guard: these thumbnails should show the full dog,
+   never crop to fill the frame. */
+.recent-breed > img,
+.similar-breed > img {
+  object-fit: contain !important;
+  object-position: center !important;
+}
+.compare-modal-head,
+.compare-share-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.compare-modal-head h2 { margin: 0; }
+
+.install-app-btn {
+  position: fixed;
+  inset-inline-start: 18px;
+  bottom: 92px;
+  z-index: 75;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 16px;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+  box-shadow: 0 14px 30px rgba(249, 115, 22, 0.32);
+}
+
+.dog-image-wrapper:not(.loaded) .dog-image {
+  opacity: 0;
+}
+
+/* =====================================================================
+   STAGGERED CARD ENTRY (first paint + after filter changes)
+===================================================================== */
+@keyframes cardEnterUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+.card.enter {
+  animation: cardEnterUp 0.32s ease-out both;
+}
+
+/* =====================================================================
+   FAV-BUTTON HEART BURST
+===================================================================== */
+@keyframes favPop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+.image-action-btn.fav-btn.bursting { animation: favPop 0.45s ease-out; }
+.image-action-btn.fav-btn.bursting::before,
+.image-action-btn.fav-btn.bursting::after {
+  content: "✦";
+  position: absolute;
+  color: var(--heart);
+  font-size: 12px;
+  pointer-events: none;
+  animation: favSparkle 0.6s ease-out forwards;
+}
+.image-action-btn.fav-btn.bursting::before { top: -8px; left: 6px; }
+.image-action-btn.fav-btn.bursting::after  { top: -4px; right: 6px; animation-delay: 60ms; }
+@keyframes favSparkle {
+  0%   { opacity: 1; transform: translateY(0) scale(0.7); }
+  100% { opacity: 0; transform: translateY(-22px) scale(1); }
+}
+
+/* =====================================================================
+   WIKIPEDIA BUTTON (with W mark)
+===================================================================== */
+a.pill-btn-wiki {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  color: #111;
+  border: 1px solid var(--input-border);
+  text-decoration: none;
+  box-shadow: none;
+}
+a.pill-btn-wiki:hover {
+  background: var(--button-bg);
+  color: #111;
+  box-shadow: 0 4px 12px var(--filter-shadow);
+}
+[data-theme="dark"] a.pill-btn-wiki {
+  background: #f8fafc;
+  color: #111;
+}
+.wiki-mark {
+  font-family: "Linux Libertine", Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+/* =====================================================================
+   COPY-LINK SUCCESS FEEDBACK
+===================================================================== */
+.pill-btn.copied {
+  background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+  color: white !important;
+  transition: background 0.2s ease;
+}
+
+/* =====================================================================
+   ACTIVE FILTER CHIPS (above the cards grid)
+===================================================================== */
+.filter-chips {
+  display: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: var(--filter-bg);
+  border-radius: var(--r-pill);
+  box-shadow: 0 6px 16px var(--filter-shadow);
+}
+.filter-chips.has-chips { display: flex; }
+.filter-chips-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 5px 12px;
+  background: color-mix(in srgb, var(--accent-1) 15%, transparent);
+  color: var(--accent-dark);
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid color-mix(in srgb, var(--accent-1) 30%, transparent);
+}
+.filter-chip button {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  line-height: 1;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  transition: background 0.15s ease;
+}
+.filter-chip button:hover { background: color-mix(in srgb, var(--accent-1) 25%, transparent); }
+.filter-chip-clear {
+  margin-inline-start: auto;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: bold;
+  text-decoration: underline;
+}
+.filter-chip-clear:hover { color: var(--accent-dark); }
+
+/* =====================================================================
+   FAVORITES HEADING (when favorites-only is active)
+===================================================================== */
+.favorites-heading {
+  margin: 0 0 16px;
+  font-size: 22px;
+  color: var(--text);
+}
+.favorites-heading[hidden] { display: none; }
+.favorite-share-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: -4px 0 18px;
+  padding: 12px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--tool-1) 9%, var(--info-bg));
+}
+.favorite-share-row[hidden] { display: none; }
+
+/* =====================================================================
+   STICKY SECTION HEADERS (when sorted by size)
+===================================================================== */
+.section-header {
+  /* Pin to just below the (compact) sticky filter bar. */
+  position: sticky;
+  top: 78px;
+  z-index: 30;
+  /* Need an opaque background since cards scroll past underneath. */
+  background: var(--filter-bg) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* =====================================================================
+   FEATURED BANNER FADE-IN
+===================================================================== */
+@keyframes featuredFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.featured-banner:not([hidden]) { animation: featuredFadeIn 0.45s ease-out both; }
+
+/* =====================================================================
+   COMPARE-AVATAR TOOLTIP
+===================================================================== */
+.compare-avatar { position: relative; }
+.compare-avatar:hover::after,
+.compare-avatar:focus-within::after {
+  content: attr(data-name);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.95);
+  color: white;
+  padding: 4px 10px;
+  border-radius: var(--r-md);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 200;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+.compare-avatar:hover::before,
+.compare-avatar:focus-within::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(15, 23, 42, 0.95);
+  z-index: 200;
+}
+
+/* =====================================================================
+   QUIZ "SKIP" – quieter, secondary-tier appearance
+===================================================================== */
+.quiz-option.skip {
+  font-style: normal;
+  opacity: 1;
+  border-style: dashed;
+  border-width: 1px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 8px 14px;
+  font-weight: 500;
+  margin-top: 4px;
+  justify-self: center;
+  align-self: center;
+  width: fit-content;
+}
+.quiz-option.skip:hover { border-color: var(--text-muted); background: var(--info-bg); }
+.quiz-option.skip.selected {
+  border-color: var(--text-muted);
+  background: var(--info-bg);
+  color: var(--text);
+}
+
+/* =====================================================================
+   QUIZ FEEDBACK (👍 / 👎 after the result)
+===================================================================== */
+.quiz-feedback {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--input-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.quiz-feedback-prompt { font-size: 14px; color: var(--text-muted); }
+.quiz-feedback-buttons { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.quiz-feedback + .quiz-nav { margin-top: 22px; }
+.quiz-feedback-buttons button {
+  padding: 6px 14px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--r-pill);
+  background: var(--input-bg);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: 0.15s;
+}
+.quiz-feedback-buttons button:hover { border-color: var(--tool-1); }
+.quiz-feedback.done .quiz-feedback-buttons { display: none; }
+.quiz-feedback.done .quiz-feedback-prompt { color: var(--tool-dark); font-weight: 500; }
+
+/* =====================================================================
+   TOAST – modern, animated, non-blocking notification.
+   Used in place of native alert() for short transient notices
+   (e.g. "you can compare up to 4 breeds"). Slides in from the top,
+   auto-dismisses, and can be tapped or X-closed early. A thin progress
+   bar across the bottom hints at the remaining time.
+===================================================================== */
+.toast-stack {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+  width: min(420px, calc(100% - 24px));
+}
+.toast {
+  pointer-events: auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--r-lg);
+  background: var(--modal-bg);
+  color: var(--text);
+  border: 1px solid var(--input-border);
+  box-shadow:
+    0 18px 40px rgba(15, 23, 42, 0.18),
+    0 4px 10px rgba(15, 23, 42, 0.10);
+  font-weight: 600;
+  font-size: 14.5px;
+  line-height: 1.35;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-14px) scale(0.96);
+  transition:
+    opacity 0.24s ease,
+    transform 0.32s cubic-bezier(0.2, 1, 0.2, 1);
+  cursor: pointer;
+}
+[data-theme="dark"] .toast {
+  background: #233044;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 22px 48px rgba(0, 0, 0, 0.55),
+    0 6px 14px rgba(0, 0, 0, 0.35);
+}
+.toast.toast-in {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.toast.toast-out {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.97);
+}
+
+.toast-icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+  color: #fff;
+  font-size: 17px;
+  line-height: 1;
+  box-shadow: 0 6px 14px rgba(249, 115, 22, 0.32);
+}
+
+.toast-message {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.toast-close {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted, var(--text));
+  cursor: pointer;
+  opacity: 0.65;
+  transition: background 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+}
+.toast-close:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+.toast-close:active { transform: scale(0.94); }
+.toast-close:focus-visible {
+  outline: 2px solid var(--accent-1);
+  outline-offset: 2px;
+  opacity: 1;
+}
+
+/* Thin progress bar across the bottom that drains over the toast's lifetime. */
+.toast-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+  transform-origin: right center;
+  animation: toast-progress-drain linear forwards;
+  opacity: 0.85;
+}
+[dir="ltr"] .toast-progress { transform-origin: left center; }
+@keyframes toast-progress-drain {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+/* Variants tint the icon + progress bar so info / warning / success read at a glance. */
+.toast-warning .toast-icon {
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  box-shadow: 0 6px 14px rgba(245, 158, 11, 0.34);
+}
+.toast-warning .toast-progress {
+  background: linear-gradient(90deg, #f59e0b, #f97316);
+}
+.toast-success .toast-icon {
+  background: linear-gradient(135deg, #10b981, #14b8a6);
+  box-shadow: 0 6px 14px rgba(16, 185, 129, 0.34);
+}
+.toast-success .toast-progress {
+  background: linear-gradient(90deg, #10b981, #14b8a6);
+}
+
+/* On narrow viewports, pin to the bottom (above the tab bar / home indicator)
+   so toasts don't sit behind the status bar / browser chrome. */
+@media (max-width: 800px) {
+  .toast-stack {
+    top: auto;
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    left: 12px;
+    right: 12px;
+    transform: none;
+    width: auto;
+  }
+  .toast {
+    transform: translateY(14px) scale(0.96);
+  }
+  .toast.toast-in {
+    transform: translateY(0) scale(1);
+  }
+  .toast.toast-out {
+    transform: translateY(10px) scale(0.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast { transition: opacity 0.15s ease; transform: none !important; }
+  .toast-progress { animation: none; opacity: 0; }
+}
+
+/* =====================================================================
+   MOBILE BOTTOM NAV (visible only on narrow screens)
+===================================================================== */
+.mobile-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--filter-bg);
+  border-top: 1px solid var(--input-border);
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+  z-index: 90;
+  justify-content: space-around;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.mobile-nav-btn {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-weight: 500;
+  border-radius: var(--r-md);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.mobile-nav-btn:hover { color: var(--accent-1); background: var(--info-bg); }
+.mobile-nav-btn.active { color: var(--accent-1); }
+.mobile-nav-btn .mn-icon { font-size: 22px; line-height: 1; display: flex; align-items: center; justify-content: center; }
+.mobile-nav-btn .mn-svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.mobile-nav-btn .mn-svg path[fill],
+.mobile-nav-btn .mn-svg rect[fill],
+.mobile-nav-btn .mn-svg-fill path { fill: currentColor; stroke: none; }
+.mobile-nav-btn .mn-icon-badge-wrap { position: relative; }
+.compare-nav-badge {
+  position: absolute;
+  top: -5px;
+  inset-inline-end: -8px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent-1);
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 16px;
+  text-align: center;
+}
+.mobile-nav-btn .mn-label { font-size: 10px; }
+
+/* =====================================================================
+   SKELETON STAT TILES (briefly shown until first image loads)
+===================================================================== */
+.stat.is-skeleton .stat-text > * {
+  background: linear-gradient(90deg, var(--skeleton-1), var(--skeleton-2), var(--skeleton-1));
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite linear;
+  color: transparent !important;
+  border-radius: var(--r-sm);
+  display: inline-block;
+  min-height: 0.9em;
+  width: 80%;
+}
+
+/* =====================================================================
+   VIEW MODE TOGGLE (Grid ↔ List) + DENSITY TOGGLE
+===================================================================== */
+.view-toggle {
+  display: inline-flex;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--r-pill);
+  padding: 3px;
+  gap: 2px;
+  height: 44px;
+  box-sizing: border-box;
+  align-items: center;
+}
+.view-btn {
+  border: none;
+  background: transparent;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-muted);
+  transition: background 0.15s ease, color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.view-btn:hover { color: var(--text); }
+.view-btn.active {
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+  color: white;
+  box-shadow: 0 4px 10px rgba(249, 115, 22, 0.25);
+}
+.density-toggle {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-muted);
+  transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.density-toggle:hover { color: var(--text); }
+.density-toggle[aria-pressed="true"] {
+  background: var(--info-bg);
+  color: var(--accent-dark);
+  border-color: var(--accent-1);
+}
+
+/* COMPACT density: smaller grid cards only — list view has its own layout. */
+.cards.is-compact:not(.is-list) { gap: 14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.cards.is-compact:not(.is-list) .card { padding: 14px; padding-bottom: 0; }
+.cards.is-compact:not(.is-list) .dog-image-wrapper { margin: -14px -14px 12px -14px; height: 170px; }
+.cards.is-compact:not(.is-list) .card h2 { font-size: 17px; margin-bottom: 6px; }
+.cards.is-compact:not(.is-list) .description { font-size: 12px; -webkit-line-clamp: 2; }
+.cards.is-compact:not(.is-list) .info { gap: 4px; }
+.cards.is-compact:not(.is-list) .stat { font-size: 11px; }
+.cards.is-compact:not(.is-list) .card-open-btn { padding: 10px; font-size: 13px; margin: 10px -14px 0; }
+.cards.is-compact:not(.is-list) .size { font-size: 12px; padding: 4px 10px; margin-bottom: 8px; }
+
+/* LIST view: each card becomes a wide horizontal row.
+   Layout is a 3-column grid: [image] [body content stacked across rows] [action].
+   Each text element gets its own explicit row so they flow vertically inside
+   the middle column instead of overlapping. */
+.cards.is-list { display: flex; flex-direction: column; gap: 12px; perspective: none; }
+.cards.is-list .card {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) auto auto;
+  grid-template-rows: auto auto auto;
+  grid-auto-rows: auto;
+  align-items: stretch;
+  padding: 14px;
+  padding-bottom: 14px;
+  gap: 4px 14px;
+  transform: none !important; /* disable tilt in list view */
+}
+.cards.is-list .card:hover {
+  transform: translateY(-2px) !important;
+}
+/* Image spans all rows on the leading edge. */
+.cards.is-list .dog-image-wrapper {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  margin: 0;
+  width: 180px;
+  height: 130px;
+  border-radius: var(--r-md);
+  align-self: center;
+}
+/* Action button spans all rows on the trailing edge, vertically centered. */
+.cards.is-list .card-open-btn {
+  grid-column: 4;
+  grid-row: 1 / -1;
+  align-self: center;
+  margin: 0;
+  width: auto;
+  padding: 10px 18px;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+/* Body items: each takes a row in the middle column, stacking top→bottom. */
+.cards.is-list .card h2 {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  font-size: 18px;
+}
+.cards.is-list .size {
+  grid-column: 2;
+  grid-row: 2;
+  margin: 4px 0 0;
+  font-size: 12px;
+  padding: 4px 10px;
+  align-self: start;
+  justify-self: start;
+}
+.cards.is-list .description {
+  grid-column: 2;
+  grid-row: 3;
+  margin: 6px 0 0;
+  font-size: 13px;
+  -webkit-line-clamp: 2;
+}
+.cards.is-list .info {
+  grid-column: 2;
+  grid-row: 4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.cards.is-list .stat {
+  flex: 0 0 auto;
+  background: var(--info-bg);
+  padding: 4px 8px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+}
+.cards.is-list .stat.full { display: none; } /* hide long ones in list view */
+.cards.is-list .food-open-btn {
+  flex: 1 1 100%;
+  margin-top: 2px;
+  padding: 8px 10px;
+  gap: 10px;
+}
+.cards.is-list .food-open-icon-wrap {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+}
+.cards.is-list .food-open-icon { font-size: 15px; }
+.cards.is-list .food-open-label { font-size: 11px; }
+.cards.is-list .food-open-action {
+  padding: 5px 9px;
+  font-size: 11px;
+}
+.cards.is-list .card::before { display: none; }
+.cards.is-list .card::after { display: none; }
+
+/* No-image initial scales down inside the smaller list-view image cell. */
+.cards.is-list .dog-image-wrapper.no-image .no-image-initial {
+  font-size: 44px;
+}
+.cards.is-list .dog-image-wrapper.no-image .no-image-label {
+  font-size: 10px;
+  padding: 2px 8px;
+}
+.cards.is-compact:not(.is-list) .dog-image-wrapper.no-image .no-image-initial {
+  font-size: clamp(40px, 7vw, 56px);
+}
+
+/* COMPACT × LIST: denser rows on desktop only. */
+@media (min-width: 801px) {
+.cards.is-list.is-compact { gap: 8px; }
+.cards.is-list.is-compact .card {
+  grid-template-columns: 110px minmax(0, 1fr) auto auto;
+  padding: 8px;
+  gap: 2px 12px;
+}
+.cards.is-list.is-compact .dog-image-wrapper { width: 110px; height: 80px; }
+.cards.is-list.is-compact .card h2 { font-size: 15px; }
+.cards.is-list.is-compact .size { font-size: 11px; padding: 2px 8px; margin-top: 2px; }
+.cards.is-list.is-compact .description { display: none; } /* drop description in dense mode */
+.cards.is-list.is-compact .info { gap: 4px; margin-top: 4px; }
+.cards.is-list.is-compact .stat { font-size: 10px; padding: 2px 6px; }
+.cards.is-list.is-compact .card-open-btn { padding: 6px 12px; font-size: 12px; }
+.cards.is-list.is-compact .image-action-btn { width: 26px; height: 26px; font-size: 12px; }
+.cards.is-list.is-compact .dog-image-wrapper.no-image .no-image-initial {
+  font-size: 28px;
+}
+.cards.is-list.is-compact .dog-image-wrapper.no-image .no-image-label {
+  display: none;
+}
+}
+
+/* In list view the image is small (180×130) so the actions would crowd it.
+   Lift them OUT of the image and stack them vertically next to the
+   "More details" button — always visible (no hover-reveal needed since
+   the row layout already gives them their own column of space). */
+.cards.is-list .image-actions {
+  position: static;
+  grid-column: 3;
+  grid-row: 1 / -1;
+  align-self: center;
+  flex-direction: column;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 0;
+  margin-inline-end: 8px;
+}
+.cards.is-list .image-action-btn {
+  background: var(--button-bg);
+  color: var(--button-color);
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+}
+.cards.is-list .image-action-btn:hover { background: var(--input-border); }
+/* Tighten the action column so the icons + button don't get extra padding. */
+.cards.is-list .card-open-btn { margin-inline-end: 4px; }
+
+/* List view on phones/tablets: banner photo, action bar, scannable body. */
+@media (max-width: 800px) {
+  .cards.is-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .cards.is-list .card {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    padding-bottom: 0;
+    gap: 0;
+    transform: none !important;
+    overflow: hidden;
+  }
+  /* Photo block: image on top, action buttons in a bar underneath — never on the photo. */
+  .cards.is-list .dog-image-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: auto;
+    margin: 0;
+    flex: 0 0 auto;
+    border-radius: 0;
+    overflow: hidden;
+    background: var(--image-placeholder);
+  }
+  .cards.is-list .dog-image-wrapper:not(.no-image) {
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    padding: 10px 12px 0;
+  }
+  .cards.is-list .dog-image-wrapper .dog-image {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: min(56vw, 240px);
+    object-fit: contain;
+    object-position: center;
+    border-radius: var(--r-md);
+    flex: 0 0 auto;
+  }
+  .cards.is-list .card:hover .dog-image {
+    transform: none;
+  }
+  .cards.is-list .dog-image-wrapper.no-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 156px;
+    height: 156px;
+    border-radius: 0;
+  }
+  .cards.is-list .dog-image-wrapper.no-image .no-image-initial {
+    font-size: 52px;
+  }
+  .cards.is-list .dog-image-wrapper.no-image .no-image-label {
+    display: none;
+  }
+  .cards.is-list .image-actions {
+    position: static;
+    inset: auto;
+    order: 2;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 16px;
+    margin: 0;
+    background: color-mix(in srgb, var(--info-bg) 88%, var(--card-bg));
+    border: none;
+    border-top: 1px solid var(--input-border);
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+  .cards.is-list .image-action-btn {
+    background: var(--card-bg);
+    color: var(--text);
+    border: 1px solid var(--input-border);
+    width: 40px;
+    height: 40px;
+    font-size: 15px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  }
+  .cards.is-list .image-action-btn:hover,
+  .cards.is-list .image-action-btn:focus-visible {
+    background: var(--input-bg);
+    transform: none;
+  }
+  .cards.is-list .card h2 {
+    margin: 0;
+    padding: 14px 16px 0;
+    font-size: 20px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+  .cards.is-list .size {
+    margin: 8px 16px 0;
+    padding: 5px 11px;
+    font-size: 12px;
+    align-self: flex-start;
+  }
+  .cards.is-list .description { display: none; }
+  .cards.is-list .info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 12px 16px 0;
+    padding: 0;
+  }
+  .cards.is-list .stat {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--r-md);
+    font-size: 13px;
+    line-height: 1.35;
+    background: var(--info-bg);
+  }
+  .cards.is-list .stat-icon {
+    font-size: 18px;
+    margin-top: 0;
+    flex: 0 0 22px;
+    text-align: center;
+  }
+  .cards.is-list .stat-text {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 6px;
+    min-width: 0;
+  }
+  .cards.is-list .stat-label {
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-muted);
+  }
+  .cards.is-list .stat-label::after {
+    content: ":";
+  }
+  .cards.is-list .stat-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    word-break: normal;
+  }
+  .cards.is-list .stat.full { display: none; }
+  .cards.is-list .food-open-btn {
+    flex: unset;
+    grid-column: unset;
+    width: auto;
+    margin: 10px 16px 0;
+    padding: 11px 12px;
+    gap: 10px;
+  }
+  .cards.is-list .food-open-icon-wrap {
+    width: 34px;
+    height: 34px;
+  }
+  .cards.is-list .food-open-label { font-size: 13px; }
+  .cards.is-list .food-open-action {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .cards.is-list .card-open-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 16px 16px 18px;
+    padding: 14px 20px;
+    border-radius: var(--r-pill);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    box-shadow: 0 10px 24px rgba(249, 115, 22, 0.32);
+  }
+  .cards.is-list .card-open-btn:hover,
+  .cards.is-list .card-open-btn:focus-visible {
+    padding-block: 14px;
+    letter-spacing: 0.02em;
+    box-shadow: 0 12px 28px rgba(249, 115, 22, 0.4);
+  }
+  /* Grid-only on mobile — hide list + density toggles. */
+  .view-toggle.is-mobile-hidden,
+  .density-toggle.is-mobile-hidden { display: none !important; }
+}
+
+/* =====================================================================
+   SKELETON CARD PLACEHOLDER (shown briefly before first paint)
+===================================================================== */
+.cards.is-loading .card { display: none; }
+.cards.is-loading::before {
+  content: "";
+  display: block;
+  grid-column: 1 / -1;
+  height: 320px;
+  background:
+    linear-gradient(90deg, var(--skeleton-1), var(--skeleton-2), var(--skeleton-1)),
+    var(--card-bg);
+  background-size: 200% 100%;
+  border-radius: var(--r-xl);
+  animation: shimmer 1.6s infinite linear;
+  border: 1px solid var(--card-border);
+}
+
+.skeleton-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-xl);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-card::before {
+  content: "";
+  height: 220px;
+  margin: -24px -24px 0;
+  background: linear-gradient(90deg, var(--skeleton-1), var(--skeleton-2), var(--skeleton-1));
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite linear;
+}
+.skeleton-card::after {
+  content: "";
+  height: 14px;
+  width: 60%;
+  background: linear-gradient(90deg, var(--skeleton-1), var(--skeleton-2), var(--skeleton-1));
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite linear;
+  border-radius: var(--r-sm);
+  margin-top: 8px;
+}
+
+/* =====================================================================
+   FLOATING COMPARE PILL (replaces wide bottom bar)
+   Themed background: a slate base with a subtle teal-tinted gradient
+   (echoing the teal "פתח השוואה" CTA) plus a soft glow so the pill feels
+   like part of the app rather than an opaque black overlay.
+===================================================================== */
+.compare-bar {
+  /* Centered floating capsule instead of the previous wide bottom strip. */
+  left: 50% !important;
+  right: auto !important;
+  transform: translate(-50%, calc(100% + 60px));
+  /* Light-theme background: warm-white slate with a hint of teal so the
+     pill keeps a clear "compare/quiz" association without going harsh. */
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--tool-1) 10%, #ffffff 90%),
+      color-mix(in srgb, var(--tool-2) 8%, #ffffff 92%)
+    ) !important;
+  color: var(--text) !important;
+  border-radius: var(--r-pill) !important;
+  /* Roomier padding + gap so the avatars + counter + CTAs all fit on one
+     line and the avatars don't kiss the pill's rounded edge. */
+  padding: 12px 18px !important;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 12px !important;
+  /* Keep everything on a single row – wrapping was rounding the pill into
+     a near-circle and pushing the avatars over the border. */
+  flex-wrap: nowrap !important;
+  border: 1px solid color-mix(in srgb, var(--tool-1) 45%, transparent) !important;
+  box-shadow:
+    0 18px 40px rgba(15, 23, 42, 0.22),
+    0 6px 14px var(--tool-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  width: auto !important;
+  max-width: calc(100vw - 24px);
+  transition: transform 0.45s cubic-bezier(0.2, 1, 0.2, 1), opacity 0.3s ease;
+}
+.compare-bar.visible {
+  transform: translate(-50%, 0);
+}
+.compare-bar .compare-bar-text {
+  color: var(--text) !important;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  /* Counter sits next to the avatar stack on one line – never wrap. */
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.compare-bar .pill-btn {
+  /* Don't let the CTAs shrink past their text. */
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.compare-bar .pill-btn {
+  background: white;
+  color: #0f172a;
+  font-weight: bold;
+  font-size: 13px;
+  padding: 7px 14px;
+  border-radius: var(--r-pill);
+  border: none;
+}
+.compare-bar .pill-btn:not(.active):not(:disabled) {
+  background: color-mix(in srgb, var(--tool-1) 12%, transparent);
+  color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--tool-1) 28%, transparent);
+}
+.compare-bar .pill-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Dark theme: keep the same accent treatment but anchor it on the slate
+   palette used by cards/modals, so the pill no longer looks like a
+   floating block of pure black. */
+[data-theme="dark"] .compare-bar {
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--tool-1) 18%, #1e293b 82%),
+      color-mix(in srgb, var(--tool-2) 14%, #1e293b 86%)
+    ) !important;
+  color: var(--text) !important;
+  border-color: color-mix(in srgb, var(--tool-1) 38%, transparent) !important;
+  box-shadow:
+    0 22px 48px rgba(0, 0, 0, 0.55),
+    0 6px 16px color-mix(in srgb, var(--tool-1) 22%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+[data-theme="dark"] .compare-bar .compare-bar-text {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+[data-theme="dark"] .compare-bar .pill-btn:not(.active):not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Counter labels: one is shown at a time depending on viewport. */
+.compare-bar-counter-full { display: inline; }
+.compare-bar-counter-short { display: none; }
+
+/* Narrow phones: trim padding, gaps and avatars so the whole bar still
+   fits on one line and nothing overflows the rounded pill. The verbose
+   counter "📋 נבחרו 4 גזעים" is swapped for the compact "📋 4" – the
+   avatars next to it already say "these are the breeds you picked", so
+   the long form is redundant on a small screen. */
+@media (max-width: 600px) {
+  .compare-bar-counter-full { display: none; }
+  .compare-bar-counter-short { display: inline; }
+  .compare-bar {
+    padding: 10px 14px !important;
+    gap: 8px !important;
+  }
+  .compare-bar .compare-bar-text { font-size: 13px; }
+  .compare-bar .pill-btn { font-size: 12.5px; padding: 6px 12px; }
+  .compare-avatar {
+    width: 32px;
+    height: 32px;
+    margin-inline-start: -10px;
+  }
+  .compare-avatars { margin-inline-end: 4px; }
+}
+/* Very narrow phones (≤ ~360 px / older iPhones): hide the avatar stack
+   altogether – the compact counter + the active CTA still communicate
+   the state, and the avatars are shown in the comparison modal itself. */
+@media (max-width: 360px) {
+  .compare-bar .compare-avatars { display: none; }
+  .compare-bar { padding: 10px 12px !important; }
+}
+
+/* =====================================================================
+   MAGNETIC BUTTONS + SPRING PRESS FEEDBACK
+===================================================================== */
+.magnetic {
+  /* JS sets --mag-x / --mag-y on mouseenter/move; resets on leave. */
+  --mag-x: 0px;
+  --mag-y: 0px;
+  transform: translate3d(var(--mag-x), var(--mag-y), 0);
+  transition: transform 0.18s cubic-bezier(0.2, 1, 0.2, 1), box-shadow 0.2s ease;
+  will-change: transform;
+}
+/* Spring press feedback for any button that opts in. */
+button:active:not(:disabled),
+.magnetic:active:not(:disabled) {
+  transform: translate3d(var(--mag-x, 0), var(--mag-y, 0), 0) scale(0.96);
+  transition: transform 0.08s ease;
+}
+/* Common primary buttons get the spring feel automatically. */
+.quiz-btn, .featured-cta, .pill-btn, .icon-btn,
+.fav-only-btn, .advanced-toggle, .attribute-btn,
+.card-open-btn, .image-action-btn, .lang-toggle,
+.density-toggle, .view-btn { transition: transform 0.15s cubic-bezier(0.2, 1, 0.2, 1), background 0.2s ease, box-shadow 0.25s ease, border-color 0.2s ease, color 0.15s ease; }
+
+/* =====================================================================
+   QUICK-PEEK TOOLTIP (long-hover preview over a card)
+===================================================================== */
+.quick-peek {
+  position: fixed;
+  z-index: 200;
+  max-width: 280px;
+  padding: 12px 14px;
+  background: rgba(15, 23, 42, 0.96);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--r-md);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: none;
+  font-size: 13px;
+  line-height: 1.4;
+  opacity: 0;
+  transform: translateY(6px) scale(0.98);
+  transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.2, 1, 0.2, 1);
+}
+.quick-peek.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.quick-peek-title {
+  font-weight: bold;
+  font-size: 14px;
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.quick-peek-title::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--qp-color, var(--accent-1));
+}
+.quick-peek-desc {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.78);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.quick-peek-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.quick-peek-meta span {
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* =====================================================================
+   GRADIENT HAIRLINE SECTION DIVIDERS
+===================================================================== */
+.section-divider {
+  display: block;
+  height: 1px;
+  margin: 32px auto;
+  width: 80%;
+  border: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--text) 18%, transparent),
+    transparent
+  );
+}
+
+/* Make the existing .section-header (size grouping) feel modern: gradient hairline + accent dot */
+.section-header {
+  border-bottom: none !important;
+  position: relative;
+  padding-block: 12px;
+}
+.section-header::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    var(--accent-1) 0%,
+    transparent 50%
+  );
+  opacity: 0.5;
+}
+
+/* =====================================================================
+   ACCESSIBILITY: REDUCED MOTION
+===================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .card:hover { transform: none; }
+  .card:hover .dog-image { transform: none; }
+  .card.enter { animation: none; }
+  .image-action-btn.fav-btn.bursting { animation: none; }
+  .image-action-btn.fav-btn.bursting::before,
+  .image-action-btn.fav-btn.bursting::after { display: none; }
+  .featured-banner:not([hidden]) { animation: none; }
+  .glow-layer { display: none; }
+  header { transform: none !important; }
+  .aurora-blob { animation: none !important; }
+  .display-h1 { animation: none !important; }
+  .magnetic { transform: none !important; }
+}
+
+/* =====================================================================
+   SITE ENHANCEMENTS (discovery, compare hints, food callout)
+===================================================================== */
+.discovery-banner {
+  position: relative;
+  margin: 0 0 16px;
+  border: 1px solid color-mix(in srgb, var(--accent-1) 35%, var(--input-border));
+  border-radius: var(--r-lg);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-1) 12%, var(--filter-bg)), var(--filter-bg));
+  box-shadow: 0 12px 28px rgba(249, 115, 22, 0.12);
+}
+.discovery-banner-inner {
+  padding: 14px 16px;
+  padding-inline-end: 44px;
+}
+.discovery-banner-copy { min-width: 0; }
+.discovery-banner-title { display: block; font-size: 16px; margin-bottom: 4px; }
+.discovery-banner-text { margin: 0 0 10px; color: var(--text-muted); font-size: 14px; line-height: 1.45; }
+.discovery-banner-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.discovery-banner-actions .pill-btn { padding: 8px 14px; font-size: 13px; }
+.discovery-dismiss {
+  position: absolute;
+  top: 12px;
+  inset-inline-end: 12px;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--input-border);
+  border-radius: 50%;
+  background: var(--info-bg);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 900;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.compare-bar-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.compare-hint {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.detail-hero-wiki::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(15, 23, 42, 0.55));
+  pointer-events: none;
+}
+.dog-image-wrapper.wiki-image::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--size-accent, var(--accent-1)) 18%, transparent), transparent 60%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.similar-compare-row { margin-top: 10px; }
+.similar-compare-btn { width: 100%; }
+
+.quiz-share-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 0 0 14px;
+}
+
+.footer-meta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.toast-action {
+  margin-inline-start: auto;
+  border: none;
+  border-radius: var(--r-pill);
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.2);
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.quick-peek.quick-peek-touch {
+  inset-inline: 16px !important;
+  left: 16px !important;
+  right: 16px !important;
+  width: auto !important;
+  max-width: none;
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  top: auto !important;
+}
+
+/* =====================================================================
+   RESPONSIVE
+===================================================================== */
+@media (max-width: 700px) {
+  h1 { font-size: 30px; }
+  header { padding: 28px; padding-top: 80px; }
+  .header-actions { top: 16px; inset-inline-end: 16px; }
+  .mobile-filter-open {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin: 0 0 14px;
+    min-height: 48px;
+    border: 1px solid var(--input-border);
+    border-radius: 999px;
+    color: var(--text);
+    background: var(--filter-bg);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+    font: inherit;
+    font-weight: 800;
+  }
+  .filter-sheet-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .filter-sheet-close {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--input-border);
+    background: var(--info-bg);
+    color: var(--text);
+    font-weight: 900;
+  }
+  /* Size filters: keep all five pills on one row inside the filter sheet. */
+  .buttons {
+    flex-wrap: nowrap;
+    gap: 5px;
+  }
+  .buttons .size-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 9px 4px;
+    font-size: 13px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .filters {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    top: auto;
+    z-index: 80;
+    grid-template-columns: 1fr;
+    /* Cap height so the sheet still shows a sliver of the dimmed page above
+       it. Use dvh where available so iOS dynamic toolbars don't clip it. */
+    max-height: 90vh;
+    max-height: 90dvh;
+    overflow-y: auto;
+    /* Make the inner scroll feel native and stop scroll-chaining into the
+       page underneath. */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 16px 16px max(24px, calc(16px + env(safe-area-inset-bottom, 0px)));
+    margin: 0;
+    border-radius: 24px 24px 0 0;
+    transform: translateY(105%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Solid panel – the desktop glass/backdrop-filter frosts the page through
+       the sheet, which on mobile reads as breed cards "bleeding in". */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    isolation: isolate;
+  }
+  body.filters-open .filters {
+    transform: translateY(0);
+  }
+  body.filters-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+  }
+  /* The sheet is modal (it has a backdrop and traps interaction). Hide the
+     bottom tab bar while it's open so it doesn't cover the last rows of the
+     sheet – otherwise the user can't reach (or scroll to) the items that
+     sit behind it. */
+  body.filters-open .mobile-nav {
+    display: none;
+  }
+  /* Floating chrome that lives outside .container would otherwise paint
+     over / around the sheet while the page underneath keeps moving on iOS. */
+  body.filters-open .scroll-top,
+  body.filters-open .compare-bar {
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  /* Lift the whole page shell above other body-level floats (compare bar,
+     scroll-top) so the dim overlay + sheet reliably cover the breed grid. */
+  body.filters-open .container {
+    z-index: 100;
+  }
+  .modal-content { padding: 22px; }
+  .detail-modal-inner { padding: 22px; }
+  .detail-main-photo { height: 240px; }
+  .detail-thumbnails { height: 90px; }
+  .detail-hero { height: 220px; }
+  .detail-hero-scrim { display: none; }
+  .detail-breed-head {
+    position: static;
+    padding: 16px 22px 6px;
+    color: var(--text);
+    pointer-events: auto;
+  }
+  .detail-breed-head h2 {
+    font-size: 26px;
+    text-shadow: none;
+    color: var(--text);
+  }
+  .detail-breed-head .size {
+    background: color-mix(in srgb, var(--size-accent, var(--accent-1)) 18%, transparent);
+    color: color-mix(in srgb, var(--size-accent, var(--accent-1)) 80%, black);
+  }
+  [data-theme="dark"] .detail-breed-head .size {
+    color: color-mix(in srgb, var(--size-accent, var(--accent-1)) 70%, white);
+  }
+  .quiz-podium { grid-template-columns: 1fr; }
+  .podium-card.gold { transform: none; }
+  /* Featured banner stacks below the photo on narrow screens. */
+  .featured-banner { flex-direction: column; align-items: stretch; text-align: center; }
+  .featured-photo { width: 100%; height: 140px; }
+  .featured-cta { width: 100%; }
+  /* 3-column footer collapses to a stack. */
+  footer .footer-grid { grid-template-columns: 1fr; gap: 22px; padding: 22px; }
+  footer .footer-bottom { flex-direction: column; gap: 4px; }
+  /* Detail-modal info: 2 columns on narrow, not 3. */
+  .detail-modal .info { grid-template-columns: 1fr 1fr; }
+  .detail-action-btn {
+    min-height: 44px;
+    font-size: 14px;
+    padding-inline: 12px;
+  }
+
+  /* Mobile bottom-nav: shown only here. Reserve space at the bottom of the
+     scroll container so floating buttons + content don't sit under it. */
+  .mobile-nav { display: flex; }
+  body { padding-bottom: 64px; }
+  .scroll-top {
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    /* Animate vertical shift so the button doesn't snap when the compare
+       bar slides in/out (the JS toggles `compare-active` on <body>). */
+    transition: bottom 0.32s cubic-bezier(0.2, 1, 0.2, 1),
+                opacity 0.2s ease,
+                transform 0.2s ease,
+                box-shadow 0.2s ease;
+  }
+  .compare-bar { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  /* Lift the scroll-top button above the compare bar while it's visible,
+     so the bar doesn't overlap the floating arrow. The JS sets
+     `compare-active` on <body>; the `:has()` selector is a progressive
+     enhancement for browsers that support it. */
+  body.compare-active .scroll-top,
+  body:has(.compare-bar.visible) .scroll-top {
+    bottom: calc(150px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Hide the mobile-only nav buttons on desktop and reveal them only here. */
+
+  /* Modal slide-up animation on mobile (instead of fade/scale). */
+  .modal { align-items: flex-end; }
+  .modal-content {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    max-height: 92vh;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+  }
+  .modal.open .modal-content { transform: translateY(0); opacity: 1; }
+  .detail-modal { border-radius: var(--r-xl) var(--r-xl) 0 0; }
+  .detail-modal .detail-hero { border-radius: var(--r-xl) var(--r-xl) 0 0; }
+  .food-open-detail--tip-open .food-info-tooltip--mobile {
+    position: static !important;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 12px 0 0;
+    translate: none !important;
+    inset: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto;
+    box-sizing: border-box;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .food-open-detail--tip-open + .price-disclaimer,
+  .detail-food-section:has(.food-open-detail--tip-open) + .price-disclaimer {
+    margin-top: 10px;
+  }
+  .modal-content.compare-modal {
+    width: min(100%, 520px);
+    padding: 22px 18px calc(22px + env(safe-area-inset-bottom, 0px));
+  }
+  .compare-modal .compare-modal-head {
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-items: start;
+    gap: 10px;
+    padding-inline: 52px 0;
+    margin-bottom: 16px;
+  }
+  [dir="rtl"] .compare-modal .compare-modal-head {
+    justify-items: end;
+    padding-inline: 0 52px;
+  }
+  .compare-modal .compare-modal-head h2 {
+    font-size: clamp(26px, 8vw, 34px);
+    line-height: 1.1;
+  }
+  .compare-modal .compare-modal-head .pill-btn {
+    min-height: 42px;
+    padding: 10px 16px;
+  }
+  .compare-modal .compare-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .compare-modal .compare-col {
+    text-align: start;
+    padding: 12px;
+  }
+  .compare-modal .compare-col img,
+  .compare-modal .compare-col .compare-img-no-image {
+    height: 180px;
+  }
+  .compare-modal .compare-col h3 {
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
+  .compare-modal .compare-section dl {
+    grid-template-columns: minmax(88px, 0.85fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 8px 10px;
+  }
+  .compare-modal .compare-section dt {
+    font-size: 12px;
+  }
+  .compare-modal .compare-section dd {
+    margin: 0;
+  }
+
+  /* Sticky section headers shouldn't crash into the smaller header. */
+  .section-header { top: 64px; }
+}
+
+/* =====================================================================
+   PRINT
+===================================================================== */
+@media print {
+  /* Force a clean light theme, regardless of dark-mode CSS variables. */
+  :root, [data-theme="dark"] {
+    --bg-grad: white;
+    --text: #111;
+    --text-muted: #444;
+    --card-bg: white;
+    --card-border: #ccc;
+    --info-bg: #f6f6f6;
+    --image-placeholder: #f0f0f0;
+  }
+  body { background: white !important; color: black !important; }
+  .filters, .header-actions, .image-actions, .card-open-btn,
+  .compare-bar, .scroll-top, .modal, footer button,
+  .skip-link, .results-counter { display: none !important; }
+  header { background: white !important; box-shadow: none; border: 1px solid #ccc; }
+  header::before { display: none !important; }
+  .cards { display: block; }
+  .card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    background: white !important;
+    backdrop-filter: none !important;
+    transform: none !important;
+    margin-bottom: 18px;
+  }
+  .card::before { display: none !important; }
+  .dog-image-wrapper { height: 180px; background: #f0f0f0 !important; }
+  .info { background: #f6f6f6 !important; }
+  /* Show URLs after links so a printed page is still useful. */
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 11px; color: #555; }
+}
