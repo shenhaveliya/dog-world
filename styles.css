@@ -1741,13 +1741,18 @@ select.sort-select { display: none; }
   inset-inline-start: calc(38px + 12px);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 12px;
   max-width: calc(100% - 38px - 12px - 108px);
   pointer-events: none;
+}
+.food-open-detail-label .food-open-label {
+  flex-shrink: 1;
+  min-width: 0;
 }
 .food-open-detail-label .food-info-tip {
   pointer-events: auto;
   flex-shrink: 0;
+  margin-inline-start: 2px;
 }
 .food-open-detail .food-info-tooltip {
   top: calc(100% + 8px);
@@ -1770,29 +1775,38 @@ select.sort-select { display: none; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  border: 1px solid color-mix(in srgb, var(--text-muted) 35%, transparent);
-  background: color-mix(in srgb, var(--text-muted) 10%, var(--info-bg));
+  border: none;
+  background: color-mix(in srgb, var(--text-muted) 14%, var(--info-bg));
   color: var(--text-muted);
-  font-size: 11px;
-  line-height: 1;
+  line-height: 0;
   cursor: help;
   user-select: none;
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-muted) 18%, transparent);
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
 }
 .food-info-btn:hover,
 .food-info-btn:focus-visible {
   color: #ea580c;
-  border-color: color-mix(in srgb, #ea580c 45%, transparent);
-  background: color-mix(in srgb, #ea580c 12%, var(--info-bg));
+  background: color-mix(in srgb, #ea580c 14%, var(--info-bg));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #ea580c 35%, transparent);
+  transform: scale(1.05);
   outline: none;
 }
 .food-info-icon {
-  font-size: 11px;
-  line-height: 1;
-  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+.food-info-icon svg {
+  display: block;
 }
 .food-info-tooltip {
   position: absolute;

@@ -349,7 +349,7 @@ function foodInfoTipHTML() {
       <span class="food-info-btn" role="button" tabindex="0"
             aria-label="${escapeHTML(t("detailFoodCalloutAria"))}"
             aria-expanded="false">
-        <span class="food-info-icon" aria-hidden="true">ⓘ</span>
+        <span class="food-info-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.75" fill="currentColor" stroke="none"/></svg></span>
       </span>
       <span class="food-info-tooltip" role="tooltip">${escapeHTML(t("detailFoodCallout"))}</span>
     </span>`;
