@@ -136,9 +136,11 @@ function pageUrlWithHash(hash) {
 function breedPageUrl(breed, lang = currentLang) {
   if (!breed) return pageUrlWithHash("");
   const suffix = lang === "en" ? ".en" : ".he";
-  const base = location.origin && location.origin !== "null"
-    ? `${location.origin}${location.pathname.replace(/\/[^/]*$/, "/")}`
-    : SITE_URL;
+  // Share/SEO pages always live at the site root (stable og:image for link previews).
+  if (location.pathname.includes("/previews/") || !location.origin || location.origin === "null") {
+    return `${SITE_URL}/breeds/${encodeURIComponent(breed.key)}${suffix}.html`;
+  }
+  const base = `${location.origin}${location.pathname.replace(/\/[^/]*$/, "/")}`;
   return `${base.replace(/\/$/, "")}/breeds/${encodeURIComponent(breed.key)}${suffix}.html`;
 }
 
@@ -221,14 +223,14 @@ function shouldAttachShareImageFile() {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 }
 
-async function shareBreedNative(breed, name, shareUrl) {
+async function shareBreedNative(breed, name) {
   const imageUrl = getDetailShareImageUrl(breed);
+  const pageLink = breedPageUrl(breed);
   updateBreedShareMeta(breed, imageUrl);
-  const shareHref = location.href;
-  const payload = { title: name, text: bDesc(breed), url: shareHref };
+  const payload = { title: name, text: bDesc(breed), url: pageLink };
 
   if (typeof navigator.share !== "function") {
-    await copyToClipboard(shareHref);
+    await copyToClipboard(pageLink);
     announce(t("linkCopied"));
     trackEvent("Copy breed link", { breed: breed.key });
     return "copied";
@@ -3258,7 +3260,7 @@ function openDetailModal(card, trigger) {
   const stickyShare = document.getElementById("detailStickyShare");
   if (stickyShare) {
     stickyShare.addEventListener("click", () => {
-      shareBreedNative(breed, name, detailUrl).then((result) => {
+      shareBreedNative(breed, name).then((result) => {
         if (result !== "copied") return;
         const original = stickyShare.textContent;
         stickyShare.textContent = t("detailShareDone");
