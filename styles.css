@@ -2908,13 +2908,16 @@ footer .small-link {
 ===================================================================== */
 .detail-modal { padding: 0; overflow-x: hidden; }
 .detail-modal-inner { padding: 32px; }
-.detail-hero-wrap { position: relative; }
+.detail-hero-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
 .detail-hero {
   position: relative;
   height: 320px;
   background: var(--image-placeholder);
-  border-top-left-radius: var(--r-xl);
-  border-top-right-radius: var(--r-xl);
+  border-radius: 0;
   overflow: hidden;
   /* Set by script.js once the hero image URL is known, so the
      pseudo-element below can render a blurred copy of the photo behind
@@ -2950,27 +2953,31 @@ footer .small-link {
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 55%);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0) 45%);
 }
 .detail-breed-head {
-  position: absolute;
-  inset-inline: 0;
-  bottom: 0;
+  position: relative;
   z-index: 3;
-  padding: 24px;
-  color: white;
-  pointer-events: none;
+  padding: 22px 24px 14px;
+  color: var(--text);
+  pointer-events: auto;
+  background: var(--modal-bg);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
 }
 .detail-breed-head h2 {
-  margin: 0 0 6px;
-  font-size: 36px;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-  color: white;
+  margin: 0 0 8px;
+  font-size: clamp(26px, 4vw, 34px);
+  line-height: 1.15;
+  text-shadow: none;
+  color: var(--text);
 }
 .detail-breed-head .size {
-  background: rgba(255, 255, 255, 0.95);
-  color: var(--accent-dark);
+  background: color-mix(in srgb, var(--size-accent, var(--accent-1)) 18%, transparent);
+  color: color-mix(in srgb, var(--size-accent, var(--accent-1)) 80%, black);
   margin: 0;
+}
+[data-theme="dark"] .detail-breed-head .size {
+  color: color-mix(in srgb, var(--size-accent, var(--accent-1)) 70%, white);
 }
 /* Make the close button readable against the photo of the hero.
    z-index must be higher than the hero's gradient overlay (z-index: 2),
@@ -5229,22 +5236,10 @@ body.calm-mode .card:hover {
   .detail-hero { height: 220px; }
   .detail-hero-scrim { display: none; }
   .detail-breed-head {
-    position: static;
-    padding: 16px 22px 6px;
-    color: var(--text);
-    pointer-events: auto;
+    padding: 18px 22px 12px;
   }
   .detail-breed-head h2 {
     font-size: 26px;
-    text-shadow: none;
-    color: var(--text);
-  }
-  .detail-breed-head .size {
-    background: color-mix(in srgb, var(--size-accent, var(--accent-1)) 18%, transparent);
-    color: color-mix(in srgb, var(--size-accent, var(--accent-1)) 80%, black);
-  }
-  [data-theme="dark"] .detail-breed-head .size {
-    color: color-mix(in srgb, var(--size-accent, var(--accent-1)) 70%, white);
   }
   .quiz-podium { grid-template-columns: 1fr; }
   .podium-card.gold { transform: none; }
