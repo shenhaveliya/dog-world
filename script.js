@@ -2546,8 +2546,33 @@ function openFoodModal(breedKey, trigger) {
 
 function openFoodInfoTip(tipEl) {
   const btn = tipEl.querySelector(".food-info-btn");
+  const tooltip = tipEl.querySelector(".food-info-tooltip");
   tipEl.classList.add("is-open");
   if (btn) btn.setAttribute("aria-expanded", "true");
+  if (tooltip && window.matchMedia("(max-width: 700px)").matches) {
+    mountMobileFoodTooltip(tipEl, tooltip);
+  }
+}
+
+function mountMobileFoodTooltip(tipEl, tooltip) {
+  const detail = tipEl.closest(".food-open-detail");
+  if (!detail || tooltip.parentElement === detail) return;
+  if (!tipEl.dataset.tipId) {
+    tipEl.dataset.tipId = "food-tip-" + Math.random().toString(36).slice(2, 9);
+  }
+  tooltip.dataset.owner = tipEl.dataset.tipId;
+  detail.appendChild(tooltip);
+  tooltip.classList.add("food-info-tooltip--mobile");
+}
+
+function restoreFoodTooltip(tipEl) {
+  const tooltip = tipEl.dataset.tipId
+    ? document.querySelector(`.food-info-tooltip[data-owner="${tipEl.dataset.tipId}"]`)
+    : tipEl.querySelector(".food-info-tooltip");
+  if (!tooltip || !tooltip.classList.contains("food-info-tooltip--mobile")) return;
+  tipEl.appendChild(tooltip);
+  tooltip.classList.remove("food-info-tooltip--mobile");
+  delete tooltip.dataset.owner;
 }
 
 function closeFoodInfoTips() {
@@ -2555,6 +2580,7 @@ function closeFoodInfoTips() {
     tipEl.classList.remove("is-open");
     const btn = tipEl.querySelector(".food-info-btn");
     if (btn) btn.setAttribute("aria-expanded", "false");
+    restoreFoodTooltip(tipEl);
   });
 }
 

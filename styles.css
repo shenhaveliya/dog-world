@@ -4895,6 +4895,27 @@ button:active:not(:disabled),
   .modal.open .modal-content { transform: translateY(0); opacity: 1; }
   .detail-modal { border-radius: var(--r-xl) var(--r-xl) 0 0; }
   .detail-modal .detail-hero { border-radius: var(--r-xl) var(--r-xl) 0 0; }
+  .food-info-tooltip--mobile {
+    position: static !important;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 10px 0 0;
+    translate: none !important;
+    inset: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto;
+    box-sizing: border-box;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .food-info-tooltip--mobile::after {
+    display: none;
+  }
   .modal-content.compare-modal {
     width: min(100%, 520px);
     padding: 22px 18px calc(22px + env(safe-area-inset-bottom, 0px));
