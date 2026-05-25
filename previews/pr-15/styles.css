@@ -2961,10 +2961,10 @@ footer .small-link {
 .detail-breed-head {
   position: relative;
   z-index: 3;
-  padding: 22px 24px 0;
-  padding-inline-end: 56px;
+  padding: 20px 48px 0;
   color: var(--text);
   pointer-events: auto;
+  text-align: center;
   background:
     linear-gradient(
       145deg,
@@ -2982,34 +2982,34 @@ footer .small-link {
 [data-theme="dark"] .detail-breed-head[data-size-rank="3"] { --size-accent: #c4b5fd; }
 [data-theme="dark"] .detail-breed-head[data-size-rank="4"] { --size-accent: #f87171; }
 .detail-breed-head-inner {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
+  justify-content: center;
+  gap: 10px;
   flex-wrap: wrap;
-  padding-inline-start: 12px;
+  max-width: 100%;
 }
 .detail-breed-head h2 {
   margin: 0;
-  flex: 1 1 auto;
-  min-width: 0;
+  flex: 0 1 auto;
   font-size: clamp(1.45rem, 4.2vw, 2rem);
   font-weight: 800;
   letter-spacing: -0.025em;
   line-height: 1.15;
   color: var(--text);
+  text-align: center;
 }
 .detail-breed-head .detail-breed-size,
 .detail-breed-head .size {
   margin: 0;
   flex: 0 0 auto;
-  padding: 7px 14px;
-  font-size: 13px;
-  font-weight: 800;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
   letter-spacing: 0.01em;
   border: 1px solid color-mix(in srgb, var(--size-accent, var(--accent-1)) 38%, var(--input-border));
   box-shadow:
-    0 4px 14px color-mix(in srgb, var(--size-accent, var(--accent-1)) 16%, transparent),
+    0 3px 10px color-mix(in srgb, var(--size-accent, var(--accent-1)) 14%, transparent),
     inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent);
   background: color-mix(in srgb, var(--size-accent, var(--accent-1)) 16%, var(--modal-bg));
   color: color-mix(in srgb, var(--size-accent, var(--accent-1)) 82%, black);
