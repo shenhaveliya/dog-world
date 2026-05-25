@@ -15,45 +15,45 @@
    THEMES
 ===================================================================== */
 :root {
-  --bg-fallback: #fff7ed;
+  --bg-fallback: #e8dfd3;
   --bg-grad:
-    radial-gradient(circle at top right, rgba(251, 146, 60, 0.18), transparent 25%),
-    radial-gradient(circle at bottom left, rgba(251, 191, 36, 0.18), transparent 30%),
-    linear-gradient(135deg, #fff7ed, #ffffff, #fef3c7);
+    radial-gradient(circle at top right, rgba(251, 146, 60, 0.09), transparent 25%),
+    radial-gradient(circle at bottom left, rgba(251, 191, 36, 0.07), transparent 30%),
+    linear-gradient(135deg, #e8dfd3, #ebe4da, #dfd4c6);
   --text: #1e293b;
   --text-muted: #64748b;
-  --card-bg: #ffffff;
-  --card-border: rgba(255, 255, 255, 0.6);
+  --card-bg: #f0e8de;
+  --card-border: rgba(255, 255, 255, 0.35);
   --card-shadow: rgba(15, 23, 42, 0.08);
   --card-hover-shadow: rgba(249, 115, 22, 0.18);
-  --header-bg: rgba(255, 255, 255, 0.82);
-  --header-border: rgba(255, 255, 255, 0.5);
-  --header-shadow: rgba(249, 115, 22, 0.12);
-  --filter-bg: white;
+  --header-bg: rgba(235, 228, 218, 0.94);
+  --header-border: rgba(207, 196, 184, 0.65);
+  --header-shadow: rgba(249, 115, 22, 0.1);
+  --filter-bg: #ebe4da;
   --filter-shadow: rgba(0, 0, 0, 0.06);
-  --input-bg: #f8fafc;
-  --input-border: #e2e8f0;
-  --button-bg: #f1f5f9;
+  --input-bg: #e0d8ce;
+  --input-border: #cfc4b8;
+  --button-bg: #d8cfc4;
   --button-color: #334155;
   /* Primary accent (orange) — for content actions: details, favorite, refresh, sort. */
   --accent-1: #f97316;
   --accent-2: #fb923c;
-  --accent-light: #ffedd5;
+  --accent-light: #edd4b8;
   --accent-dark: #c2410c;
   /* Secondary "tool" accent (teal) — for system tools: compare, quiz, progress.
      Having a second hue lets primary actions stand out instead of every button
      screaming the same orange. */
   --tool-1: #14b8a6;
   --tool-2: #0d9488;
-  --tool-light: #ccfbf1;
+  --tool-light: #c5e8e2;
   --tool-dark: #0f766e;
   --tool-shadow: rgba(20, 184, 166, 0.3);
-  --info-bg: #f8fafc;
-  --image-placeholder: linear-gradient(135deg, #fed7aa, #fef3c7);
-  --skeleton-1: rgba(254, 215, 170, 0.45);
-  --skeleton-2: rgba(254, 243, 199, 0.85);
+  --info-bg: #e0d8ce;
+  --image-placeholder: linear-gradient(135deg, #d9b48f, #e2d0b3);
+  --skeleton-1: rgba(217, 180, 143, 0.42);
+  --skeleton-2: rgba(226, 208, 179, 0.78);
   --modal-overlay: rgba(15, 23, 42, 0.55);
-  --modal-bg: white;
+  --modal-bg: #ebe4da;
   --heart: #ef4444;
   --gold: #fbbf24;
   --silver: #cbd5e1;
