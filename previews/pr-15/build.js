@@ -33,8 +33,9 @@ const SITE_URL = (process.env.SITE_URL || "https://shenhaveliya.github.io/dog-wo
 const OUT_DIR = path.join(__dirname, "breeds");
 const SPA_PATH = "/";
 const TODAY = new Date().toISOString().slice(0, 10);
-const CSS_VERSION = "20260520-food-layout1";
+const CSS_VERSION = "20260520-ux-polish3";
 const DEFAULT_PREVIEW_IMAGE = "https://images.dog.ceo/breeds/retriever-golden/n02099601_7771.jpg";
+const PREVIEW_CACHE_PATH = path.join(__dirname, "breed-preview-images.json");
 
 function escapeHTML(str) {
   return String(str)
@@ -69,21 +70,62 @@ function breedPageUrl(breed, lang) {
   return `${SITE_URL}/breeds/${encodeURIComponent(breed.key)}.${lang}.html`;
 }
 
-function previewImageFor(breed) {
+function previewImageFor(breed, cache) {
+  if (cache && cache[breed.key]) return cache[breed.key];
   const wiki = BREED_WIKI_IMAGES && BREED_WIKI_IMAGES[breed.key];
   if (wiki && wiki.src) return wiki.src;
   return DEFAULT_PREVIEW_IMAGE;
 }
 
+async function fetchDogCeoPreview(apiName) {
+  const res = await fetch(`https://dog.ceo/api/breed/${apiName}/images/random`);
+  if (!res.ok) throw new Error(`dog.ceo ${res.status}`);
+  const data = await res.json();
+  if (data.status === "success" && data.message) return data.message;
+  throw new Error("dog.ceo empty");
+}
+
+async function buildPreviewImageCache(refresh) {
+  let cache = {};
+  if (!refresh && fs.existsSync(PREVIEW_CACHE_PATH)) {
+    try {
+      cache = JSON.parse(fs.readFileSync(PREVIEW_CACHE_PATH, "utf8"));
+    } catch (e) { cache = {}; }
+  }
+
+  let fetched = 0;
+  for (const breed of BREEDS) {
+    if (cache[breed.key] && cache[breed.key] !== DEFAULT_PREVIEW_IMAGE) continue;
+    const wiki = BREED_WIKI_IMAGES && BREED_WIKI_IMAGES[breed.key];
+    if (wiki && wiki.src) {
+      cache[breed.key] = wiki.src;
+      continue;
+    }
+    if (breed.apiName) {
+      try {
+        cache[breed.key] = await fetchDogCeoPreview(breed.apiName);
+        fetched++;
+        await new Promise((r) => setTimeout(r, 80));
+        continue;
+      } catch (e) { /* fall through */ }
+    }
+    cache[breed.key] = DEFAULT_PREVIEW_IMAGE;
+  }
+
+  fs.writeFileSync(PREVIEW_CACHE_PATH, JSON.stringify(cache, null, 2) + "\n");
+  console.log(`Preview image cache: ${Object.keys(cache).length} breeds (${fetched} fetched from dog.ceo)`);
+  return cache;
+}
+
 /**
  * Render a single breed's HTML page in the chosen language.
  */
-function renderBreedPage(breed, lang) {
+function renderBreedPage(breed, lang, image) {
   const dict = I18N[lang];
   const name = pickName(breed, lang);
   const desc = pickDesc(breed, lang);
   const url = breedPageUrl(breed, lang);
-  const image = previewImageFor(breed);
+  const previewImage = image || previewImageFor(breed);
   const wikiHost = dict.wikiHost;
   const wiki = wikiHost + encodeURIComponent(breed.nameEn.replace(/ /g, "_"));
 
@@ -94,7 +136,7 @@ function renderBreedPage(breed, lang) {
     "inLanguage": lang,
     "description": desc,
     "url": url,
-    "image": image,
+    "image": previewImage,
     "about": {
       "@type": "Thing",
       "name": name,
@@ -123,13 +165,15 @@ function renderBreedPage(breed, lang) {
   <meta property="og:description" content="${escapeHTML(desc)}" />
   <meta property="og:locale" content="${lang === "en" ? "en_US" : "he_IL"}" />
   <meta property="og:url" content="${escapeHTML(url)}" />
-  <meta property="og:image" content="${escapeHTML(image)}" />
+  <meta property="og:image" content="${escapeHTML(previewImage)}" />
   <meta property="og:image:alt" content="${escapeHTML(name)}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${escapeHTML(name)}" />
   <meta name="twitter:description" content="${escapeHTML(desc)}" />
-  <meta name="twitter:image" content="${escapeHTML(image)}" />
+  <meta name="twitter:image" content="${escapeHTML(previewImage)}" />
 
   <script type="application/ld+json">${JSON.stringify(ld)}</script>
 
@@ -157,6 +201,7 @@ function renderBreedPage(breed, lang) {
         <em>${escapeHTML(breed.nameHe)}${lang === "en" ? "" : " · " + escapeHTML(breed.nameEn)}</em>
       </p>
       <span class="size">${escapeHTML(dict.sizeBadge(sizeLabel(breed, lang)))}</span>
+      <img src="${escapeHTML(previewImage)}" alt="${escapeHTML(name)}" width="640" height="420" style="width:100%;max-height:320px;object-fit:cover;border-radius:16px;margin:12px 0;" loading="lazy" />
       <p class="description">${escapeHTML(desc)}</p>
       <div class="info">
         <p><strong>${escapeHTML(dict.infoEnergy)}</strong> ${escapeHTML(pickField(breed, lang, "energyLabel"))}</p>
@@ -192,19 +237,17 @@ function ensureDir(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
-function writeBreedPages() {
+function writeBreedPages(cache) {
   ensureDir(OUT_DIR);
   let count = 0;
   for (const breed of BREEDS) {
+    const image = previewImageFor(breed, cache);
     for (const lang of LANGUAGES) {
       const filename = `${breed.key}.${lang}.html`;
-      fs.writeFileSync(path.join(OUT_DIR, filename), renderBreedPage(breed, lang));
+      fs.writeFileSync(path.join(OUT_DIR, filename), renderBreedPage(breed, lang, image));
       count++;
     }
-    // Also write a default (no-lang-suffix) page that is the "x-default"
-    // canonical entry; uses Hebrew, since the site's primary audience is
-    // Hebrew-speaking. This is what we link from sitemap.xml as the main URL.
-    fs.writeFileSync(path.join(OUT_DIR, `${breed.key}.html`), renderBreedPage(breed, "he"));
+    fs.writeFileSync(path.join(OUT_DIR, `${breed.key}.html`), renderBreedPage(breed, "he", image));
     count++;
   }
   console.log(`Wrote ${count} breed pages into ${OUT_DIR}`);
@@ -248,5 +291,14 @@ function writeSitemap() {
   console.log(`Wrote sitemap.xml (${BREEDS.length} breed entries + 1 homepage)`);
 }
 
-writeBreedPages();
-writeSitemap();
+async function main() {
+  const refresh = process.argv.includes("--refresh-images");
+  const cache = await buildPreviewImageCache(refresh);
+  writeBreedPages(cache);
+  writeSitemap();
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
