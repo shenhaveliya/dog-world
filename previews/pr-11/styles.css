@@ -2371,14 +2371,19 @@ footer .small-link {
   flex-direction: column;
   margin-top: 18px;
   border-radius: var(--r-lg);
-  border: 1px solid var(--input-border);
-  background: color-mix(in srgb, var(--card-bg) 94%, var(--accent-1) 6%);
+  border: 1px solid color-mix(in srgb, var(--accent-1) 18%, var(--input-border));
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--accent-1) 7%, var(--info-bg)) 0%,
+    var(--info-bg) 48%,
+    color-mix(in srgb, var(--accent-2) 5%, var(--info-bg)) 100%
+  );
   overflow: hidden;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--accent-1) 8%, transparent);
 }
 .detail-actions-panel > .detail-action-btn,
 .detail-actions-panel > .detail-actions-split {
-  border-bottom: 1px solid color-mix(in srgb, var(--input-border) 85%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--input-border) 75%, var(--accent-1) 10%);
 }
 .detail-actions-panel > :last-child {
   border-bottom: none;
@@ -2388,7 +2393,7 @@ footer .small-link {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .detail-actions-split > .detail-action-btn + .detail-action-btn {
-  border-inline-start: 1px solid color-mix(in srgb, var(--input-border) 85%, transparent);
+  border-inline-start: 1px solid color-mix(in srgb, var(--input-border) 75%, var(--accent-1) 10%);
 }
 .detail-action-btn {
   display: flex;
@@ -2413,28 +2418,28 @@ footer .small-link {
 }
 .detail-action-btn:hover,
 .detail-action-btn:focus-visible {
-  background: color-mix(in srgb, var(--accent-1) 10%, var(--card-bg));
+  background: color-mix(in srgb, var(--accent-1) 11%, var(--info-bg));
   outline: none;
 }
 .detail-action-btn:focus-visible {
-  box-shadow: inset 0 0 0 2px var(--accent-1);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent-1) 45%, transparent);
 }
 .detail-action-btn--wiki {
-  background: #fff;
-  color: #111;
+  background: color-mix(in srgb, var(--input-bg) 55%, var(--card-bg));
+  color: var(--text);
 }
 .detail-action-btn--wiki:hover,
 .detail-action-btn--wiki:focus-visible {
-  background: color-mix(in srgb, var(--accent-1) 6%, #fff);
-  color: #111;
+  background: color-mix(in srgb, var(--accent-1) 9%, var(--input-bg));
+  color: var(--text);
 }
 [data-theme="dark"] .detail-action-btn--wiki {
-  background: #f8fafc;
-  color: #111;
+  background: color-mix(in srgb, var(--input-bg) 60%, var(--card-bg));
+  color: var(--text);
 }
 [data-theme="dark"] .detail-action-btn--wiki:hover,
 [data-theme="dark"] .detail-action-btn--wiki:focus-visible {
-  background: #fff;
+  background: color-mix(in srgb, var(--accent-1) 14%, var(--info-bg));
 }
 .detail-action-btn--link {
   color: var(--text);
