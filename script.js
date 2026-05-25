@@ -502,6 +502,7 @@ const scanModeBtn = document.getElementById("scanModeBtn");
 const resumeBanner = document.getElementById("resumeBanner");
 const resumeBannerText = document.getElementById("resumeBannerText");
 const resumeBannerGo = document.getElementById("resumeBannerGo");
+const resumeBannerHint = document.getElementById("resumeBannerHint");
 const resumeBannerDismiss = document.getElementById("resumeBannerDismiss");
 
 let scanMode = false;
@@ -2861,6 +2862,17 @@ function formatQuizShareText(top3) {
   }).join("\n");
 }
 
+function syncToolbarToggleLabels() {
+  if (scanModeBtn) {
+    scanModeBtn.title = t(scanMode ? "scanModeOn" : "scanModeOff");
+    scanModeBtn.setAttribute("aria-label", t("scanModeLabel"));
+  }
+  if (calmModeToggle) {
+    const calm = document.body.classList.contains("calm-mode");
+    calmModeToggle.title = t(calm ? "calmModeOn" : "calmModeOff");
+  }
+}
+
 function initCalmMode() {
   let calm = false;
   try { calm = localStorage.getItem(CALM_KEY) === "1"; } catch (e) { /* ignore */ }
@@ -2872,8 +2884,10 @@ function initCalmMode() {
       document.body.classList.toggle("calm-mode", next);
       calmModeToggle.setAttribute("aria-pressed", next ? "true" : "false");
       try { localStorage.setItem(CALM_KEY, next ? "1" : "0"); } catch (e) { /* ignore */ }
+      syncToolbarToggleLabels();
     });
   }
+  syncToolbarToggleLabels();
 }
 
 function initScanMode() {
@@ -2881,9 +2895,10 @@ function initScanMode() {
   scanModeBtn.addEventListener("click", () => {
     scanMode = !scanMode;
     scanModeBtn.setAttribute("aria-pressed", scanMode ? "true" : "false");
-    scanModeBtn.title = t(scanMode ? "scanModeOn" : "scanModeOff");
     cardsContainer.classList.toggle("is-scan", scanMode);
+    syncToolbarToggleLabels();
   });
+  syncToolbarToggleLabels();
 }
 
 function initResumeBanner() {
@@ -2911,11 +2926,13 @@ function initResumeBanner() {
 
   if (mode === "compare") {
     resumeBannerText.textContent = t("resumeBannerCompare", payload);
-    resumeBannerGo.textContent = t("resumeBannerContinue");
+    if (resumeBannerHint) resumeBannerHint.textContent = t("resumeBannerHintCompare");
+    resumeBannerGo.textContent = t("resumeBannerGoCompare");
     resumeBannerGo.onclick = () => openCompareModal();
   } else {
     resumeBannerText.textContent = t("resumeBannerBreed", bName(payload));
-    resumeBannerGo.textContent = t("resumeBannerContinue");
+    if (resumeBannerHint) resumeBannerHint.textContent = t("resumeBannerHintBreed");
+    resumeBannerGo.textContent = t("resumeBannerGoBreed", bName(payload));
     resumeBannerGo.onclick = () => {
       const card = cardForBreed(payload.key);
       if (card) openDetailModal(card, resumeBannerGo);
@@ -2991,11 +3008,28 @@ function openDetailModal(card, trigger) {
     ? `<div class="detail-thumbnails detail-thumbnails-standalone" id="detailThumbs"></div>`
     : "";
 
-  detailModalContent.innerHTML = `${heroHTML}
+  const navKeys = getVisibleFilteredCards().map((c) => c.dataset.breed);
+  const showBreedNav = navKeys.length > 1;
+  const navIdx = navKeys.indexOf(breedKey);
+  const prevKey = showBreedNav ? navKeys[(navIdx - 1 + navKeys.length) % navKeys.length] : null;
+  const nextKey = showBreedNav ? navKeys[(navIdx + 1) % navKeys.length] : null;
+  const breedNavHTML = showBreedNav ? `
     <div class="detail-breed-nav">
-      <button type="button" id="detailPrevBtn" class="detail-breed-nav-btn" aria-label="${escapeHTML(t("detailPrevAria"))}">← ${escapeHTML(t("detailPrevAria"))}</button>
-      <button type="button" id="detailNextBtn" class="detail-breed-nav-btn" aria-label="${escapeHTML(t("detailNextAria"))}">${escapeHTML(t("detailNextAria"))} →</button>
-    </div>
+      <p class="detail-breed-nav-hint">${escapeHTML(t("detailNavHint"))}</p>
+      <div class="detail-breed-nav-btns">
+        <button type="button" id="detailPrevBtn" class="detail-breed-nav-btn" aria-label="${escapeHTML(t("detailPrevAria"))}: ${escapeHTML(bName(breedByKey(prevKey)))}">
+          <span class="detail-breed-nav-dir">${escapeHTML(t("detailPrevAria"))}</span>
+          <span class="detail-breed-nav-name">${escapeHTML(bName(breedByKey(prevKey)))}</span>
+        </button>
+        <button type="button" id="detailNextBtn" class="detail-breed-nav-btn" aria-label="${escapeHTML(t("detailNextAria"))}: ${escapeHTML(bName(breedByKey(nextKey)))}">
+          <span class="detail-breed-nav-dir">${escapeHTML(t("detailNextAria"))}</span>
+          <span class="detail-breed-nav-name">${escapeHTML(bName(breedByKey(nextKey)))}</span>
+        </button>
+      </div>
+    </div>` : "";
+
+  detailModalContent.innerHTML = `${heroHTML}
+    ${breedNavHTML}
     <div class="detail-modal-inner">
       <div class="detail-summary">${detailSummaryHTML(breed)}</div>
       <p class="description">${escapeHTML(bDesc(breed))}</p>
@@ -3012,12 +3046,6 @@ function openDetailModal(card, trigger) {
 
       <div class="detail-actions-panel" role="group" aria-label="${escapeHTML(t("detailActionsAria"))}">
         ${refreshBtnHTML}
-        <button id="detailFav" class="detail-action-btn" type="button">${isFavorite(breedKey) ? escapeHTML(t("detailFavOn")) : escapeHTML(t("detailFavAdd"))}</button>
-        <div class="detail-actions-split">
-          <button id="detailShare" class="detail-action-btn" type="button">${escapeHTML(t("detailShare"))}</button>
-          <button id="detailNativeShare" class="detail-action-btn" type="button">${escapeHTML(t("detailShareNative"))}</button>
-        </div>
-        <a id="detailWhatsApp" class="detail-action-btn detail-action-btn--link" href="#" target="_blank" rel="noopener noreferrer">${escapeHTML(t("detailShareWhatsApp"))}</a>
         <a id="detailWiki" class="detail-action-btn detail-action-btn--wiki" href="${escapeHTML(wiki)}" target="_blank" rel="noopener noreferrer">
           <span class="wiki-mark" aria-hidden="true">W</span> ${escapeHTML(t("detailWiki"))}
         </a>
@@ -3031,24 +3059,11 @@ function openDetailModal(card, trigger) {
   `;
 
   try { localStorage.setItem(LAST_BREED_KEY, breedKey); } catch (e) { /* ignore */ }
-  _detailNavKeys = getVisibleFilteredCards().map((c) => c.dataset.breed);
-  const navIdx = _detailNavKeys.indexOf(breedKey);
+  _detailNavKeys = navKeys;
   const prevBtn = document.getElementById("detailPrevBtn");
   const nextBtn = document.getElementById("detailNextBtn");
-  if (prevBtn) {
-    prevBtn.disabled = _detailNavKeys.length <= 1;
-    prevBtn.addEventListener("click", () => navigateDetailBreed(-1));
-  }
-  if (nextBtn) {
-    nextBtn.disabled = _detailNavKeys.length <= 1;
-    nextBtn.addEventListener("click", () => navigateDetailBreed(1));
-  }
-  if (navIdx > -1 && _detailNavKeys.length > 1) {
-    const prevKey = _detailNavKeys[(navIdx - 1 + _detailNavKeys.length) % _detailNavKeys.length];
-    const nextKey = _detailNavKeys[(navIdx + 1) % _detailNavKeys.length];
-    if (prevBtn) prevBtn.textContent = `← ${bName(breedByKey(prevKey))}`;
-    if (nextBtn) nextBtn.textContent = `${bName(breedByKey(nextKey))} →`;
-  }
+  if (prevBtn) prevBtn.addEventListener("click", () => navigateDetailBreed(-1));
+  if (nextBtn) nextBtn.addEventListener("click", () => navigateDetailBreed(1));
 
   const desiredHash = `#breed/${encodeURIComponent(breedKey)}`;
   if (location.hash !== desiredHash) {
@@ -3077,16 +3092,18 @@ function openDetailModal(card, trigger) {
 
   const refreshEl = document.getElementById("detailRefresh");
   if (refreshEl) refreshEl.addEventListener("click", () => loadDetailPhotos(breed, true));
-  document.getElementById("detailFav").addEventListener("click", () => {
-    card.querySelector(".fav-btn").click();
-    document.getElementById("detailFav").textContent =
-      isFavorite(breedKey) ? t("detailFavOn") : t("detailFavAdd");
+
+  const detailUrl = breedPageUrl(breed);
+  const updateStickyFavLabel = () => {
     const stickyFav = document.getElementById("detailStickyFav");
     if (stickyFav) stickyFav.textContent = isFavorite(breedKey) ? t("detailFavOn") : t("detailStickyFav");
-  });
+  };
   const stickyFav = document.getElementById("detailStickyFav");
   if (stickyFav) {
-    stickyFav.addEventListener("click", () => document.getElementById("detailFav")?.click());
+    stickyFav.addEventListener("click", () => {
+      card.querySelector(".fav-btn")?.click();
+      updateStickyFavLabel();
+    });
   }
   const stickyCompare = document.getElementById("detailStickyCompare");
   if (stickyCompare) {
@@ -3112,45 +3129,29 @@ function openDetailModal(card, trigger) {
   const stickyShare = document.getElementById("detailStickyShare");
   if (stickyShare) {
     stickyShare.addEventListener("click", () => {
-      document.getElementById("detailShare")?.click();
+      if (typeof navigator.share === "function") {
+        navigator.share({
+          title: name,
+          text: bDesc(breed),
+          url: detailUrl,
+        }).then(() => trackEvent("Native share breed", { breed: breedKey })).catch(() => { /* cancelled */ });
+      } else {
+        copyToClipboard(detailUrl).then(
+          () => {
+            announce(t("linkCopied"));
+            trackEvent("Copy breed link", { breed: breedKey });
+            const original = stickyShare.textContent;
+            stickyShare.textContent = t("detailShareDone");
+            stickyShare.classList.add("copied");
+            setTimeout(() => {
+              stickyShare.textContent = original;
+              stickyShare.classList.remove("copied");
+            }, 1500);
+          },
+          () => prompt(t("detailShare"), detailUrl)
+        );
+      }
     });
-  }
-  document.getElementById("detailShare").addEventListener("click", () => {
-    const btn = document.getElementById("detailShare");
-    const url = breedPageUrl(breed);
-    copyToClipboard(url).then(
-      () => {
-        announce(t("linkCopied"));
-        trackEvent("Copy breed link", { breed: breedKey });
-        // Visible feedback for sighted users: swap label + green for ~1.5s.
-        const original = btn.textContent;
-        btn.textContent = t("detailShareDone");
-        btn.classList.add("copied");
-        setTimeout(() => {
-          btn.textContent = original;
-          btn.classList.remove("copied");
-        }, 1500);
-      },
-      () => prompt(t("detailShare"), url)
-    );
-  });
-  const detailUrl = breedPageUrl(breed);
-  const nativeShareBtn = document.getElementById("detailNativeShare");
-  if (nativeShareBtn) {
-    nativeShareBtn.hidden = typeof navigator.share !== "function";
-    nativeShareBtn.addEventListener("click", () => {
-      navigator.share({
-        title: name,
-        text: bDesc(breed),
-        url: detailUrl,
-      }).then(() => trackEvent("Native share breed", { breed: breedKey })).catch(() => { /* cancelled */ });
-    });
-  }
-  const whatsApp = document.getElementById("detailWhatsApp");
-  if (whatsApp) {
-    const text = `${name} - ${detailUrl}`;
-    whatsApp.href = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    whatsApp.addEventListener("click", () => trackEvent("WhatsApp share breed", { breed: breedKey }));
   }
   detailModalContent.querySelectorAll(".similar-breed").forEach((btn) => {
     const img = btn.querySelector("img");
@@ -4418,6 +4419,7 @@ function applyLanguage(lang) {
   // applyLanguage updates those via data-i18n, but the custom dropdown
   // mirrors them so it needs a refresh too.
   if (typeof renderSortMenu === "function") renderSortMenu();
+  syncToolbarToggleLabels();
 
   if (foodModal && foodModal.classList.contains("open") && foodModalBody) {
     const breedKey = foodModal.dataset.breedKey;
