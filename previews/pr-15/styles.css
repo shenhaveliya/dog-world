@@ -3033,24 +3033,6 @@ footer .small-link {
     transparent 100%
   );
 }
-.detail-breed-head::before {
-  content: "";
-  position: absolute;
-  inset-inline-start: 0;
-  top: 18px;
-  bottom: 18px;
-  width: 3px;
-  border-radius: 0 4px 4px 0;
-  background: linear-gradient(
-    180deg,
-    var(--size-accent, var(--accent-1)),
-    color-mix(in srgb, var(--tool-1) 70%, var(--size-accent, var(--accent-2)))
-  );
-  opacity: 0.9;
-}
-[dir="rtl"] .detail-breed-head::before {
-  border-radius: 4px 0 0 4px;
-}
 /* Make the close button readable against the photo of the hero.
    z-index must be higher than the hero's gradient overlay (z-index: 2),
    otherwise the overlay would swallow clicks on the X. */
@@ -5308,20 +5290,18 @@ body.calm-mode .card:hover {
   .detail-hero { height: 210px; }
   .detail-hero-scrim { display: none; }
   .detail-breed-head {
-    padding: 18px 20px 0;
-    padding-inline-end: 52px;
+    padding: 18px 44px 0;
   }
   .detail-breed-head-inner {
-    padding-inline-start: 10px;
-    gap: 10px;
+    gap: 8px;
   }
   .detail-breed-head h2 {
     font-size: 1.45rem;
   }
   .detail-breed-head .detail-breed-size,
   .detail-breed-head .size {
-    padding: 6px 12px;
-    font-size: 12px;
+    padding: 3px 9px;
+    font-size: 10px;
   }
   .detail-breed-head-divider {
     margin-top: 14px;
