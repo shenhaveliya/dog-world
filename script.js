@@ -2809,7 +2809,7 @@ function openDetailModal(card, trigger) {
       ${breedHeadHTML}
     </div>`;
   const refreshBtnHTML = (withImage && !isWikiOnly)
-    ? `<button id="detailRefresh" class="pill-btn" type="button">${escapeHTML(t("detailRefresh"))}</button>`
+    ? `<button id="detailRefresh" class="detail-action-btn" type="button">${escapeHTML(t("detailRefresh"))}</button>`
     : "";
   const thumbsHTML = (withImage && !isWikiOnly)
     ? `<div class="detail-thumbnails detail-thumbnails-standalone" id="detailThumbs"></div>`
@@ -2829,13 +2829,15 @@ function openDetailModal(card, trigger) {
 
       ${similarBreedsHTML(breed)}
 
-      <div class="detail-actions">
+      <div class="detail-actions-panel" role="group" aria-label="${escapeHTML(t("detailActionsAria"))}">
         ${refreshBtnHTML}
-        <button id="detailFav" class="pill-btn" type="button">${isFavorite(breedKey) ? escapeHTML(t("detailFavOn")) : escapeHTML(t("detailFavAdd"))}</button>
-        <button id="detailShare" class="pill-btn" type="button">${escapeHTML(t("detailShare"))}</button>
-        <button id="detailNativeShare" class="pill-btn" type="button">${escapeHTML(t("detailShareNative"))}</button>
-        <a id="detailWhatsApp" class="pill-btn pill-btn-link" href="#" target="_blank" rel="noopener noreferrer">${escapeHTML(t("detailShareWhatsApp"))}</a>
-        <a id="detailWiki" class="pill-btn pill-btn-link pill-btn-wiki" href="${escapeHTML(wiki)}" target="_blank" rel="noopener noreferrer">
+        <button id="detailFav" class="detail-action-btn" type="button">${isFavorite(breedKey) ? escapeHTML(t("detailFavOn")) : escapeHTML(t("detailFavAdd"))}</button>
+        <div class="detail-actions-split">
+          <button id="detailShare" class="detail-action-btn" type="button">${escapeHTML(t("detailShare"))}</button>
+          <button id="detailNativeShare" class="detail-action-btn" type="button">${escapeHTML(t("detailShareNative"))}</button>
+        </div>
+        <a id="detailWhatsApp" class="detail-action-btn detail-action-btn--link" href="#" target="_blank" rel="noopener noreferrer">${escapeHTML(t("detailShareWhatsApp"))}</a>
+        <a id="detailWiki" class="detail-action-btn detail-action-btn--wiki" href="${escapeHTML(wiki)}" target="_blank" rel="noopener noreferrer">
           <span class="wiki-mark" aria-hidden="true">W</span> ${escapeHTML(t("detailWiki"))}
         </a>
       </div>
