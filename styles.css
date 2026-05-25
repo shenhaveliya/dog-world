@@ -1738,21 +1738,21 @@ select.sort-select { display: none; }
   z-index: 2;
   top: 50%;
   translate: 0 -50%;
-  inset-inline-start: calc(38px + 12px);
+  inset-inline-start: calc(38px + 12px + 14px);
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  max-width: calc(100% - 38px - 12px - 108px);
+  gap: 16px;
+  max-width: calc(100% - 38px - 12px - 14px - 108px);
   pointer-events: none;
 }
 .food-open-detail-label .food-open-label {
   flex-shrink: 1;
   min-width: 0;
+  padding-inline-end: 2px;
 }
 .food-open-detail-label .food-info-tip {
   pointer-events: auto;
   flex-shrink: 0;
-  margin-inline-start: 2px;
 }
 .food-open-detail .food-info-tooltip {
   top: calc(100% + 8px);
