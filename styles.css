@@ -2366,11 +2366,78 @@ footer .small-link {
 .detail-modal .stat { font-size: 14px; padding: 12px 14px; }
 .detail-modal .stat-value { font-size: 14px; }
 
-.detail-actions {
+.detail-actions-panel {
   display: flex;
+  flex-direction: column;
+  margin-top: 18px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--input-border);
+  background: color-mix(in srgb, var(--card-bg) 94%, var(--accent-1) 6%);
+  overflow: hidden;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+.detail-actions-panel > .detail-action-btn,
+.detail-actions-panel > .detail-actions-split {
+  border-bottom: 1px solid color-mix(in srgb, var(--input-border) 85%, transparent);
+}
+.detail-actions-panel > :last-child {
+  border-bottom: none;
+}
+.detail-actions-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.detail-actions-split > .detail-action-btn + .detail-action-btn {
+  border-inline-start: 1px solid color-mix(in srgb, var(--input-border) 85%, transparent);
+}
+.detail-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
-  margin-top: 16px;
-  flex-wrap: wrap;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1.25;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  transition: background 0.15s ease, color 0.15s ease;
+  box-sizing: border-box;
+}
+.detail-action-btn:hover,
+.detail-action-btn:focus-visible {
+  background: color-mix(in srgb, var(--accent-1) 10%, var(--card-bg));
+  outline: none;
+}
+.detail-action-btn:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent-1);
+}
+.detail-action-btn--wiki {
+  background: #fff;
+  color: #111;
+}
+.detail-action-btn--wiki:hover,
+.detail-action-btn--wiki:focus-visible {
+  background: color-mix(in srgb, var(--accent-1) 6%, #fff);
+  color: #111;
+}
+[data-theme="dark"] .detail-action-btn--wiki {
+  background: #f8fafc;
+  color: #111;
+}
+[data-theme="dark"] .detail-action-btn--wiki:hover,
+[data-theme="dark"] .detail-action-btn--wiki:focus-visible {
+  background: #fff;
+}
+.detail-action-btn--link {
+  color: var(--text);
 }
 
 /* =====================================================================
@@ -4809,27 +4876,10 @@ button:active:not(:disabled),
   footer .footer-bottom { flex-direction: column; gap: 4px; }
   /* Detail-modal info: 2 columns on narrow, not 3. */
   .detail-modal .info { grid-template-columns: 1fr 1fr; }
-  .detail-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-    margin-top: 18px;
-  }
-  .detail-actions .pill-btn,
-  .detail-actions .pill-btn-link {
-    width: 100%;
+  .detail-action-btn {
     min-height: 44px;
-    justify-content: center;
-    text-align: center;
+    font-size: 14px;
     padding-inline: 12px;
-    white-space: nowrap;
-    box-sizing: border-box;
-  }
-  #detailRefresh,
-  #detailFav,
-  #detailWhatsApp,
-  #detailWiki {
-    grid-column: 1 / -1;
   }
 
   /* Mobile bottom-nav: shown only here. Reserve space at the bottom of the
