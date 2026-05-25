@@ -69,6 +69,7 @@ const LANG_KEY = "dogweb-lang";
 const MAX_COMPARE = 4;
 const PHOTOS_PER_BREED = 4;
 const SITE_URL = "https://shenhaveliya.github.io/dog-world/";
+const DEFAULT_OG_IMAGE = `${SITE_URL}og-image.jpg?v=20260520-v15`;
 
 /* =====================================================================
    SMALL UTILITIES
@@ -139,6 +140,90 @@ function breedPageUrl(breed, lang = currentLang) {
     ? `${location.origin}${location.pathname.replace(/\/[^/]*$/, "/")}`
     : SITE_URL;
   return `${base.replace(/\/$/, "")}/breeds/${encodeURIComponent(breed.key)}${suffix}.html`;
+}
+
+function breedSpaUrl(breedKey) {
+  return pageUrlWithHash(`#breed/${encodeURIComponent(breedKey)}`);
+}
+
+function setMetaContent(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.setAttribute("content", value);
+}
+
+function getDetailShareImageUrl(breed) {
+  const heroImg = document.getElementById("detailHeroImg");
+  if (heroImg) {
+    const url = heroImg.currentSrc || heroImg.src;
+    if (url && /^https?:/.test(url) && url !== DEFAULT_DOG_IMAGE) return url;
+  }
+  const known = bestKnownImageFor(breed);
+  if (known && known !== DEFAULT_DOG_IMAGE) return known;
+  return DEFAULT_OG_IMAGE;
+}
+
+function updateBreedShareMeta(breed, imageUrl) {
+  if (!breed) return;
+  const name = bName(breed);
+  const desc = bDesc(breed);
+  const url = breedSpaUrl(breed.key);
+  const img = imageUrl && imageUrl !== DEFAULT_DOG_IMAGE ? imageUrl : DEFAULT_OG_IMAGE;
+  setMetaContent("ogTitle", `${name} – ${t("docTitle")}`);
+  setMetaContent("ogDescription", desc);
+  setMetaContent("ogUrl", url);
+  setMetaContent("ogImage", img);
+  setMetaContent("ogImageSecure", img);
+  setMetaContent("ogImageAlt", name);
+  setMetaContent("twTitle", `${name} – ${t("docTitle")}`);
+  setMetaContent("twDescription", desc);
+  setMetaContent("twImage", img);
+  setMetaContent("twImageAlt", name);
+}
+
+function resetShareMeta() {
+  const dict = I18N[currentLang] || I18N.he;
+  setMetaContent("ogTitle", dict.docTitle);
+  setMetaContent("ogDescription", dict.docDescription);
+  setMetaContent("ogUrl", SITE_URL);
+  setMetaContent("ogImage", DEFAULT_OG_IMAGE);
+  setMetaContent("ogImageSecure", DEFAULT_OG_IMAGE);
+  setMetaContent("ogImageAlt", dict.ogImageAlt || dict.docTitle);
+  setMetaContent("twTitle", dict.docTitle);
+  setMetaContent("twDescription", dict.docDescription);
+  setMetaContent("twImage", DEFAULT_OG_IMAGE);
+  setMetaContent("twImageAlt", dict.ogImageAlt || dict.docTitle);
+}
+
+async function fetchImageShareFile(url, filename) {
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error("image fetch failed");
+  const blob = await resp.blob();
+  return new File([blob], filename, { type: blob.type || "image/jpeg" });
+}
+
+async function shareBreedNative(breed, name, shareUrl) {
+  const imageUrl = getDetailShareImageUrl(breed);
+  updateBreedShareMeta(breed, imageUrl);
+  const payload = { title: name, text: bDesc(breed), url: shareUrl };
+  if (typeof navigator.share === "function") {
+    try {
+      if (imageUrl && imageUrl !== DEFAULT_OG_IMAGE && navigator.canShare) {
+        const file = await fetchImageShareFile(imageUrl, `${breed.key}.jpg`);
+        if (navigator.canShare({ ...payload, files: [file] })) {
+          await navigator.share({ ...payload, files: [file] });
+          trackEvent("Native share breed", { breed: breed.key, withImage: true });
+          return "shared";
+        }
+      }
+    } catch (e) { /* fall through to link-only share */ }
+    await navigator.share(payload);
+    trackEvent("Native share breed", { breed: breed.key });
+    return "shared";
+  }
+  await copyToClipboard(shareUrl);
+  announce(t("linkCopied"));
+  trackEvent("Copy breed link", { breed: breed.key });
+  return "copied";
 }
 
 function updateQueryParam(name, value) {
@@ -523,8 +608,12 @@ try {
 function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
   themeToggle.textContent = theme === "dark" ? "☀️" : "🌙";
-  themeToggle.setAttribute("title", theme === "dark" ? t("themeTitleLight") : t("themeTitleDark"));
   themeToggle.setAttribute("aria-label", theme === "dark" ? t("themeAriaToLight") : t("themeAriaToDark"));
+  if (themeToggle.classList.contains("ui-tip")) {
+    themeToggle.setAttribute("data-tip", theme === "dark" ? t("themeTipDark") : t("themeTipLight"));
+  } else {
+    themeToggle.setAttribute("title", theme === "dark" ? t("themeTitleLight") : t("themeTitleDark"));
+  }
 }
 
 const initialTheme =
@@ -2532,6 +2621,7 @@ function closeModal(modal) {
   ) {
     history.replaceState(null, "", location.pathname + location.search);
   }
+  if (modal.id === "detailModal") resetShareMeta();
 }
 
 function openFoodModal(breedKey, trigger) {
@@ -2862,14 +2952,25 @@ function formatQuizShareText(top3) {
   }).join("\n");
 }
 
+function syncUiTips() {
+  const dict = I18N[currentLang];
+  if (!dict) return;
+  document.querySelectorAll("[data-i18n-tip]").forEach((el) => {
+    const key = el.dataset.i18nTip;
+    const v = dict[key];
+    if (typeof v === "string") el.setAttribute("data-tip", v);
+  });
+}
+
 function syncToolbarToggleLabels() {
   if (scanModeBtn) {
-    scanModeBtn.title = t(scanMode ? "scanModeOn" : "scanModeOff");
+    const scanTip = t(scanMode ? "scanModeOn" : "scanModeOff");
+    scanModeBtn.setAttribute("data-tip", scanTip);
     scanModeBtn.setAttribute("aria-label", t("scanModeLabel"));
   }
   if (calmModeToggle) {
     const calm = document.body.classList.contains("calm-mode");
-    calmModeToggle.title = t(calm ? "calmModeOn" : "calmModeOff");
+    calmModeToggle.setAttribute("data-tip", t(calm ? "calmModeOn" : "calmModeOff"));
   }
 }
 
@@ -3071,6 +3172,7 @@ function openDetailModal(card, trigger) {
   }
 
   openModal(detailModal, trigger);
+  updateBreedShareMeta(breed, cachedImg || getDetailShareImageUrl(breed));
   if (withImage && !isWikiOnly) loadDetailPhotos(breed);
 
   // Keep the blurred backdrop in sync with whatever photo is currently in
@@ -3082,7 +3184,10 @@ function openDetailModal(card, trigger) {
     if (heroImg && heroEl) {
       const syncHeroBg = () => {
         const url = heroImg.currentSrc || heroImg.src;
-        if (url) heroEl.style.setProperty("--hero-bg", `url("${url.replace(/"/g, '\\"')}")`);
+        if (url) {
+          heroEl.style.setProperty("--hero-bg", `url("${url.replace(/"/g, '\\"')}")`);
+          updateBreedShareMeta(breed, url);
+        }
       };
       heroImg.addEventListener("load", syncHeroBg);
       // Fire once now in case the cached image is already decoded.
@@ -3093,7 +3198,7 @@ function openDetailModal(card, trigger) {
   const refreshEl = document.getElementById("detailRefresh");
   if (refreshEl) refreshEl.addEventListener("click", () => loadDetailPhotos(breed, true));
 
-  const detailUrl = breedPageUrl(breed);
+  const detailUrl = breedSpaUrl(breedKey);
   const updateStickyFavLabel = () => {
     const stickyFav = document.getElementById("detailStickyFav");
     if (stickyFav) stickyFav.textContent = isFavorite(breedKey) ? t("detailFavOn") : t("detailStickyFav");
@@ -3129,28 +3234,16 @@ function openDetailModal(card, trigger) {
   const stickyShare = document.getElementById("detailStickyShare");
   if (stickyShare) {
     stickyShare.addEventListener("click", () => {
-      if (typeof navigator.share === "function") {
-        navigator.share({
-          title: name,
-          text: bDesc(breed),
-          url: detailUrl,
-        }).then(() => trackEvent("Native share breed", { breed: breedKey })).catch(() => { /* cancelled */ });
-      } else {
-        copyToClipboard(detailUrl).then(
-          () => {
-            announce(t("linkCopied"));
-            trackEvent("Copy breed link", { breed: breedKey });
-            const original = stickyShare.textContent;
-            stickyShare.textContent = t("detailShareDone");
-            stickyShare.classList.add("copied");
-            setTimeout(() => {
-              stickyShare.textContent = original;
-              stickyShare.classList.remove("copied");
-            }, 1500);
-          },
-          () => prompt(t("detailShare"), detailUrl)
-        );
-      }
+      shareBreedNative(breed, name, detailUrl).then((result) => {
+        if (result !== "copied") return;
+        const original = stickyShare.textContent;
+        stickyShare.textContent = t("detailShareDone");
+        stickyShare.classList.add("copied");
+        setTimeout(() => {
+          stickyShare.textContent = original;
+          stickyShare.classList.remove("copied");
+        }, 1500);
+      }).catch(() => { /* cancelled */ });
     });
   }
   detailModalContent.querySelectorAll(".similar-breed").forEach((btn) => {
@@ -4389,6 +4482,8 @@ function applyLanguage(lang) {
     const key = el.dataset.i18nTitle;
     if (typeof dict[key] === "string") el.setAttribute("title", dict[key]);
   });
+  syncUiTips();
+  syncToolbarToggleLabels();
 
   if (langToggle) {
     // Keep the 🌐 icon span intact; only swap the text label.
@@ -4499,6 +4594,7 @@ syncFromHash();
 initDiscoveryBanner();
 initCalmMode();
 initScanMode();
+syncUiTips();
 loadQuizMatchKeys();
 syncQuizMatchBadges();
 initResumeBanner();

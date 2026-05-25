@@ -26,11 +26,14 @@ const I18N = {
     themeAriaToLight: "החלף למצב בהיר",
     themeTitleDark: "מצב כהה",
     themeTitleLight: "מצב בהיר",
+    themeTipDark: "ערכת נושא כהה — לחצו למצב בהיר",
+    themeTipLight: "ערכת נושא בהירה — לחצו למצב כהה",
     themeAnnouncedDark: "מצב כהה הופעל",
     themeAnnouncedLight: "מצב בהיר הופעל",
 
     langToggle: "EN",
     langToggleAria: "Switch to English",
+    langToggleTip: "החלפת שפה — עברית / English",
 
     quizBtn: "🎯 מצא לי כלב",
 
@@ -236,7 +239,10 @@ const I18N = {
     viewModeLabel: "תצוגה",
     viewGrid: "תצוגת רשת",
     viewList: "תצוגת רשימה",
+    viewGridTip: "תצוגת רשת — כרטיסים",
+    viewListTip: "תצוגת רשימה — שורות רחבות",
     densityToggle: "החלף צפיפות",
+    densityTip: "צפיפות — כרטיסים גדולים או קומפקטיים",
     sectionCount: (n) => n === 1 ? "גזע אחד" : `${n} גזעים`,
     sizeIconSmall: "🐕",
     sizeIconMedium: "🐕‍🦺",
@@ -369,11 +375,14 @@ const I18N = {
     themeAriaToLight: "Switch to light mode",
     themeTitleDark: "Dark mode",
     themeTitleLight: "Light mode",
+    themeTipDark: "Dark theme — tap for light mode",
+    themeTipLight: "Light theme — tap for dark mode",
     themeAnnouncedDark: "Dark mode enabled",
     themeAnnouncedLight: "Light mode enabled",
 
     langToggle: "עב",
     langToggleAria: "החלף לעברית",
+    langToggleTip: "Switch language — Hebrew / English",
 
     quizBtn: "🎯 Find My Dog",
 
@@ -579,7 +588,10 @@ const I18N = {
     viewModeLabel: "View",
     viewGrid: "Grid view",
     viewList: "List view",
+    viewGridTip: "Grid view — cards",
+    viewListTip: "List view — wide rows",
     densityToggle: "Toggle density",
+    densityTip: "Density — comfortable or compact cards",
     sectionCount: (n) => n === 1 ? "1 breed" : `${n} breeds`,
     sizeIconSmall: "🐕",
     sizeIconMedium: "🐕‍🦺",
