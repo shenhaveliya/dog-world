@@ -1730,19 +1730,36 @@ select.sort-select { display: none; }
 .food-open-detail .food-open-btn {
   width: 100%;
 }
-.food-open-detail .food-info-tip {
+.food-open-copy--spacer {
+  min-height: 1.35em;
+}
+.food-open-detail-label {
   position: absolute;
   z-index: 2;
   top: 50%;
   translate: 0 -50%;
   inset-inline-start: calc(38px + 12px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100% - 38px - 12px - 108px);
   pointer-events: none;
 }
-.food-open-detail .food-open-label {
-  padding-inline-start: 22px;
-}
-.food-open-detail .food-info-tip .food-info-btn {
+.food-open-detail-label .food-info-tip {
   pointer-events: auto;
+  flex-shrink: 0;
+}
+.food-open-detail .food-info-tooltip {
+  top: calc(100% + 8px);
+  bottom: auto;
+  inset-inline-start: 0;
+  translate: none;
+}
+.food-open-detail .food-info-tooltip::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: var(--modal-bg, var(--card-bg));
 }
 .food-info-tip {
   position: relative;

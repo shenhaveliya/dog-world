@@ -367,8 +367,8 @@ function foodOpenBtnHTML(breed, variant) {
       <span class="food-open-icon-wrap" aria-hidden="true">
         <span class="food-open-icon">🍽️</span>
       </span>
-      <span class="food-open-copy">
-        <span class="food-open-label">${label}</span>
+      <span class="food-open-copy${variant === "detail" ? " food-open-copy--spacer" : ""}">
+        ${variant === "detail" ? "" : `<span class="food-open-label">${label}</span>`}
       </span>
       <span class="food-open-action">
         <span class="food-open-action-text">${escapeHTML(t("foodOpenBtn"))}</span>
@@ -379,7 +379,10 @@ function foodOpenBtnHTML(breed, variant) {
     return `
       <div class="food-open-detail">
         ${btnInner}
-        ${foodInfoTipHTML()}
+        <div class="food-open-detail-label">
+          <span class="food-open-label">${label}</span>
+          ${foodInfoTipHTML()}
+        </div>
       </div>`;
   }
   return btnInner;
